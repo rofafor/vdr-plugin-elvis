@@ -1,0 +1,120 @@
+# VDR plugin language source file.
+# Copyright (C) 2007 Rolf Ahrenberg
+# This file is distributed under the same license as the Elvis package.
+# Rolf Ahrenberg
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: elvis 0.0.1\n"
+"Report-Msgid-Bugs-To: <see README>\n"
+"POT-Creation-Date: 2010-08-13 12:00+0300\n"
+"PO-Revision-Date: 2010-08-13 12:00+0300\n"
+"Last-Translator: Rolf Ahrenberg\n"
+"Language-Team: Finnish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Elisa Viihde Widget"
+msgstr "Elisa Viihde -vimpain"
+
+msgid "Elvis"
+msgstr "Elvis"
+
+msgid "Elvis is alive!"
+msgstr "Elvis elää!"
+
+msgid "Hide main menu entry"
+msgstr "Piilota valinta päävalikosta"
+
+msgid "Define whether the main manu entry is hidden."
+msgstr "Määrittele, näytetäänkö laajennoksen valinta päävalikossa."
+
+msgid "Username"
+msgstr "Käyttäjätunnus"
+
+msgid "Define your username for Elisa Viihde service"
+msgstr "Määrittele käyttäjätunnuksesi Elisa Viihde -palveluun"
+
+msgid "Password"
+msgstr "Salasala"
+
+msgid "Define your password for Elisa Viihde service"
+msgstr "Määrittele salasanasi Elisa Viihde -palveluun"
+
+msgid "Help"
+msgstr "Opaste"
+
+#, c-format
+msgid "Fetching: %s"
+msgstr "Haetaan: %s"
+
+#, c-format
+msgid "Fetching failed: %s"
+msgstr "Haku epäonnistui: %s"
+
+#, c-format
+msgid "Already fetching: %s"
+msgstr "Haku jo käynnissä: %s"
+
+#, c-format
+msgid "Fetched: %s"
+msgstr "Haettu: %s"
+
+msgid "Button$Fetch"
+msgstr "Hae"
+
+msgid "[DIR]"
+msgstr "[hakemisto]"
+
+msgid "Cannot remove folder!"
+msgstr "Kansiota ei voida poistaa!"
+
+msgid "Cannot remove recording!"
+msgstr "Tallennetta ei voida poistaa!"
+
+msgid "Create new timer"
+msgstr "Luo uusi ajastin"
+
+msgid "Folder"
+msgstr "Kansio"
+
+msgid "Timer created"
+msgstr "Ajastin luotu"
+
+msgid "Cannot create timer!"
+msgstr "Ajastimen luonti epäonnistui!"
+
+msgid "Cannot remove wildcard!"
+msgstr "Hakuajastinta ei voida poistaa!"
+
+msgid "Cannot remove timer!"
+msgstr "Ajastinta ei voida poistaa!"
+
+msgid "Edit search timer"
+msgstr "Muokkaa hakuajastinta"
+
+msgid "New search timer"
+msgstr "Uusi hakuajastin"
+
+msgid "Search term"
+msgstr "Hakutermi"
+
+msgid "Cannot edit search timer!"
+msgstr "Hakuajastimen muokkaus epäonnistui!"
+
+msgid "Cannot create search timer!"
+msgstr "Hakuajastimen luonti epäonnistui!"
+
+msgid "Search timers"
+msgstr "Hakuajastimet"
+
+msgid "Cannot remove search timer!"
+msgstr "Hakuajastimen poisto epäonnistui!"
+
+msgid "Top events"
+msgstr "Suosituimmat"
+
+#, c-format
+msgid "Now fetching recordings: %d"
+msgstr "Tallenteita haetaan: %d"

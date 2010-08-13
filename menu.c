@@ -1,0 +1,1073 @@
+/*
+ * menu.c: Elvis plugin for the Video Disk Recorder
+ *
+ *
+ */
+
+#include <vdr/status.h>
+#include <vdr/remote.h>
+#include <vdr/menuitems.h>
+
+#include "common.h"
+#include "fetch.h"
+#include "player.h"
+#include "menu.h"
+
+// --- cElvisRecordingInfoMenu -----------------------------------------
+
+cElvisRecordingInfoMenu::cElvisRecordingInfoMenu(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings"))),
+  urlM(urlP),
+  nameM(nameP),
+  descriptionM(descriptionP),
+  startTimeM(startTimeP),
+  lengthM(lengthP)
+{
+  SetHelp(trVDR("Button$Play"), tr("Button$Fetch"), NULL, NULL);
+}
+
+void cElvisRecordingInfoMenu::Display()
+{
+  cOsdMenu::Display();
+  DisplayMenu()->SetText(*descriptionM, false);
+  cStatus::MsgOsdTextItem(*descriptionM);
+}
+
+eOSState cElvisRecordingInfoMenu::ProcessKey(eKeys keyP)
+{
+  if (!HasSubMenu()) {
+     switch (keyP) {
+       case kUp|k_Repeat:
+       case kUp:
+       case kDown|k_Repeat:
+       case kDown:
+       case kLeft|k_Repeat:
+       case kLeft:
+       case kRight|k_Repeat:
+       case kRight:
+            DisplayMenu()->Scroll(NORMALKEY(keyP) == kUp || NORMALKEY(keyP) == kLeft, NORMALKEY(keyP) == kLeft || NORMALKEY(keyP) == kRight);
+            cStatus::MsgOsdTextItem(NULL, NORMALKEY(keyP) == kUp);
+            return osContinue;
+       case kInfo:
+            return osBack;
+       default:
+            break;
+       }
+     }
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kPlay:
+       case kRed:
+            cRemote::Put(kOk, true);
+       case kOk:
+            return osBack;
+       case kGreen:
+            cElvisFetcher::GetInstance()->New(*urlM, *nameM, *descriptionM, *startTimeM, lengthM);
+            break;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisRecordingItem ---------------------------------------------
+
+cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
+: cOsdItem(recordingP ? (recordingP->IsFolder() ? *cString::sprintf("%s\t%s", tr("[DIR]"), recordingP->Name()) : *cString::sprintf("%s\t%s", recordingP->StartTime(), recordingP->Name())) : ""),
+  recordingM(recordingP),
+  descriptionM(recordingP ? (recordingP->Info() ? *cString::sprintf("%s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", recordingP->Info()->StartTime(), recordingP->Info()->EndTime(),
+               recordingP->Info()->Length(), recordingP->Channel(), recordingP->Name(), recordingP->Info()->ShortText(), recordingP->Info()->Description()) :
+               *cString::sprintf("%s\n%s\n\n%s", recordingP->StartTime(), recordingP->Channel(), recordingP->Name())) : "")
+{
+}
+
+// --- cElvisRecordingsMenu --------------------------------------------
+
+cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings")), 17),
+  folderIdM(folderIdP),
+  levelM(levelP)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisRecordingsMenu::SetHelpKeys()
+{
+  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  if (item) {
+     if (item->IsFolder())
+        SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
+     else
+        SetHelp(trVDR("Button$Play"), tr("Button$Fetch"), trVDR("Button$Delete"), trVDR("Button$Info"));
+     }
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisRecordingsMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  cElvisRecordings::GetInstance()->Update(folderIdM);
+  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item))
+      Add(new cElvisRecordingItem(item));
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisRecordingsMenu::Delete()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  if (item) {
+     if (item->IsFolder())
+        Skins.Message(mtInfo, tr("Cannot remove folder!"));
+     else {
+        if (!cElvisRecordings::GetInstance()->Delete(item->Recording()))
+           Skins.Message(mtError, tr("Cannot remove recording!"));
+        if (!Count())
+           return osBack;
+        Setup();
+        }
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisRecordingsMenu::Info()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
+     return AddSubMenu(new cElvisRecordingInfoMenu(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
+
+  return osContinue;
+}
+
+eOSState cElvisRecordingsMenu::Play()
+{
+  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  if (item) {
+     if (item->IsFolder())
+        return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
+     else if (item->Recording()->Info()) {
+        cControl::Launch(new cElvisPlayerControl(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
+        return osEnd;
+        }
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisRecordingsMenu::Fetch()
+{
+  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
+     cElvisFetcher::GetInstance()->New(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes());
+
+  return osContinue;
+}
+
+eOSState cElvisRecordingsMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRed:
+       case kPlay:
+       case kOk:
+            return Play();
+       case kGreen:
+            return Fetch();
+       case kYellow:
+            return Delete();
+       case kBlue:
+            return Info();
+       default:
+            break;
+       }
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisTimerCreateMenu -------------------------------------------
+
+cElvisTimerCreateMenu::cElvisTimerCreateMenu(cElvisEvent *eventP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Create new timer")), 17),
+  eventM(eventP)
+{
+  int i = 0;
+
+  folderM = i;
+  numFoldersM = 1;
+  cElvisRecordings::GetInstance()->Update();
+  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item)) {
+      if (item->IsFolder() && !isempty(item->Name()))
+         ++numFoldersM;
+      }
+  folderNamesM = new const char*[numFoldersM];
+  folderNamesM[i] = "(oletus)";
+  folderIdsM = new int[numFoldersM];
+  folderIdsM[i] = -1;
+  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item)) {
+      if (item->IsFolder() && !isempty(item->Name())) {
+         ++i;
+         folderNamesM[i] = item->Name();
+         folderIdsM[i]   = item->Id();
+         }
+      }
+
+  Setup();
+}
+
+cElvisTimerCreateMenu::~cElvisTimerCreateMenu()
+{
+  delete [] folderNamesM;
+  delete [] folderIdsM;
+}
+
+void cElvisTimerCreateMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  if (eventM) {
+     Add(new cOsdItem(cString::sprintf("%s:\t%s", trVDR("Name"), eventM->Name()), osUnknown, false));
+     if (!isempty(eventM->Channel()))
+        Add(new cOsdItem(cString::sprintf("%s:\t%s", trVDR("Channel"), eventM->Channel()), osUnknown, false));
+     else if (eventM->Info() && !isempty(eventM->Info()->Channel()))
+        Add(new cOsdItem(cString::sprintf("%s:\t%s", trVDR("Channel"), eventM->Info()->Channel()), osUnknown, false));
+     Add(new cOsdItem(cString::sprintf("%s:\t%s", trVDR("Start"), eventM->StartTime()), osUnknown, false));
+     Add(new cOsdItem(cString::sprintf("%s:\t%s", trVDR("Stop"), eventM->EndTime()), osUnknown, false));
+     Add(new cMenuEditStraItem(tr("Folder"), &folderM, numFoldersM, folderNamesM));
+     }
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisTimerCreateMenu::ProcessKey(eKeys keyP)
+{
+ eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kOk:
+            if (eventM) {
+               if (cElvisTimers::GetInstance()->Create(eventM->Id(), folderIdsM[folderM]))
+                  Skins.Message(mtInfo, tr("Timer created"));
+               else
+                  Skins.Message(mtError, tr("Cannot create timer!"));
+               }
+            return osBack;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisTimerInfoMenu ---------------------------------------------
+
+cElvisTimerInfoMenu::cElvisTimerInfoMenu(cElvisTimer *timerP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers"))),
+  textM(cString::sprintf("%s - %s (%s)\n%s%s\n\n%s\n\n%s\n\n%s", timerP->Info()->StartTime(), timerP->Info()->EndTime(), timerP->Info()->Length(),
+        timerP->Channel(), isempty(timerP->WildCard()) ? "" : *cString::sprintf(" (%s)", timerP->WildCard()), timerP->Name(), timerP->Info()->ShortText(),
+        timerP->Info()->Description()))
+{
+}
+
+void cElvisTimerInfoMenu::Display()
+{
+  cOsdMenu::Display();
+  DisplayMenu()->SetText(*textM, false);
+  cStatus::MsgOsdTextItem(*textM);
+}
+
+eOSState cElvisTimerInfoMenu::ProcessKey(eKeys keyP)
+{
+  if (!HasSubMenu()) {
+     switch (keyP) {
+       case kUp|k_Repeat:
+       case kUp:
+       case kDown|k_Repeat:
+       case kDown:
+       case kLeft|k_Repeat:
+       case kLeft:
+       case kRight|k_Repeat:
+       case kRight:
+            DisplayMenu()->Scroll(NORMALKEY(keyP) == kUp || NORMALKEY(keyP) == kLeft, NORMALKEY(keyP) == kLeft || NORMALKEY(keyP) == kRight);
+            cStatus::MsgOsdTextItem(NULL, NORMALKEY(keyP) == kUp);
+            return osContinue;
+       case kInfo:
+            return osBack;
+       default:
+            break;
+       }
+     }
+
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kOk:
+            return osBack;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisTimerItem -------------------------------------------------
+
+cElvisTimerItem::cElvisTimerItem(cElvisTimer *timerP)
+: cOsdItem(timerP ? *cString::sprintf("%s\t%s\t%s\t%s", timerP->StartTime(), timerP->Channel(), (timerP->Id() > 0) ? "" : "*", timerP->Name()) : ""),
+  timerM(timerP)
+{
+}
+
+// --- cElvisTimersMenu ------------------------------------------------
+
+cElvisTimersMenu::cElvisTimersMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 17, 8, 3)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisTimersMenu::SetHelpKeys()
+{
+  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  if (item) {
+     if (item->Wildcard())
+        SetHelp(NULL, NULL, NULL, trVDR("Button$Info"));
+     else
+        SetHelp(NULL, NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
+     }
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisTimersMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  cElvisTimers::GetInstance()->Update();
+  for (cElvisTimer *item = cElvisTimers::GetInstance()->First(); item; item = cElvisTimers::GetInstance()->Next(item))
+      Add(new cElvisTimerItem(item));
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisTimersMenu::Delete()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  if (item) {
+     if (item->Wildcard())
+        Skins.Message(mtInfo, tr("Cannot remove wildcard!"));
+     else {
+        if (!cElvisTimers::GetInstance()->Delete(item->Timer()))
+           Skins.Message(mtError, tr("Cannot remove timer!"));
+        if (!Count())
+           return osBack;
+        Setup();
+        }
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisTimersMenu::Info()
+{
+  if (HasSubMenu() || Count() == 0)
+     return (osContinue);
+
+  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  if (item)
+     return AddSubMenu(new cElvisTimerInfoMenu(item->Timer()));
+
+  return osContinue;
+}
+
+eOSState cElvisTimersMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kYellow:
+            return Delete();
+       case kBlue:
+       case kOk:
+            return Info();
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisSearchTimersMenu ------------------------------------------
+
+cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), timerP ? tr("Edit search timer") : tr("New search timer")), 17),
+  timerM(timerP)
+{
+  int i = 0;
+
+  cElvisChannels::GetInstance()->Update();
+  channelM = i;
+  numChannelsM = cElvisChannels::GetInstance()->Count();
+  channelNamesM = new const char*[numChannelsM];
+  for (cElvisChannel *channel = cElvisChannels::GetInstance()->First(); channel; channel = cElvisChannels::GetInstance()->Next(channel)) {
+      channelNamesM[channel->Index()] = channel->Name();
+      if (timerM && !strcmp(timerM->Channel(), channel->Name()))
+         channelM = i;
+      ++i;
+      }
+
+  cElvisRecordings::GetInstance()->Update();
+  i = 0;
+  folderM = i;
+  numFoldersM = 1;
+  for (cElvisRecording *recording = cElvisRecordings::GetInstance()->First(); recording; recording = cElvisRecordings::GetInstance()->Next(recording)) {
+      if (recording->IsFolder() && !isempty(recording->Name()))
+         ++numFoldersM;
+      }
+  folderNamesM = new const char*[numFoldersM];
+  folderNamesM[i] = "(oletus)";
+  folderIdsM = new int[numFoldersM];
+  folderIdsM[i] = -1;
+  for (cElvisRecording *recording = cElvisRecordings::GetInstance()->First(); recording; recording = cElvisRecordings::GetInstance()->Next(recording)) {
+      if (recording->IsFolder() && !isempty(recording->Name())) {
+         ++i;
+         folderNamesM[i] = recording->Name();
+         folderIdsM[i] = recording->Id();
+         if (timerM && !strcmp(timerM->Folder(), recording->Name()))
+            folderM = i;
+         }
+      }
+
+  memset(wildcardM, 0, sizeof(wildcardM));
+  if (timerM)
+     Utf8Strn0Cpy(wildcardM, timerM->Wildcard(), sizeof(wildcardM));
+
+  Setup();
+}
+
+cElvisSearchTimerEditMenu::~cElvisSearchTimerEditMenu()
+{
+  delete[] channelNamesM;
+  delete[] folderNamesM;
+  delete[] folderIdsM;
+}
+
+void cElvisSearchTimerEditMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  Add(new cMenuEditStrItem(tr("Search term"), wildcardM, sizeof(wildcardM), tr(FileNameChars)));
+  Add(new cMenuEditStraItem(trVDR("Channel"), &channelM, numChannelsM,      channelNamesM));
+  Add(new cMenuEditStraItem(tr("Folder"),     &folderM,  numFoldersM,       folderNamesM));
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisSearchTimerEditMenu::ProcessKey(eKeys keyP)
+{
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kOk:
+               if (timerM) {
+                  if (((strcmp(timerM->Channel(), channelNamesM[channelM]) || strcmp(timerM->Wildcard(), wildcardM) || strcmp(timerM->Folder(), folderNamesM[folderM]))) &&
+                      !cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
+                     Skins.Message(mtError, tr("Cannot edit search timer!"));
+                  }
+               else {
+                  if (!isempty(wildcardM) && !cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
+                     Skins.Message(mtError, tr("Cannot create search timer!"));
+               }
+            return osBack;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisSearchTimerItem -------------------------------------------
+
+cElvisSearchTimerItem::cElvisSearchTimerItem(cElvisSearchTimer *timerP)
+: cOsdItem(*cString::sprintf("%s\t%s\t%s", timerP->Channel(), timerP->Folder(), timerP->Wildcard())),
+  timerM(timerP)
+{
+}
+
+// --- cElvisSearchTimersMenu ------------------------------------------
+
+cElvisSearchTimersMenu::cElvisSearchTimersMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Search timers")), 10, 12)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisSearchTimersMenu::SetHelpKeys()
+{
+  cElvisSearchTimer *item = (cElvisSearchTimer *)Get(Current());
+  if (item)
+     SetHelp(trVDR("Button$Edit"), trVDR("Button$New"), trVDR("Button$Delete"), NULL);
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisSearchTimersMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  cElvisSearchTimers::GetInstance()->Update();
+  for (cElvisSearchTimer *item = cElvisSearchTimers::GetInstance()->First(); item; item = cElvisSearchTimers::GetInstance()->Next(item))
+      Add(new cElvisSearchTimerItem(item));
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisSearchTimersMenu::Delete()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisSearchTimerItem *item = (cElvisSearchTimerItem *)Get(Current());
+  if (item) {
+     if (!cElvisSearchTimers::GetInstance()->Delete(item->Timer()))
+        Skins.Message(mtError, tr("Cannot remove search timer!"));
+     if (!Count())
+        return osBack;
+     Setup();
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisSearchTimersMenu::New()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  return AddSubMenu(new cElvisSearchTimerEditMenu(NULL));
+}
+
+eOSState cElvisSearchTimersMenu::Edit()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisSearchTimerItem *item = (cElvisSearchTimerItem *)Get(Current());
+  if (item)
+     return AddSubMenu(new cElvisSearchTimerEditMenu(item->Timer()));
+
+  return osContinue;
+}
+
+eOSState cElvisSearchTimersMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kOk:
+       case kRed:
+            return Edit();
+       case kGreen:
+            return New();
+       case kYellow:
+            return Delete();
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisChannelEventInfoMenu --------------------------------------
+
+cElvisChannelEventInfoMenu::cElvisChannelEventInfoMenu(cElvisEvent *eventP, const char *channelP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG"))),
+  eventM(eventP),
+  textM(cString::sprintf("%s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", eventP->Info()->StartTime(), eventP->Info()->EndTime(), eventP->Info()->Length(),
+        channelP ? channelP : "", eventP->Name(), eventP->Info()->ShortText(), eventP->Info()->Description()))
+{
+  if (eventM)
+     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, NULL);
+}
+
+void cElvisChannelEventInfoMenu::Display()
+{
+  cOsdMenu::Display();
+  DisplayMenu()->SetText(*textM, false);
+  cStatus::MsgOsdTextItem(*textM);
+}
+
+eOSState cElvisChannelEventInfoMenu::Record(bool quickP)
+{
+  if (eventM) {
+     if (quickP) {
+        if (cElvisTimers::GetInstance()->Create(eventM->Id()))
+           Skins.Message(mtInfo, tr("Timer created"));
+        else
+           Skins.Message(mtError, tr("Cannot create timer!"));
+        }
+     else
+        return AddSubMenu(new cElvisTimerCreateMenu(eventM));
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisChannelEventInfoMenu::ProcessKey(eKeys keyP)
+{
+  if (!HasSubMenu()) {
+     switch (keyP) {
+       case kUp|k_Repeat:
+       case kUp:
+       case kDown|k_Repeat:
+       case kDown:
+       case kLeft|k_Repeat:
+       case kLeft:
+       case kRight|k_Repeat:
+       case kRight:
+            DisplayMenu()->Scroll(NORMALKEY(keyP) == kUp || NORMALKEY(keyP) == kLeft, NORMALKEY(keyP) == kLeft || NORMALKEY(keyP) == kRight);
+            cStatus::MsgOsdTextItem(NULL, NORMALKEY(keyP) == kUp);
+            return osContinue;
+       default:
+            break;
+       }
+     }
+
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRecord:
+       case kRed:
+            return Record(true);
+       case kGreen:
+            return Record(false);
+       case kOk:
+            return osBack;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisChannelEventItem -----------------------------------------------
+
+cElvisChannelEventItem::cElvisChannelEventItem(cElvisEvent *eventP)
+: cOsdItem(eventP ? *cString::sprintf("%s\t%s", eventP->StartTime(), eventP->Name()) : ""),
+  eventM(eventP)
+{
+}
+
+// --- cElvisChannelEventsMenu ------------------------------------------------
+
+cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 17),
+  channelM(channelP)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisChannelEventsMenu::SetHelpKeys()
+{
+  cElvisEvent *item = (cElvisEvent *)Get(Current());
+  if (item)
+     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, trVDR("Button$Info"));
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisChannelEventsMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  if (channelM) {
+     channelM->Update();
+     for (cElvisEvent *item = channelM->cList<cElvisEvent>::First(); item; item = channelM->cList<cElvisEvent>::Next(item))
+         Add(new cElvisChannelEventItem(item));
+     }
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisChannelEventsMenu::Record(bool quickP)
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item) {
+        if (quickP) {
+           if (cElvisTimers::GetInstance()->Create(item->Event()->Id()))
+              Skins.Message(mtInfo, tr("Timer created"));
+           else
+              Skins.Message(mtError, tr("Cannot create timer!"));
+           Setup();
+           }
+        else
+           return AddSubMenu(new cElvisTimerCreateMenu(item->Event()));
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisChannelEventsMenu::Info()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item)
+     return AddSubMenu(new cElvisChannelEventInfoMenu(item->Event(), channelM->Name()));
+
+  return osContinue;
+}
+
+eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRecord:
+       case kRed:
+            return Record(true);
+       case kGreen:
+            return Record(false);
+       case kBlue:
+       case kOk:
+            return Info();
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisChannelItem -----------------------------------------------
+
+cElvisChannelItem::cElvisChannelItem(cElvisChannel *channelP)
+: cOsdItem(channelP ? *cString::sprintf("%s", channelP->Name()) : ""),
+  channelM(channelP)
+{
+}
+
+// --- cElvisEPGMenu ---------------------------------------------------
+
+cElvisEPGMenu::cElvisEPGMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG")), 17)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisEPGMenu::SetHelpKeys()
+{
+  cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
+  if (item)
+     SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisEPGMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  cElvisChannels::GetInstance()->Update();
+  for (cElvisChannel *item = cElvisChannels::GetInstance()->First(); item; item = cElvisChannels::GetInstance()->Next(item)) {
+      if (item->Name())
+         Add(new cElvisChannelItem(item));
+      }
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisEPGMenu::Select()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
+  if (item)
+     return AddSubMenu(new cElvisChannelEventsMenu(item->Channel()));
+
+  return osContinue;
+}
+
+eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
+{
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRed:
+       case kOk:
+            return Select();
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisTopEventsMenu ---------------------------------------------
+
+cElvisTopEventsMenu::cElvisTopEventsMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 17)
+{
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisTopEventsMenu::SetHelpKeys()
+{
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item)
+     SetHelp(trVDR("Button$Record"), trVDR("Button$New"), NULL, trVDR("Button$Info"));
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisTopEventsMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  cElvisTopEvents::GetInstance()->Update();
+  for (cElvisEvent *item = cElvisTopEvents::GetInstance()->First(); item; item = cElvisTopEvents::GetInstance()->Next(item))
+      Add(new cElvisChannelEventItem(item));
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisTopEventsMenu::Record(bool quickP)
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item && item->Event()) {
+        if (quickP) {
+           if (cElvisTimers::GetInstance()->Create(item->Event()->Id()))
+              Skins.Message(mtInfo, tr("Timer created"));
+           else
+              Skins.Message(mtError, tr("Cannot create timer!"));
+           Setup();
+           }
+        else
+           return AddSubMenu(new cElvisTimerCreateMenu(item->Event()));
+     }
+
+  return osContinue;
+}
+
+eOSState cElvisTopEventsMenu::Info()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item && item->Event())
+     return AddSubMenu(new cElvisChannelEventInfoMenu(item->Event(), item->Event()->Channel()));
+
+  return osContinue;
+}
+
+eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRecord:
+       case kRed:
+            return Record(true);
+       case kGreen:
+            return Record(false);
+       case kOk:
+       case kBlue:
+            return Info();
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisMenu ------------------------------------------------------
+
+cElvisMenu::cElvisMenu()
+: cOsdMenu(tr("Elvis")),
+  fetchCountM(cElvisFetcher::GetInstance()->FetchCount())
+{
+  Setup();
+}
+
+void cElvisMenu::Setup()
+{
+  int current = Current();
+  Clear();
+
+  SetHasHotkeys();
+  Add(new cOsdItem(hk(trVDR("Recordings")), osUser1));
+  Add(new cOsdItem(hk(trVDR("Timers")),     osUser2));
+  Add(new cOsdItem(hk(tr("Search timers")), osUser3));
+  Add(new cOsdItem(hk(trVDR("EPG")),        osUser4));
+  Add(new cOsdItem(hk(tr("Top events")),    osUser5));
+  if (fetchCountM > 0) {
+     Add(new cOsdItem(*cString::sprintf(tr("Now fetching recordings: %d"), fetchCountM), osUnknown, false));
+     }
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisMenu::ProcessKey(eKeys keyP)
+{
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  switch (state) {
+    case osUser1:
+         return AddSubMenu(new cElvisRecordingsMenu);
+    case osUser2:
+         return AddSubMenu(new cElvisTimersMenu);
+    case osUser3:
+         return AddSubMenu(new cElvisSearchTimersMenu);
+    case osUser4:
+         return AddSubMenu(new cElvisEPGMenu);
+    case osUser5:
+         return AddSubMenu(new cElvisTopEventsMenu);
+    default:
+         break;
+    }
+
+  unsigned int count = cElvisFetcher::GetInstance()->FetchCount();
+  if (count != fetchCountM) {
+     fetchCountM = count;
+     Setup();
+     }
+
+  return state;
+}
