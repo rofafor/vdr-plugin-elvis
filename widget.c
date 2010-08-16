@@ -777,14 +777,14 @@ bool cElvisWidget::Login()
 {
   cMutexLock(mutexM);
 
-  if (isempty(ElvisConfig.username) || isempty(ElvisConfig.password)) {
+  if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
      error("cElvisWidget::Login(): invalid credentials");
      return false;
      }
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/default.sl?username=%s&password=%s&ajax=true",
-                      GetBase(), ElvisConfig.username, ElvisConfig.password));
+                      GetBase(), ElvisConfig.Username, ElvisConfig.Password));
      return Perform("Login", "TRUE");
      }
 

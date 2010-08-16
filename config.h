@@ -8,14 +8,29 @@
 #ifndef __ELVIS_CONFIG_H
 #define __ELVIS_CONFIG_H
 
-struct cElvisConfig
-{
+#include <vdr/config.h>
+
+class cElvisConfig : public cConfig<cSetupLine> {
+private:
+  enum {
+    MaxCredentials = 32
+  };
+  static const char *confBaseNameS;
+  bool Parse(const char *Name, const char *Value);
+  cSetupLine *Get(const char *Name);
+  void Store(const char *Name, const char *Value);
+  void Store(const char *Name, int Value);
 public:
-  cElvisConfig();
-  int hidemenu;
-  int service;
-  char username[32];
-  char password[32];
+  int __BeginData__;
+  int HideMenu;
+  int Service;
+  char Username[MaxCredentials];
+  char Password[MaxCredentials];
+  int __EndData__;
+  cElvisConfig(void);
+  cElvisConfig& operator= (const cElvisConfig &s);
+  bool Load(const char *Directory);
+  bool Save(void);
 };
 
 extern cElvisConfig ElvisConfig;

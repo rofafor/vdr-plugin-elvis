@@ -8,3 +8,4 @@ VDR Plugin 'elvis' Revision History
 2010-08-xx: Version 0.0.2
 
 - Added support for Saunavisio.
+- Moved all setup options into separate 'elvis.conf' file.

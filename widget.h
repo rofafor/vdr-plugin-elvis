@@ -140,7 +140,7 @@ public:
   static cElvisWidget *GetInstance();
   static void Destroy();
   virtual ~cElvisWidget();
-  const char *GetBase() { return ((ElvisConfig.service == 0) ? baseUrlViihdeS : baseUrlVisioS); }
+  const char *GetBase() { return ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS); }
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);

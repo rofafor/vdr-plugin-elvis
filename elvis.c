@@ -39,7 +39,7 @@ public:
   virtual void MainThreadHook(void);
   virtual cString Active(void);
   virtual time_t WakeupTime(void);
-  virtual const char *MainMenuEntry(void) { return tr(MAINMENUENTRY); }
+  virtual const char *MainMenuEntry(void) { return (ElvisConfig.HideMenu ? NULL : tr(MAINMENUENTRY)); }
   virtual cOsdObject *MainMenuAction(void);
   virtual cMenuSetupPage *SetupMenu(void);
   virtual bool SetupParse(const char *Name, const char *Value);
@@ -88,6 +88,7 @@ bool cPluginElvis::ProcessArgs(int argc, char *argv[])
 bool cPluginElvis::Initialize(void)
 {
   // Initialize any background activities the plugin shall perform.
+  ElvisConfig.Load(ConfigDirectory(PLUGIN_NAME_I18N));
   return true;
 }
 
@@ -148,14 +149,7 @@ cMenuSetupPage *cPluginElvis::SetupMenu(void)
 
 bool cPluginElvis::SetupParse(const char *Name, const char *Value)
 {
-  // Parse your own setup parameters and store their values.
-  if      (!strcasecmp(Name, "HideMenu")) ElvisConfig.hidemenu = atoi(Value);
-  else if (!strcasecmp(Name, "Service"))  ElvisConfig.service  = atoi(Value);
-  else if (!strcasecmp(Name, "Username")) strn0cpy(ElvisConfig.username, Value, sizeof(ElvisConfig.username));
-  else if (!strcasecmp(Name, "Password")) strn0cpy(ElvisConfig.password, Value, sizeof(ElvisConfig.password));
-  else return false;
-
-  return true;
+  return false;
 }
 
 bool cPluginElvis::Service(const char *Id, void *Data)
@@ -189,16 +183,16 @@ void cPluginElvisSetup::Setup(void)
   Clear();
   help.Clear();
 
-  Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &data.hidemenu));
+  Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &data.HideMenu));
   help.Append(tr("Define whether the main manu entry is hidden."));
 
-  Add(new cMenuEditBoolItem(tr("Use service"), &data.service, tr("Elisa Viihde"), tr("Saunavisio")));
+  Add(new cMenuEditBoolItem(tr("Use service"), &data.Service, tr("Elisa Viihde"), tr("Saunavisio")));
   help.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
 
-  Add(new cMenuEditStrItem(tr("Username"), data.username, sizeof(data.username), tr(FileNameChars)));
+  Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username), tr(FileNameChars)));
   help.Append(tr("Define your username for the service."));
 
-  Add(new cMenuEditStrItem(tr("Password"), data.password, sizeof(data.password), tr(FileNameChars)));
+  Add(new cMenuEditStrItem(tr("Password"), data.Password, sizeof(data.Password), tr(FileNameChars)));
   help.Append(tr("Define your password for the service."));
 
   SetCurrent(Get(current));
@@ -218,10 +212,7 @@ eOSState cPluginElvisSetup::ProcessKey(eKeys Key)
 void cPluginElvisSetup::Store(void)
 {
   ElvisConfig = data;
-  SetupStore("HideMenu",  ElvisConfig.hidemenu);
-  SetupStore("Service",   ElvisConfig.service);
-  SetupStore("Username",  ElvisConfig.username);
-  SetupStore("Password",  ElvisConfig.password);
+  ElvisConfig.Save();
 }
 
 VDRPLUGINCREATOR(cPluginElvis); // Don't touch this!

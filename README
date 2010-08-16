@@ -29,6 +29,8 @@ Description:
 
 The Elvis plugin allows Elisa Viihde users to manage and watch their NPVR
 recordings, timers and search timers via VDR's familiar user interface.
+The plugins uses a separate 'elvis.conf' configuration file to store
+settings.
 
 Installation:
 
@@ -43,6 +45,7 @@ make plugins
 Notes:
 
 - Remember to add a correct username and password via the setup menu
-  before using the plugin!
+  or directly editing the 'elvis.conf' configuration file before using
+  the plugin!
 
 - Password is currently stored unencrypted and shown in the setup menu.
