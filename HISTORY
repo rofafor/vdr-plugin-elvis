@@ -9,3 +9,4 @@ VDR Plugin 'elvis' Revision History
 
 - Added support for Saunavisio.
 - Moved all setup options into separate 'elvis.conf' file.
+- Fixed localization in setup inputs.

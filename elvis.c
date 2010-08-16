@@ -189,10 +189,10 @@ void cPluginElvisSetup::Setup(void)
   Add(new cMenuEditBoolItem(tr("Use service"), &data.Service, tr("Elisa Viihde"), tr("Saunavisio")));
   help.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
 
-  Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username), tr(FileNameChars)));
+  Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username)));
   help.Append(tr("Define your username for the service."));
 
-  Add(new cMenuEditStrItem(tr("Password"), data.Password, sizeof(data.Password), tr(FileNameChars)));
+  Add(new cMenuEditStrItem(tr("Password"), data.Password, sizeof(data.Password)));
   help.Append(tr("Define your password for the service."));
 
   SetCurrent(Get(current));
