@@ -8,7 +8,6 @@
 #include <string.h>
 
 #include "common.h"
-#include "config.h"
 #include "widget.h"
 
 // --- cElvisWidgetInfo ------------------------------------------------
@@ -43,7 +42,8 @@ cElvisWidgetInfo::~cElvisWidgetInfo()
 
 // --- cElvisWidget ----------------------------------------------------
 
-const char* cElvisWidget::baseUrlS = "http://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 
@@ -209,9 +209,9 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
 
   if (handleM) {
      if (folderIdP < 0)
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?ajax=true&clear=true", baseUrlS));
+        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()));
      else
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", baseUrlS, folderIdP));
+        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -292,7 +292,7 @@ bool cElvisWidget::RemoveRecording(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", baseUrlS, idP));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -318,7 +318,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/recordings.sl?ajax=true", baseUrlS));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/recordings.sl?ajax=true", GetBase()));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -377,9 +377,9 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
 
   if (handleM && (idP > 0)) {
      if (folderIdP < 0)
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", baseUrlS, idP, idP));
+        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP));
      else
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", baseUrlS, idP, idP, folderIdP));
+        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -405,7 +405,7 @@ bool cElvisWidget::RemoveTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remover=%d&ajax=true", baseUrlS, idP));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -431,7 +431,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?ajax=true", baseUrlS));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?ajax=true", GetBase()));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -487,10 +487,10 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
   if (handleM && channelP && wildcardP) {
      if (wildcardIdP < 0)
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true",
-                         baseUrlS, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
+                         GetBase(), *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
      else
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true",
-                         baseUrlS, wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
+                         GetBase(), wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -521,7 +521,7 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", baseUrlS, idP));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -547,7 +547,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?channels", baseUrlS));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase()));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -587,7 +587,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", baseUrlS, *Escape(channelP)));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP)));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -649,7 +649,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/channels.sl?ajax=true", baseUrlS));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/channels.sl?ajax=true", GetBase()));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -702,7 +702,7 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&ajax=true", baseUrlS, idP));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP));
      for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
@@ -784,7 +784,7 @@ bool cElvisWidget::Login()
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/default.sl?username=%s&password=%s&ajax=true",
-                      baseUrlS, ElvisConfig.username, ElvisConfig.password));
+                      GetBase(), ElvisConfig.username, ElvisConfig.password));
      return Perform("Login", "TRUE");
      }
 
@@ -796,7 +796,7 @@ bool cElvisWidget::Logout()
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/logout.sl?ajax=true", baseUrlS));
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/logout.sl?ajax=true", GetBase()));
      return Perform("Logout");
      }
 

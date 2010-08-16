@@ -13,6 +13,7 @@ struct cElvisConfig
 public:
   cElvisConfig();
   int hidemenu;
+  int service;
   char username[32];
   char password[32];
 };

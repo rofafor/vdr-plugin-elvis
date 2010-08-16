@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: elvis 0.0.1\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-08-13 12:00+0300\n"
+"POT-Creation-Date: 2010-08-16 09:52+0300\n"
 "PO-Revision-Date: 2010-08-13 12:00+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
@@ -30,17 +30,29 @@ msgstr "Piilota valinta päävalikosta"
 msgid "Define whether the main manu entry is hidden."
 msgstr "Määrittele, näytetäänkö laajennoksen valinta päävalikossa."
 
+msgid "Use service"
+msgstr "Käytä palvelua"
+
+msgid "Elisa Viihde"
+msgstr "Elisa Viihde"
+
+msgid "Saunavisio"
+msgstr "Saunavisio"
+
+msgid "Define whether your service is Elisa Viihde or Saunavisio."
+msgstr "Määrittele käyttämäsi palvelu: Elisa Viihde tai Saunavisio."
+
 msgid "Username"
 msgstr "Käyttäjätunnus"
 
-msgid "Define your username for Elisa Viihde service"
-msgstr "Määrittele käyttäjätunnuksesi Elisa Viihde -palveluun"
+msgid "Define your username for the service."
+msgstr "Määrittele käyttäjätunnuksesi palveluun."
 
 msgid "Password"
 msgstr "Salasala"
 
-msgid "Define your password for Elisa Viihde service"
-msgstr "Määrittele salasanasi Elisa Viihde -palveluun"
+msgid "Define your password for the service."
+msgstr "Määrittele salasanasi palveluun."
 
 msgid "Help"
 msgstr "Opaste"

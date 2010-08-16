@@ -18,7 +18,7 @@
 #error "VDR-1.7.15 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.0.1";
+       const char VERSION[]       = "0.0.2";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 
@@ -150,6 +150,7 @@ bool cPluginElvis::SetupParse(const char *Name, const char *Value)
 {
   // Parse your own setup parameters and store their values.
   if      (!strcasecmp(Name, "HideMenu")) ElvisConfig.hidemenu = atoi(Value);
+  else if (!strcasecmp(Name, "Service"))  ElvisConfig.service  = atoi(Value);
   else if (!strcasecmp(Name, "Username")) strn0cpy(ElvisConfig.username, Value, sizeof(ElvisConfig.username));
   else if (!strcasecmp(Name, "Password")) strn0cpy(ElvisConfig.password, Value, sizeof(ElvisConfig.password));
   else return false;
@@ -191,11 +192,14 @@ void cPluginElvisSetup::Setup(void)
   Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &data.hidemenu));
   help.Append(tr("Define whether the main manu entry is hidden."));
 
+  Add(new cMenuEditBoolItem(tr("Use service"), &data.service, tr("Elisa Viihde"), tr("Saunavisio")));
+  help.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
+
   Add(new cMenuEditStrItem(tr("Username"), data.username, sizeof(data.username), tr(FileNameChars)));
-  help.Append(tr("Define your username for Elisa Viihde service"));
+  help.Append(tr("Define your username for the service."));
 
   Add(new cMenuEditStrItem(tr("Password"), data.password, sizeof(data.password), tr(FileNameChars)));
-  help.Append(tr("Define your password for Elisa Viihde service"));
+  help.Append(tr("Define your password for the service."));
 
   SetCurrent(Get(current));
   Display();
@@ -215,6 +219,7 @@ void cPluginElvisSetup::Store(void)
 {
   ElvisConfig = data;
   SetupStore("HideMenu",  ElvisConfig.hidemenu);
+  SetupStore("Service",   ElvisConfig.service);
   SetupStore("Username",  ElvisConfig.username);
   SetupStore("Password",  ElvisConfig.password);
 }

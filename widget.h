@@ -20,6 +20,8 @@
 #include <vdr/thread.h>
 #include <vdr/tools.h>
 
+#include "config.h"
+
 // --- cElvisWidgetCallbacks -------------------------------------------
 
 class cElvisWidgetRecordingCallbackIf {
@@ -115,7 +117,8 @@ private:
   enum {
     LOGIN_RETRIES = 2
   };
-  static const char *baseUrlS;
+  static const char *baseUrlViihdeS;
+  static const char *baseUrlVisioS;
   static cElvisWidget *instanceS;
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   cString dataM;
@@ -137,6 +140,7 @@ public:
   static cElvisWidget *GetInstance();
   static void Destroy();
   virtual ~cElvisWidget();
+  const char *GetBase() { return ((ElvisConfig.service == 0) ? baseUrlViihdeS : baseUrlVisioS); }
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);

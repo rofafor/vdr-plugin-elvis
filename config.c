@@ -11,7 +11,8 @@
 cElvisConfig ElvisConfig;
 
 cElvisConfig::cElvisConfig()
-: hidemenu(0)
+: hidemenu(0),
+  service(0)
 {
   Utf8Strn0Cpy(username, "foo", sizeof(username));
   Utf8Strn0Cpy(password, "bar", sizeof(password));
