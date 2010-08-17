@@ -104,11 +104,11 @@ void cMenuEditHiddenStrItem::EnterEditMode(void)
   if (!valueUtf8) {
      valueUtf8 = new uint[length];
      lengthUtf8 = Utf8ToArray(value, valueUtf8, length);
-     int l = strlen(allowed) + 1;
+     int l = (int)(strlen(allowed) + 1);
      allowedUtf8 = new uint[l];
      Utf8ToArray(allowed, allowedUtf8, l);
      const char *charMap = trVDR("CharMap$ 0\t-.,1#~\\^$[]|()*+?{}/:%@&\tabc2\tdef3\tghi4\tjkl5\tmno6\tpqrs7\ttuv8\twxyz9");
-     l = strlen(charMap) + 1;
+     l = (int)(strlen(charMap) + 1);
      charMapUtf8 = new uint[l];
      Utf8ToArray(charMap, charMapUtf8, l);
      currentCharUtf8 = charMapUtf8;
@@ -211,16 +211,16 @@ void cMenuEditHiddenStrItem::Set(void)
      char *p = buf;
      if (offset)
         *p++ = '<';
-     len = Utf8FromArray(valueUtf8 + offset, p, sizeof(buf) - (p - buf), pos - offset);
+     len = Utf8FromArray(valueUtf8 + offset, p, (int)(sizeof(buf) - (p - buf)), pos - offset);
      for (int i = 0; i < len; ++i)
          *p++ = '*';
      *p++ = '[';
      if (insert && newchar)
         *p++ = ']';
-     p += Utf8FromArray(&valueUtf8[pos], p, sizeof(buf) - (p - buf), 1);
+     p += Utf8FromArray(&valueUtf8[pos], p, (int)(sizeof(buf) - (p - buf)), 1);
      if (!(insert && newchar))
         *p++ = ']';
-     len = Utf8FromArray(&valueUtf8[pos + 1], p, sizeof(buf) - (p - buf), EndPos - pos - 1);
+     len = Utf8FromArray(&valueUtf8[pos + 1], p, (int)(sizeof(buf) - (p - buf)), EndPos - pos - 1);
      for (int i = 0; i < len; ++i)
          *p++ = '*';
      if (EndPos != lengthUtf8)
