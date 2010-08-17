@@ -192,7 +192,7 @@ void cPluginElvisSetup::Setup(void)
   Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username)));
   help.Append(tr("Define your username for the service."));
 
-  Add(new cMenuEditStrItem(tr("Password"), data.Password, sizeof(data.Password)));
+  Add(new cMenuEditHiddenStrItem(tr("Password"), data.Password, sizeof(data.Password)));
   help.Append(tr("Define your password for the service."));
 
   SetCurrent(Get(current));
