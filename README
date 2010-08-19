@@ -16,8 +16,10 @@ See the file COPYING for more information.
 
 Requirements:
 
-- Elisa Viihde; the login and username shall be configured in the setup menu.
+- Elisa Viihde or Saunavisio; the login and username shall be configured
+  in the setup menu.
   http://www.elisa.fi/viihde/
+  http://www.saunavisio.fi/index.html
 
 - Libcurl - the multiprotocol file transfer library
   http://curl.haxx.se/libcurl/
@@ -27,10 +29,10 @@ Requirements:
 
 Description:
 
-The Elvis plugin allows Elisa Viihde users to manage and watch their NPVR
-recordings, timers and search timers via VDR's familiar user interface.
-The plugins uses a separate 'elvis.conf' configuration file to store
-settings.
+The Elvis plugin allows Elisa Viihde and Saunavisio users to manage and
+watch their NPVR recordings, timers and search timers via VDR's familiar
+user interface. The plugins uses a separate 'elvis.conf' configuration file
+to store settings.
 
 Installation:
 
