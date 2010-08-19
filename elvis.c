@@ -39,7 +39,7 @@ public:
   virtual void MainThreadHook(void);
   virtual cString Active(void);
   virtual time_t WakeupTime(void);
-  virtual const char *MainMenuEntry(void) { return (ElvisConfig.HideMenu ? NULL : tr(MAINMENUENTRY)); }
+  virtual const char *MainMenuEntry(void) { return ((ElvisConfig.HideMenu || isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) ? NULL : tr(MAINMENUENTRY)); }
   virtual cOsdObject *MainMenuAction(void);
   virtual cMenuSetupPage *SetupMenu(void);
   virtual bool SetupParse(const char *Name, const char *Value);

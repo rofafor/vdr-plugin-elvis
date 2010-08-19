@@ -48,6 +48,6 @@ Notes:
 
 - Remember to add a correct username and password via the setup menu
   or directly editing the 'elvis.conf' configuration file before using
-  the plugin!
+  the plugin! Otherwise the main menu entry isn't visible.
 
 - Password is currently stored unencrypted and shown in the setup menu.

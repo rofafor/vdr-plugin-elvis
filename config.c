@@ -16,8 +16,8 @@ cElvisConfig::cElvisConfig()
 : HideMenu(0),
   Service(0)
 {
-  Utf8Strn0Cpy(Username, "foo", sizeof(Username));
-  Utf8Strn0Cpy(Password, "bar", sizeof(Password));
+  memset(Username, 0, sizeof(Username));
+  memset(Password, 0, sizeof(Password));
 }
 
 cElvisConfig& cElvisConfig::operator=(const cElvisConfig &s)
