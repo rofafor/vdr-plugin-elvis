@@ -12,3 +12,4 @@ VDR Plugin 'elvis' Revision History
 - Fixed localization in setup inputs.
 - Added a validation for non-empty username and password
   for the main menu entry.
+- Tweaked ringbuffer limits.

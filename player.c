@@ -80,7 +80,7 @@ bool cElvisReader::PutData(uchar *dataP, int lenP)
      return false;
   if (ringBufferM && (lenP >= 0)) {
      // should be pause the transfer?
-     if (ringBufferM->Available() > (ringBufferM->Free() * BUFFER_UPPER_LIMIT_RATIO)) {
+     if (ringBufferM->Free() < (2 * CURL_MAX_WRITE_SIZE)) {
         debug("cElvisReader::PutData(pause): free=%d available=%d len=%d", ringBufferM->Free(), ringBufferM->Available(), lenP);
         pausedM = true;
         return false;
@@ -245,7 +245,7 @@ void cElvisReader::Action()
               curl_easy_pause(handleM, pausedM ? CURLPAUSE_ALL : CURLPAUSE_CONT);
               pauseToggledM = false;
               }
-           if (pausedM && (ringBufferM->Free() > (ringBufferM->Available() * BUFFER_LOWER_LIMIT_RATIO))) {
+           if (pausedM && (ringBufferM->Free() > ringBufferM->Available())) {
               debug("cElvisReader::Action(continue): free=%d available=%d", ringBufferM->Free(), ringBufferM->Available());
               pausedM = false;
               curl_easy_pause(handleM, CURLPAUSE_CONT);

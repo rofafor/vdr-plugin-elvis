@@ -20,8 +20,6 @@
 class cElvisReader : public cThread {
 private:
   enum {
-    BUFFER_LOWER_LIMIT_RATIO = 1,
-    BUFFER_UPPER_LIMIT_RATIO = 10,
     TIMEOUT_MS               = 10
   };
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
