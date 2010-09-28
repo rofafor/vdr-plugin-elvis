@@ -7,6 +7,7 @@
 #include <vdr/status.h>
 #include <vdr/remote.h>
 #include <vdr/menuitems.h>
+#include <vdr/interface.h>
 
 #include "common.h"
 #include "fetch.h"
@@ -132,10 +133,10 @@ eOSState cElvisRecordingsMenu::Delete()
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
      if (item->IsFolder())
-        Skins.Message(mtInfo, tr("Cannot remove folder!"));
-     else {
+        Skins.Message(mtInfo, tr("Cannot delete folder!"));
+     else if (Interface->Confirm(tr("Delete folder?"))) {
         if (!cElvisRecordings::GetInstance()->Delete(item->Recording()))
-           Skins.Message(mtError, tr("Cannot remove recording!"));
+           Skins.Message(mtError, tr("Cannot delete recording!"));
         if (!Count())
            return osBack;
         Setup();
@@ -400,10 +401,10 @@ eOSState cElvisTimersMenu::Delete()
   cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
   if (item) {
      if (item->Wildcard())
-        Skins.Message(mtInfo, tr("Cannot remove wildcard!"));
-     else {
+        Skins.Message(mtInfo, tr("Cannot delete search timer!"));
+     else if (Interface->Confirm(tr("Delete timer?"))){
         if (!cElvisTimers::GetInstance()->Delete(item->Timer()))
-           Skins.Message(mtError, tr("Cannot remove timer!"));
+           Skins.Message(mtError, tr("Cannot delete timer!"));
         if (!Count())
            return osBack;
         Setup();
@@ -596,9 +597,9 @@ eOSState cElvisSearchTimersMenu::Delete()
      return osContinue;
 
   cElvisSearchTimerItem *item = (cElvisSearchTimerItem *)Get(Current());
-  if (item) {
+  if (item && Interface->Confirm(tr("Delete search timer?"))) {
      if (!cElvisSearchTimers::GetInstance()->Delete(item->Timer()))
-        Skins.Message(mtError, tr("Cannot remove search timer!"));
+        Skins.Message(mtError, tr("Cannot delete search timer!"));
      if (!Count())
         return osBack;
      Setup();

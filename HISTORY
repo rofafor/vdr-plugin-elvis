@@ -13,3 +13,7 @@ VDR Plugin 'elvis' Revision History
 - Added a validation for non-empty username and password
   for the main menu entry.
 - Tweaked ringbuffer limits.
+
+2010-xx-xx: Version 0.0.3
+
+- Added confirmation prompts for deletions.

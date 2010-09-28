@@ -14,11 +14,11 @@
 #include "menu.h"
 #include "widget.h"
 
-#if defined(APIVERSNUM) && APIVERSNUM < 10715
-#error "VDR-1.7.15 API version or greater is required!"
+#if defined(APIVERSNUM) && APIVERSNUM < 10716
+#error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.0.2";
+       const char VERSION[]       = "0.0.3";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 

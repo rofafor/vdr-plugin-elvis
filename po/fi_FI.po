@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.0.1\n"
+"Project-Id-Version: elvis 0.0.3\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-08-16 09:52+0300\n"
-"PO-Revision-Date: 2010-08-13 12:00+0300\n"
+"POT-Creation-Date: 2010-09-29 09:29+0300\n"
+"PO-Revision-Date: 2010-09-29 09:29+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
 "MIME-Version: 1.0\n"
@@ -79,10 +79,13 @@ msgstr "Hae"
 msgid "[DIR]"
 msgstr "[hakemisto]"
 
-msgid "Cannot remove folder!"
+msgid "Cannot delete folder!"
 msgstr "Kansiota ei voida poistaa!"
 
-msgid "Cannot remove recording!"
+msgid "Delete folder?"
+msgstr "Poistetaanko kansio?"
+
+msgid "Cannot delete recording!"
 msgstr "Tallennetta ei voida poistaa!"
 
 msgid "Create new timer"
@@ -97,10 +100,13 @@ msgstr "Ajastin luotu"
 msgid "Cannot create timer!"
 msgstr "Ajastimen luonti epäonnistui!"
 
-msgid "Cannot remove wildcard!"
+msgid "Cannot delete search timer!"
 msgstr "Hakuajastinta ei voida poistaa!"
 
-msgid "Cannot remove timer!"
+msgid "Delete timer?"
+msgstr "Poistetaanko ajastin?"
+
+msgid "Cannot delete timer!"
 msgstr "Ajastinta ei voida poistaa!"
 
 msgid "Edit search timer"
@@ -121,8 +127,8 @@ msgstr "Hakuajastimen luonti epäonnistui!"
 msgid "Search timers"
 msgstr "Hakuajastimet"
 
-msgid "Cannot remove search timer!"
-msgstr "Hakuajastimen poisto epäonnistui!"
+msgid "Delete search timer?"
+msgstr "Poistetaanko hakuajastin?"
 
 msgid "Top events"
 msgstr "Suosituimmat"
