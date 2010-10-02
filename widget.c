@@ -112,8 +112,10 @@ cElvisWidget::~cElvisWidget()
      Logout();
 
      // cleanup curl stuff
-     curl_slist_free_all(headerListM);
-     headerListM = NULL;
+     if (headerListM) {
+        curl_slist_free_all(headerListM);
+        headerListM = NULL;
+        }
      curl_easy_cleanup(handleM);
      handleM = NULL;
      }
