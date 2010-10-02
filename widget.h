@@ -118,7 +118,9 @@ private:
     LOGIN_RETRIES = 2
   };
   static const char *baseUrlViihdeS;
+  static const char *baseUrlViihdeSslS;
   static const char *baseUrlVisioS;
+  static const char *baseUrlVisioSslS;
   static cElvisWidget *instanceS;
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   cString dataM;
@@ -140,7 +142,7 @@ public:
   static cElvisWidget *GetInstance();
   static void Destroy();
   virtual ~cElvisWidget();
-  const char *GetBase() { return ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS); }
+  const char *GetBase() { return (ElvisConfig.Ssl == 0) ? ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS) : ((ElvisConfig.Service == 0) ? baseUrlViihdeSslS : baseUrlVisioSslS); }
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);

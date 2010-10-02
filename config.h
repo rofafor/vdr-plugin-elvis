@@ -24,6 +24,7 @@ public:
   int __BeginData__;
   int HideMenu;
   int Service;
+  int Ssl;
   char Username[MaxCredentials];
   char Password[MaxCredentials];
   int __EndData__;

@@ -189,6 +189,9 @@ void cPluginElvisSetup::Setup(void)
   Add(new cMenuEditBoolItem(tr("Use service"), &data.Service, tr("Elisa Viihde"), tr("Saunavisio")));
   help.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
 
+  Add(new cMenuEditBoolItem(tr("Use SSL connection"), &data.Ssl));
+  help.Append(tr("Define whether SSL connection is used."));
+
   Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username)));
   help.Append(tr("Define your username for the service."));
 

@@ -17,3 +17,5 @@ VDR Plugin 'elvis' Revision History
 2010-xx-xx: Version 0.0.3
 
 - Added confirmation prompts for deletions.
+- Added a setup option for secure connections.
+- Fixed a translation typo (Thanks to Antti Seppälä).

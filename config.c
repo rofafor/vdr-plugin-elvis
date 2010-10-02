@@ -14,7 +14,8 @@ const char *cElvisConfig::confBaseNameS = "elvis.conf";
 
 cElvisConfig::cElvisConfig()
 : HideMenu(0),
-  Service(0)
+  Service(0),
+  Ssl(0)
 {
   memset(Username, 0, sizeof(Username));
   memset(Password, 0, sizeof(Password));
@@ -77,6 +78,7 @@ bool cElvisConfig::Parse(const char *Name, const char *Value)
   else if (!strcasecmp(Name, "Password")) Utf8Strn0Cpy(Password, Value, sizeof(Password));
   else if (!strcasecmp(Name, "HideMenu")) HideMenu = atoi(Value);
   else if (!strcasecmp(Name, "Service"))  Service  = atoi(Value);
+  else if (!strcasecmp(Name, "Ssl"))      Ssl      = atoi(Value);
   else
      return false;
   return true;
@@ -86,6 +88,7 @@ bool cElvisConfig::Save(void)
 {
   Store("HideMenu",  HideMenu);
   Store("Service",   Service);
+  Store("Ssl",       Ssl);
   Store("Username",  Username);
   Store("Password",  Password);
 

@@ -43,7 +43,9 @@ cElvisWidgetInfo::~cElvisWidgetInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
 const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
+const char* cElvisWidget::baseUrlVisioSslS = "https://www.saunavisio.fi/tvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 

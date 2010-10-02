@@ -42,6 +42,12 @@ msgstr "Saunavisio"
 msgid "Define whether your service is Elisa Viihde or Saunavisio."
 msgstr "Määrittele käyttämäsi palvelu: Elisa Viihde tai Saunavisio."
 
+msgid "Use SSL connection"
+msgstr "Käytä SSL-yhteyttä"
+
+msgid "Define whether SSL connection is used."
+msgstr "Määrittele, käytetäänkö SSL-yhteyttä."
+
 msgid "Username"
 msgstr "Käyttäjätunnus"
 
@@ -49,7 +55,7 @@ msgid "Define your username for the service."
 msgstr "Määrittele käyttäjätunnuksesi palveluun."
 
 msgid "Password"
-msgstr "Salasala"
+msgstr "Salasana"
 
 msgid "Define your password for the service."
 msgstr "Määrittele salasanasi palveluun."
