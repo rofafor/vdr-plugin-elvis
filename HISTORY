@@ -20,3 +20,6 @@ VDR Plugin 'elvis' Revision History
 - Added a setup option for secure connections.
 - Fixed a translation typo (Thanks to Antti Seppälä).
 - Added missing replaying status changes.
+- Tweaked skipping durations of green/yellow (+-60s)
+  and 1/3 (+-20s) keys, and mapped 4/6 keys for longer
+  skipping (+-5min) in replaying mode.

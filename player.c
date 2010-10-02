@@ -566,22 +566,32 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
     case kGreen|k_Repeat:
     case kGreen:
          if (playerM)
-            playerM->SkipSeconds(-300);
+            playerM->SkipSeconds(-60);
          break;
     case kYellow|k_Repeat:
     case kYellow:
          if (playerM)
-            playerM->SkipSeconds(300);
+            playerM->SkipSeconds(60);
          break;
     case k1|k_Repeat:
     case k1:
          if (playerM)
-            playerM->SkipSeconds(-30);
+            playerM->SkipSeconds(-20);
          break;
     case k3|k_Repeat:
     case k3:
          if (playerM)
-            playerM->SkipSeconds(30);
+            playerM->SkipSeconds(20);
+         break;
+    case k4|k_Repeat:
+    case k4:
+         if (playerM)
+            playerM->SkipSeconds(-300);
+         break;
+    case k6|k_Repeat:
+    case k6:
+         if (playerM)
+            playerM->SkipSeconds(300);
          break;
     case kStop:
     case kBlue:
