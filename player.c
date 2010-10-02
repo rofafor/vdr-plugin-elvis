@@ -140,7 +140,7 @@ void cElvisReader::Jump(unsigned long startbyteP)
   cMutexLock MutexLock(&mutexM);
   debug("cElvisReader::Jump(%ld)", startbyteP);
   rangeStartM = startbyteP;
-  Disconnect();
+  curl_multi_remove_handle(multiM, handleM);
   if (ringBufferM)
      ringBufferM->Clear();
   Connect();

@@ -19,6 +19,8 @@ VDR Plugin 'elvis' Revision History
 - Added confirmation prompts for deletions.
 - Added a setup option for secure connections.
 - Fixed a translation typo (Thanks to Antti Seppälä).
+- Optimized skipping by reusing existing CURL connection
+  (Thanks to Antti Seppälä).
 - Added missing replaying status changes.
 - Tweaked skipping durations of green/yellow (+-60s)
   and 1/3 (+-20s) keys, and mapped 4/6 keys for longer
