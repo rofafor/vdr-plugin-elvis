@@ -349,11 +349,11 @@ void cElvisPlayer::Stop()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Stop()");
-  DeviceClear();
   playFrameM = NULL;
   dropFrameM = NULL;
   DELETE_POINTER(readFrameM);
   ringBufferM->Clear();
+  DeviceClear();
 }
 
 void cElvisPlayer::Forward()
@@ -392,6 +392,7 @@ void cElvisPlayer::SkipSeconds(int secondsP)
   dropFrameM = NULL;
   DELETE_POINTER(readFrameM);
   ringBufferM->Clear();
+  DeviceClear();
 }
 
 void cElvisPlayer::Action()
