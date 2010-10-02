@@ -14,8 +14,9 @@ VDR Plugin 'elvis' Revision History
   for the main menu entry.
 - Tweaked ringbuffer limits.
 
-2010-xx-xx: Version 0.0.3
+2010-10-03: Version 0.0.3
 
 - Added confirmation prompts for deletions.
 - Added a setup option for secure connections.
 - Fixed a translation typo (Thanks to Antti Seppälä).
+- Added missing replaying status changes.

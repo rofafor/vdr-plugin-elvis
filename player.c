@@ -5,6 +5,8 @@
  *
  */
 
+#include <vdr/status.h>
+
 #include "common.h"
 #include "menu.h"
 #include "player.h"
@@ -498,11 +500,13 @@ cElvisPlayerControl::cElvisPlayerControl(const char *urlP, const char *nameP, co
   startTimeM(startTimeP),
   lengthM(lengthP)
 {
+  cStatus::MsgReplaying(this, nameP, "elvis.ts", true);
 }
 
 cElvisPlayerControl::~cElvisPlayerControl()
 {
   Hide();
+  cStatus::MsgReplaying(this, NULL, "elvis.ts", false);
   if (playerM)
      playerM->Stop();
   DELETE_POINTER(playerM);
