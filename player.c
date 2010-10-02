@@ -181,6 +181,9 @@ bool cElvisReader::Connect()
      curl_easy_setopt(handleM, CURLOPT_NOPROGRESS, 1L);
      curl_easy_setopt(handleM, CURLOPT_NOSIGNAL, 1L);
 
+     // set timeout
+     curl_easy_setopt(handleM, CURLOPT_CONNECTTIMEOUT, 5L);
+
      // set user-agent
      curl_easy_setopt(handleM, CURLOPT_USERAGENT, *cString::sprintf("vdr-%s/%s", PLUGIN_NAME_I18N, VERSION));
 
@@ -318,23 +321,25 @@ void cElvisPlayer::Play()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Play()");
+  if (modeM != MODE_NORMAL) {
+     modeM = MODE_NORMAL;
+     DevicePlay();
+     }
   if (readerM)
      readerM->Pause(false);
-  modeM = MODE_NORMAL;
 }
 
 void cElvisPlayer::Pause()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Pause()");
-  if (modeM == MODE_PAUSE)
+  if (modeM == MODE_PAUSE) {
      modeM = MODE_NORMAL;
+     DevicePlay();
+     }
   else {
      modeM = MODE_PAUSE;
-     playFrameM = NULL;
-     dropFrameM = NULL;
-     DELETE_POINTER(readFrameM);
-     ringBufferM->Clear();
+     DeviceFreeze();
      }
   if (readerM)
      readerM->Pause((modeM == MODE_PAUSE));
@@ -344,12 +349,19 @@ void cElvisPlayer::Stop()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Stop()");
+  DeviceClear();
+  playFrameM = NULL;
+  dropFrameM = NULL;
+  DELETE_POINTER(readFrameM);
+  ringBufferM->Clear();
 }
 
 void cElvisPlayer::Forward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Forward()");
+  if ((modeM != MODE_NORMAL) || (modeM != MODE_TRICKPLAY_FORWARD) || (modeM != MODE_TRICKPLAY_BACKWARD))
+     DevicePlay();
   modeM = MODE_TRICKPLAY_FORWARD;
 }
 
@@ -357,6 +369,8 @@ void cElvisPlayer::Backward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Backward()");
+  if ((modeM != MODE_NORMAL) || (modeM != MODE_TRICKPLAY_FORWARD) || (modeM != MODE_TRICKPLAY_BACKWARD))
+     DevicePlay();
   modeM = MODE_TRICKPLAY_BACKWARD;
 }
 
@@ -406,13 +420,13 @@ void cElvisPlayer::Action()
                 if (modeM == MODE_TRICKPLAY_FORWARD) {
                    if (timeout.TimedOut()) {
                       timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(1);
+                      SkipSeconds(2);
                       }
                    }
                 else if (modeM == MODE_TRICKPLAY_BACKWARD) {
                    if (timeout.TimedOut()) {
                       timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(-1);
+                      SkipSeconds(-2);
                       }
                    }
                 if (readerM) {

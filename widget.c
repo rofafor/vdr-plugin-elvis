@@ -84,6 +84,7 @@ cElvisWidget::cElvisWidget()
      curl_easy_setopt(handleM, CURLOPT_NOSIGNAL, 1L);
 
      // set timeout
+     curl_easy_setopt(handleM, CURLOPT_CONNECTTIMEOUT, 5L);
      curl_easy_setopt(handleM, CURLOPT_TIMEOUT, 10L);
 
      // set user-agent
