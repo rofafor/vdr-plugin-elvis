@@ -27,6 +27,7 @@ private:
   const cString urlM;
   unsigned long rangeStartM;
   unsigned long rangeSizeM;
+  unsigned long rangePendingM;
   bool pauseToggledM;
   bool pausedM;
   bool eofM;
@@ -37,6 +38,8 @@ private:
   cRingBufferLinear *ringBufferM;
   bool Connect();
   bool Disconnect();
+  void Retry();
+  void Jump(unsigned long startbyteP);
 protected:
   virtual void Action();
 public:
@@ -47,7 +50,7 @@ public:
   void DelData(int lenP);
   uchar *GetData(int *lenP);
   void Pause(bool onoffP);
-  void Jump(unsigned long startbyteP);
+  void JumpRequest(unsigned long startbyteP);
   unsigned long GetRangeStart() { return rangeStartM; }
   unsigned long GetRangeSize() { return rangeSizeM; }
 };

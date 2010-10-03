@@ -18,6 +18,7 @@ cElvisReader::cElvisReader(const char *urlP)
   urlM(urlP),
   rangeStartM(0),
   rangeSizeM(0),
+  rangePendingM(0),
   pauseToggledM(false),
   pausedM(false),
   eofM(false),
@@ -135,15 +136,24 @@ uchar *cElvisReader::GetData(int *lenP)
   return p;
 }
 
+void cElvisReader::JumpRequest(unsigned long startbyteP)
+{
+  cMutexLock MutexLock(&mutexM);
+  debug("cElvisReader::JumpRequest(%ld)", startbyteP);
+  rangePendingM = startbyteP;
+}
+
 void cElvisReader::Jump(unsigned long startbyteP)
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisReader::Jump(%ld)", startbyteP);
+  rangePendingM = 0;
   rangeStartM = startbyteP;
   curl_multi_remove_handle(multiM, handleM);
   if (ringBufferM)
      ringBufferM->Clear();
-  Connect();
+  curl_easy_setopt(handleM, CURLOPT_RANGE, *cString::sprintf("%ld-", rangeStartM));
+  curl_multi_add_handle(multiM, handleM);
 }
 
 void cElvisReader::Pause(bool onoffP)
@@ -235,6 +245,27 @@ bool cElvisReader::Disconnect()
   return true;
 }
 
+void cElvisReader::Retry()
+{
+  cMutexLock MutexLock(&mutexM);
+  debug("cElvisReader::Retry()");
+  if (handleM) {
+     double downloaded = 0.0;
+
+     // remove handle
+     curl_multi_remove_handle(multiM, handleM);
+
+     // check how much we downloaded already
+     curl_easy_getinfo(handleM, CURLINFO_SIZE_DOWNLOAD, &downloaded);
+     debug("cElvisReader::Retry(): rangeStart=%ld, downloaded=%f", rangeStartM, downloaded);
+
+     // continue
+     rangeStartM += (unsigned long)downloaded;
+     curl_easy_setopt(handleM, CURLOPT_RANGE, *cString::sprintf("%ld-", rangeStartM));
+     curl_multi_add_handle(multiM, handleM);
+     }
+}
+
 void cElvisReader::Action()
 {
   debug("cElvisReader::Action(): start");
@@ -244,6 +275,9 @@ void cElvisReader::Action()
            int running_handles, maxfd;
            fd_set fdread, fdwrite, fdexcep;
            struct timeval timeout;
+
+           if (rangePendingM)
+              Jump(rangePendingM);
 
            do {
              err = curl_multi_perform(multiM, &running_handles);
@@ -267,9 +301,13 @@ void cElvisReader::Action()
               int msgcount;
               CURLMsg *msg = curl_multi_info_read(multiM, &msgcount);
               if (msg && (msg->msg == CURLMSG_DONE)) {
-                 debug("cElvisReader::Action(done)");
-                 eofM = true;
-                 break;
+                 debug("cElvisReader::Action(done): %s", curl_easy_strerror(msg->data.result));
+                 if (msg->data.result == CURLE_PARTIAL_FILE)
+                    Retry();
+                 else {
+                    eofM = true;
+                    break;
+                    }
                  }
               }
 
@@ -392,7 +430,7 @@ void cElvisPlayer::SkipSeconds(int secondsP)
   else
      readSizeM += skip;
   if (readerM)
-     readerM->Jump(readSizeM);
+     readerM->JumpRequest(readSizeM);
   playFrameM = NULL;
   dropFrameM = NULL;
   DELETE_POINTER(readFrameM);
