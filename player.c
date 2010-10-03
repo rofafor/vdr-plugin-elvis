@@ -333,7 +333,7 @@ cElvisPlayer::cElvisPlayer(const char *urlP, unsigned long lengthP)
   lengthM((lengthP + 1 + 5) * 60), // remember to add start & stop marginals
   readerM(new cElvisReader(urlP)),
   readSizeM(0),
-  modeM(MODE_NORMAL),
+  modeM(MODE_PLAY),
   ringBufferM(new cRingBufferFrame(MEGABYTE(1))),
   readFrameM(NULL),
   playFrameM(NULL),
@@ -364,8 +364,8 @@ void cElvisPlayer::Play()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Play()");
-  if (modeM != MODE_NORMAL) {
-     modeM = MODE_NORMAL;
+  if (modeM != MODE_PLAY) {
+     modeM = MODE_PLAY;
      DevicePlay();
      }
   if (readerM)
@@ -377,7 +377,7 @@ void cElvisPlayer::Pause()
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Pause()");
   if (modeM == MODE_PAUSE) {
-     modeM = MODE_NORMAL;
+     modeM = MODE_PLAY;
      DevicePlay();
      }
   else {
@@ -403,18 +403,37 @@ void cElvisPlayer::Forward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Forward()");
-  if ((modeM != MODE_NORMAL) || (modeM != MODE_TRICKPLAY_FORWARD) || (modeM != MODE_TRICKPLAY_BACKWARD))
-     DevicePlay();
-  modeM = MODE_TRICKPLAY_FORWARD;
+
+  switch (modeM) {
+     case MODE_REW:
+     case MODE_SREW:
+     case MODE_PLAY:
+        DeviceTrickSpeed(3);
+        modeM = MODE_FFWD;
+        break;
+     case MODE_PAUSE:
+        DeviceTrickSpeed(4);
+        modeM = MODE_SFWD;
+        break;
+     case MODE_SFWD:
+        Pause();
+        modeM = MODE_PAUSE;
+        break;
+     case MODE_FFWD:
+     default:
+        DevicePlay();
+        modeM = MODE_PLAY;
+        break;
+  }
 }
 
 void cElvisPlayer::Backward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Backward()");
-  if ((modeM != MODE_NORMAL) || (modeM != MODE_TRICKPLAY_FORWARD) || (modeM != MODE_TRICKPLAY_BACKWARD))
+  if ((modeM != MODE_PLAY) || (modeM != MODE_FFWD) || (modeM != MODE_REW))
      DevicePlay();
-  modeM = MODE_TRICKPLAY_BACKWARD;
+  modeM = MODE_REW;
 }
 
 void cElvisPlayer::SkipSeconds(int secondsP)
@@ -436,6 +455,44 @@ void cElvisPlayer::SkipSeconds(int secondsP)
   DELETE_POINTER(readFrameM);
   ringBufferM->Clear();
   DeviceClear();
+}
+
+bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
+{
+  switch (modeM) {
+    default:
+    case MODE_PLAY:
+         playP    = true;
+         forwardP = true;
+         speedP   = -1;
+         break;
+    case MODE_PAUSE:
+         playP    = false;
+         forwardP = true;
+         speedP   = -1;
+         break;
+    case MODE_FFWD:
+         playP    = true;
+         forwardP = true;
+         speedP   = 0;
+         break;
+    case MODE_REW:
+         playP    = true;
+         forwardP = false;
+         speedP   = 0;
+         break;
+    case MODE_SFWD:
+         playP    = false;
+         forwardP = true;
+         speedP   = 0;
+         break;
+    case MODE_SREW:
+         playP    = false;
+         forwardP = false;
+         speedP   = 0;
+         break;
+    }
+  return true;
 }
 
 void cElvisPlayer::Action()
@@ -461,13 +518,7 @@ void cElvisPlayer::Action()
              LOCK_THREAD;
 
              if (!readFrameM) {
-                if (modeM == MODE_TRICKPLAY_FORWARD) {
-                   if (timeout.TimedOut()) {
-                      timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(1);
-                      }
-                   }
-                else if (modeM == MODE_TRICKPLAY_BACKWARD) {
+                if ((modeM == MODE_REW) || (modeM == MODE_SREW)) {
                    if (timeout.TimedOut()) {
                       timeout.Set(TIMEOUT_TRICKPLAY_MS);
                       SkipSeconds(-1);
@@ -651,6 +702,16 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
          if (playerM)
             playerM->SkipSeconds(300);
          break;
+    case k7|k_Repeat:
+    case k7:
+         if (playerM)
+            playerM->SkipSeconds(-900);
+         break;
+    case k9|k_Repeat:
+    case k9:
+         if (playerM)
+            playerM->SkipSeconds(900);
+         break;
     case kStop:
     case kBlue:
     case kBack:
@@ -671,15 +732,13 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
    }
 
    if (displayM && playerM) {
+        bool play = true, forward = true;
+        int speed = -1;
         displayM->SetCurrent(playerM ? *cString::sprintf("%ld:%02ld:%02ld", playerM->Current() / 3600, (playerM->Current() % 3600) / 60, playerM->Current() % 60) : "0:00:00");
         displayM->SetTotal(playerM ? *cString::sprintf("%ld:%02ld:%02ld", playerM->Total() / 3600, (playerM->Total() % 3600) / 60, playerM->Total() % 60) : "0:00:00");
         displayM->SetProgress(playerM ? playerM->Progress() : 0, 100);
-        if (playerM->IsPaused())
-           displayM->SetMode(false, true, -1);
-        else if (playerM->IsFastForwarding() || playerM->IsRewinding())
-           displayM->SetMode(true, playerM->IsFastForwarding(), 0);
-        else
-           displayM->SetMode(true, true, -1);
+        if (playerM->GetReplayMode(play, forward, speed))
+           displayM->SetMode(play, forward, speed);
     }
 
   return state;

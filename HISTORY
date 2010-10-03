@@ -23,6 +23,7 @@ VDR Plugin 'elvis' Revision History
   (Thanks to Antti Seppälä).
 - Fixed CURL multithreading issues (Thanks to Antti Seppälä).
 - Added missing replaying status changes.
-- Tweaked skipping durations of green/yellow (+-60s) and
-  1/3 (+-20s) keys, and mapped 4/6 keys for longer skipping
-  (+-5min) in replaying mode.
+- Tweaked skip durations of green/yellow (+-60s) and 1/3
+  (+-20s) keys in replaying mode.
+- Mapped 4/6 (+-5min) and 7/9 (+-15min) keys for longer
+  skips in replaying mode.

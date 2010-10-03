@@ -60,11 +60,14 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    MODE_NORMAL              = 0,
-    MODE_TRICKPLAY_FORWARD,
-    MODE_TRICKPLAY_BACKWARD,
-    MODE_PAUSE,
-    TIMEOUT_TRICKPLAY_MS     = 3000
+    MODE_PLAY            = 0,
+    MODE_PAUSE           = 1,
+    MODE_FFWD            = 2,
+    MODE_REW             = 3,
+    MODE_SFWD            = 4,
+    MODE_SREW            = 5,
+
+    TIMEOUT_TRICKPLAY_MS = 3000
   };
   const unsigned long lengthM;
   cElvisReader *readerM;
@@ -91,9 +94,7 @@ public:
   unsigned long Total() { return lengthM; }
   unsigned long Current() { return (readerM && readerM->GetRangeSize() && lengthM) ? (readSizeM / (readerM->GetRangeSize() / lengthM)) : 0; }
   unsigned int Progress() { return (readerM && readerM->GetRangeSize()) ? (unsigned int)((double)readSizeM / (double)readerM->GetRangeSize() * 100.0) : 0; }
-  bool IsPaused() { return (modeM == MODE_PAUSE); }
-  bool IsFastForwarding() { return (modeM == MODE_TRICKPLAY_FORWARD); }
-  bool IsRewinding() { return (modeM == MODE_TRICKPLAY_BACKWARD); }
+  bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);
 };
 
 // --- cElvisPlayerControl ---------------------------------------------
