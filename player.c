@@ -157,13 +157,16 @@ void cElvisReader::Pause(bool onoffP)
 bool cElvisReader::Connect()
 {
   cMutexLock MutexLock(&mutexM);
+  bool initialConnect = false;
   debug("cElvisReader::Connect()");
 
   // initialize the curl session
   if (!handleM)
      handleM = curl_easy_init();
-  if (!multiM)
+  if (!multiM) {
      multiM = curl_multi_init();
+     initialConnect = true;
+     }
 
   if (handleM && multiM) {
      pausedM = false;
@@ -197,11 +200,13 @@ bool cElvisReader::Connect()
      curl_easy_setopt(handleM, CURLOPT_RANGE, *cString::sprintf("%ld-", rangeStartM));
 
      // set additional headers to prevent caching
-     headerListM = curl_slist_append(headerListM, "Cache-Control: no-store, no-cache, must-revalidate");
-     headerListM = curl_slist_append(headerListM, "Cache-Control: post-check=0, pre-check=0");
-     headerListM = curl_slist_append(headerListM, "Pragma: no-cache");
-     headerListM = curl_slist_append(headerListM, "Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-     curl_easy_setopt(handleM, CURLOPT_HTTPHEADER, headerListM); 
+     if (initialConnect) {
+        headerListM = curl_slist_append(headerListM, "Cache-Control: no-store, no-cache, must-revalidate");
+        headerListM = curl_slist_append(headerListM, "Cache-Control: post-check=0, pre-check=0");
+        headerListM = curl_slist_append(headerListM, "Pragma: no-cache");
+        headerListM = curl_slist_append(headerListM, "Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+        curl_easy_setopt(handleM, CURLOPT_HTTPHEADER, headerListM); 
+        }
 
      // add handle into multi set
      curl_multi_add_handle(multiM, handleM);
@@ -421,13 +426,13 @@ void cElvisPlayer::Action()
                 if (modeM == MODE_TRICKPLAY_FORWARD) {
                    if (timeout.TimedOut()) {
                       timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(2);
+                      SkipSeconds(1);
                       }
                    }
                 else if (modeM == MODE_TRICKPLAY_BACKWARD) {
                    if (timeout.TimedOut()) {
                       timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(-2);
+                      SkipSeconds(-1);
                       }
                    }
                 if (readerM) {
