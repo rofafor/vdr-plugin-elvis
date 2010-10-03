@@ -301,10 +301,11 @@ void cElvisReader::Action()
               int msgcount;
               CURLMsg *msg = curl_multi_info_read(multiM, &msgcount);
               if (msg && (msg->msg == CURLMSG_DONE)) {
-                 debug("cElvisReader::Action(done): %s", curl_easy_strerror(msg->data.result));
                  if (msg->data.result == CURLE_PARTIAL_FILE)
                     Retry();
                  else {
+                    if (msg->data.result != CURLE_OK)
+                       info("cElvisReader::Action(done): %s (%d)", curl_easy_strerror(msg->data.result), msg->data.result);
                     eofM = true;
                     break;
                     }
