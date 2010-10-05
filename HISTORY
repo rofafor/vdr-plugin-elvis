@@ -32,3 +32,4 @@ VDR Plugin 'elvis' Revision History
 
 - Added functionality to abort current fetching.
 - Added 'ABRT' and 'LIST' commands for SVDRP interface.
+- Tweaked trickplay functionality.

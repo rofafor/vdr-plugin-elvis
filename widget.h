@@ -115,7 +115,7 @@ public:
 class cElvisWidget {
 private:
   enum {
-    LOGIN_RETRIES = 2
+    eLoginRetries = 2
   };
   static const char *baseUrlViihdeS;
   static const char *baseUrlViihdeSslS;

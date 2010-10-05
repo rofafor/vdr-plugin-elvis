@@ -217,7 +217,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()));
      else
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetRecordings")) {
@@ -298,7 +298,7 @@ bool cElvisWidget::RemoveRecording(int idP)
 
   if (handleM && (idP > 0)) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("RemoveRecording")) {
@@ -324,7 +324,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/recordings.sl?ajax=true", GetBase()));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetTimers")) {
@@ -385,7 +385,7 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP));
      else
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("AddTimer", "TRUE")) {
@@ -411,7 +411,7 @@ bool cElvisWidget::RemoveTimer(int idP)
 
   if (handleM && (idP > 0)) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("RemoveTimer")) {
@@ -437,7 +437,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?ajax=true", GetBase()));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetSearchTimers")) {
@@ -496,7 +496,7 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
      else
         curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true",
                          GetBase(), wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("AddSearchTimer", "TRUE")) {
@@ -527,7 +527,7 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
 
   if (handleM && (idP > 0)) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("RemoveSearchTimer")) {
@@ -553,7 +553,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase()));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetChannels")) {
@@ -593,7 +593,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
 
   if (handleM && channelP && !isempty(channelP)) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP)));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetEvents")) {
@@ -655,7 +655,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
 
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/channels.sl?ajax=true", GetBase()));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetEvents")) {
@@ -708,7 +708,7 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP));
-     for (int retries = 0; retries < LOGIN_RETRIES; ++retries) {
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(1000);
          if (Perform("GetEventInfo")) {

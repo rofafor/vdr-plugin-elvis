@@ -20,7 +20,7 @@
 class cElvisReader : public cThread {
 private:
   enum {
-    TIMEOUT_MS               = 10
+    eTimeoutMs = 10
   };
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   static size_t HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
@@ -48,6 +48,7 @@ public:
   void SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP);
   bool PutData(uchar *dataP, int lenP);
   void DelData(int lenP);
+  void ClearData();
   uchar *GetData(int *lenP);
   void Pause(bool onoffP);
   void JumpRequest(unsigned long startbyteP);
@@ -60,25 +61,40 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    MODE_PLAY            = 0,
-    MODE_PAUSE           = 1,
-    MODE_FFWD            = 2,
-    MODE_REW             = 3,
-    MODE_SFWD            = 4,
-    MODE_SREW            = 5,
-
-    TRICKPLAY_TIMEOUT_MS = 1000L,
-    TRICKPLAY_SKIP_MS    = 1000L
+    eTrickplayTimeout    = 1, // in seconds
+    eTrickplaySkipLength = 2  // in seconds
   };
+  enum eSpeedValues {
+    spMaxOffset      = 3,  // offset of the maximum speed from normal speed in either direction
+    spNormalIndex    = 4,  // index of the '1' entry in the speedS array
+    spSkipLimitIndex = 6,  // index of entry when fastforwarding is done by skipping in the speedS array
+    spMultiplier     = 12, // speed multiplier
+    spClampValue     = 63  // max value for clamping
+  };
+  enum ePlayModes {
+    pmPlay,
+    pmPause,
+    pmSlow,
+    pmFast,
+    pmStill
+  };
+  enum ePlayDirs {
+    pdForward,
+    pdBackward
+  };
+  static int speedS[];
+  ePlayModes playModeM;
+  ePlayDirs playDirM;
+  int trickSpeedM;
   const unsigned long lengthM;
   cElvisReader *readerM;
   unsigned long readSizeM;
-  unsigned int modeM;
   cMutex mutexM;
   cRingBufferFrame *ringBufferM;
   cFrame *readFrameM;
   cFrame *playFrameM;
   cFrame *dropFrameM;
+  void TrickSpeed(int incrementP);
 protected:
   virtual void Activate(bool onP);
   virtual void Action();
@@ -87,10 +103,10 @@ public:
   virtual ~cElvisPlayer();
   void Play();
   void Pause();
-  void Stop();
+  void Clear();
   void Backward();
   void Forward();
-  void SkipTime(long milliSecondsP);
+  void SkipTime(long secondsP, bool relativeP = true, bool playP = true);
   bool Finished() { return !Active(); }
   unsigned long Total() { return lengthM; }
   unsigned long Current() { return (readerM && readerM->GetRangeSize() && lengthM) ? (readSizeM / (readerM->GetRangeSize() / lengthM)) : 0; }
@@ -102,12 +118,6 @@ public:
 
 class cElvisPlayerControl : public cControl {
 private:
-  enum {
-    TIME_20_SECONDS_MS   = 20000L,
-    TIME_1_MINUTE_MS     = 60000L,
-    TIME_5_MINUTES_MS    = 300000L,
-    TIME_15_MINUTES_MS   = 900000L,
-  };
   cElvisPlayer *playerM;
   cSkinDisplayReplay *displayM;
   cString urlM;

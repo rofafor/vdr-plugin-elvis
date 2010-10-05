@@ -104,6 +104,14 @@ void cElvisReader::DelData(int lenP)
      ringBufferM->Del(lenP);
 }
 
+void cElvisReader::ClearData()
+{
+  cMutexLock MutexLock(&mutexM);
+  //debug("cElvisReader::ClearData()");
+  if (ringBufferM)
+     ringBufferM->Clear();
+}
+
 uchar *cElvisReader::GetData(int *lenP)
 {
   cMutexLock MutexLock(&mutexM);
@@ -313,7 +321,7 @@ void cElvisReader::Action()
               }
 
            timeout.tv_sec  = 0;
-           timeout.tv_usec = TIMEOUT_MS * 1000;
+           timeout.tv_usec = eTimeoutMs * 1000;
            FD_ZERO(&fdread);
            FD_ZERO(&fdwrite);
            FD_ZERO(&fdexcep);
@@ -321,7 +329,7 @@ void cElvisReader::Action()
            if (maxfd >= 0)
               select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
            else
-              cCondWait::SleepMs(TIMEOUT_MS);
+              cCondWait::SleepMs(eTimeoutMs);
            }
      Disconnect();
      }
@@ -329,12 +337,16 @@ void cElvisReader::Action()
 
 // --- cElvisPlayer ----------------------------------------------------
 
+int cElvisPlayer::speedS[] = { 0, -2, -4, -8, 1, 2, 4, 12, 0 };
+
 cElvisPlayer::cElvisPlayer(const char *urlP, unsigned long lengthP)
 : cThread("elvisplayer"),
+  playModeM(pmPlay),
+  playDirM(pdForward),
+  trickSpeedM(spNormalIndex),
   lengthM((lengthP + 1 + 5) * 60), // remember to add start & stop marginals
   readerM(new cElvisReader(urlP)),
   readSizeM(0),
-  modeM(MODE_PLAY),
   ringBufferM(new cRingBufferFrame(MEGABYTE(1))),
   readFrameM(NULL),
   playFrameM(NULL),
@@ -361,38 +373,72 @@ void cElvisPlayer::Activate(bool onP)
      Cancel(9);
 }
 
+void cElvisPlayer::TrickSpeed(int incrementP)
+{
+  int nts = trickSpeedM + incrementP;
+  if (speedS[nts] == 1) {
+     trickSpeedM = nts;
+     if (playModeM == pmFast)
+        Play();
+     else
+        Pause();
+     }
+  else if (speedS[nts]) {
+     trickSpeedM = nts;
+     int mul = ((playModeM == pmSlow) && (playDirM == pdForward)) ? 1 : spMultiplier;
+     int sp = (speedS[nts] > 0) ? mul / speedS[nts] : -speedS[nts] * mul;
+     if (sp > spClampValue)
+        sp = spClampValue;
+     DeviceTrickSpeed(sp);
+     }
+}
+
 void cElvisPlayer::Play()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Play()");
-  if (modeM != MODE_PLAY) {
-     modeM = MODE_PLAY;
+
+  if (playModeM != pmPlay) {
+     if ((playModeM == pmStill) || (playModeM == pmFast) || ((playModeM == pmSlow) && (playDirM == pdBackward))) {
+        if (!(DeviceHasIBPTrickSpeed() && (playDirM == pdForward)))
+           Clear();
+        }
      DevicePlay();
+     playModeM = pmPlay;
+     playDirM = pdForward;
+     if (readerM)
+        readerM->Pause(false);
      }
-  if (readerM)
-     readerM->Pause(false);
 }
 
 void cElvisPlayer::Pause()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Pause()");
-  if (modeM == MODE_PAUSE) {
-     modeM = MODE_PLAY;
-     DevicePlay();
+
+  if ((playModeM == pmPause) || (playModeM == pmStill)) {
+     Play();
+     if (readerM)
+        readerM->Pause(false);
      }
   else {
-     modeM = MODE_PAUSE;
+     if ((playModeM == pmFast) || ((playModeM == pmSlow) && (playDirM == pdBackward))) {
+        if (!(DeviceHasIBPTrickSpeed() && (playDirM == pdForward)))
+           Clear();
+        }
      DeviceFreeze();
+     playModeM = pmPause;
+     if (readerM)
+        readerM->Pause(true);
      }
-  if (readerM)
-     readerM->Pause((modeM == MODE_PAUSE));
 }
 
-void cElvisPlayer::Stop()
+void cElvisPlayer::Clear()
 {
   cMutexLock MutexLock(&mutexM);
-  debug("cElvisPlayer::Stop()");
+  debug("cElvisPlayer::Clear()");
+  if (readerM)
+     readerM->ClearData();
   playFrameM = NULL;
   dropFrameM = NULL;
   DELETE_POINTER(readFrameM);
@@ -404,95 +450,133 @@ void cElvisPlayer::Forward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Forward()");
-
-  switch (modeM) {
-     case MODE_REW:
-     case MODE_SREW:
-     case MODE_PLAY:
-        DeviceTrickSpeed(3);
-        modeM = MODE_FFWD;
-        break;
-     case MODE_PAUSE:
-        DeviceTrickSpeed(4);
-        modeM = MODE_SFWD;
-        break;
-     case MODE_SFWD:
-        Pause();
-        modeM = MODE_PAUSE;
-        break;
-     case MODE_FFWD:
-     default:
-        DevicePlay();
-        modeM = MODE_PLAY;
-        break;
-  }
+  switch (playModeM) {
+    case pmFast:
+         if (Setup.MultiSpeedMode) {
+            TrickSpeed(playDirM == pdForward ? 1 : -1);
+            break;
+            }
+         else if (playDirM == pdForward) {
+            Play();
+            break;
+            }
+         // run into pmPlay
+    case pmPlay:
+         if (!(DeviceHasIBPTrickSpeed() && (playDirM == pdForward)))
+            Clear();
+         if (DeviceIsPlayingVideo())
+            DeviceMute();
+         playModeM = pmFast;
+         playDirM = pdForward;
+         trickSpeedM = spNormalIndex;
+         TrickSpeed(Setup.MultiSpeedMode ? 1 : spMaxOffset);
+         break;
+    case pmSlow:
+         if (Setup.MultiSpeedMode) {
+            TrickSpeed(playDirM == pdForward ? -1 : 1);
+            break;
+            }
+         else if (playDirM == pdForward) {
+            Pause();
+            break;
+            }
+         Clear();
+         // run into pmPause
+    case pmPause:
+    case pmStill:
+         DeviceMute();
+         playModeM = pmSlow;
+         playDirM = pdForward;
+         trickSpeedM = spNormalIndex;
+         TrickSpeed(Setup.MultiSpeedMode ? -1 : -spMaxOffset);
+         break;
+    default:
+         error("cElvisPlayer::Forward(): Unknown playmode=%d", playModeM);
+         break;
+    }
 }
 
 void cElvisPlayer::Backward()
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::Backward()");
-  if ((modeM != MODE_PLAY) || (modeM != MODE_FFWD) || (modeM != MODE_REW))
-     DevicePlay();
-  modeM = MODE_REW;
+  switch (playModeM) {
+    case pmFast:
+         if (Setup.MultiSpeedMode) {
+            TrickSpeed(playDirM == pdBackward ? 1 : -1);
+            break;
+            }
+         else if (playDirM == pdBackward) {
+            Play();
+            break;
+            }
+         // run into pmPlay
+    case pmPlay:
+         Clear();
+         if (DeviceIsPlayingVideo())
+            DeviceMute();
+         playModeM = pmFast;
+         playDirM = pdBackward;
+         trickSpeedM = spNormalIndex;
+         TrickSpeed(Setup.MultiSpeedMode ? 1 : spMaxOffset);
+         break;
+    case pmSlow:
+         if (Setup.MultiSpeedMode) {
+            TrickSpeed(playDirM == pdBackward ? -1 : 1);
+            break;
+            }
+         else if (playDirM == pdBackward) {
+            Pause();
+            break;
+            }
+         Clear();
+         // run into pmPause
+    case pmPause:
+    case pmStill:
+         Clear();
+         DeviceMute();
+         playModeM = pmSlow;
+         playDirM = pdBackward;
+         trickSpeedM = spNormalIndex;
+         TrickSpeed(Setup.MultiSpeedMode ? -1 : -spMaxOffset);
+         break;
+    default:
+         error("cElvisPlayer::Backward(): Unknown playmode=%d", playModeM);
+         break;
+    }
 }
 
-void cElvisPlayer::SkipTime(long milliSecondsP)
+void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
   cMutexLock MutexLock(&mutexM);
-  debug("cElvisPlayer::SkipTime(%ld)", milliSecondsP);
   unsigned long filesize = readerM ? readerM->GetRangeSize() : 0;
-  long skip = lengthM ? milliSecondsP * (filesize / lengthM) / 1000 : 0;
+  long skip = lengthM ? secondsP * (filesize / lengthM) : 0;
+  debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, filesize);
+  if (!relativeP)
+     readSizeM = 0;
   if ((skip < 0) && (readSizeM < (unsigned long)labs(skip)))
      readSizeM = 0;
   else if ((readSizeM + skip) > filesize)
      return;
   else
      readSizeM += skip;
+  Clear();
   if (readerM)
      readerM->JumpRequest(readSizeM);
-  playFrameM = NULL;
-  dropFrameM = NULL;
-  DELETE_POINTER(readFrameM);
-  ringBufferM->Clear();
-  DeviceClear();
+  if (playP)
+     Play();
 }
 
 bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
 {
-  switch (modeM) {
-    default:
-    case MODE_PLAY:
-         playP    = true;
-         forwardP = true;
-         speedP   = -1;
-         break;
-    case MODE_PAUSE:
-         playP    = false;
-         forwardP = true;
-         speedP   = -1;
-         break;
-    case MODE_FFWD:
-         playP    = true;
-         forwardP = true;
-         speedP   = 0;
-         break;
-    case MODE_REW:
-         playP    = true;
-         forwardP = false;
-         speedP   = 0;
-         break;
-    case MODE_SFWD:
-         playP    = false;
-         forwardP = true;
-         speedP   = 0;
-         break;
-    case MODE_SREW:
-         playP    = false;
-         forwardP = false;
-         speedP   = 0;
-         break;
-    }
+  cMutexLock MutexLock(&mutexM);
+  //debug("cElvisPlayer::GetReplayMode()");
+  playP = ((playModeM == pmPlay) || (playModeM == pmFast));
+  forwardP = (playDirM == pdForward);
+  if ((playModeM == pmFast) || (playModeM == pmSlow))
+     speedP = Setup.MultiSpeedMode ? abs(trickSpeedM - spNormalIndex) : 0;
+  else
+     speedP = -1;
   return true;
 }
 
@@ -511,18 +595,24 @@ void cElvisPlayer::Action()
               DevicePoll(Poller, 10);
               sleep = false;
               }
-           if (modeM == MODE_PAUSE) {
+           if ((playModeM == pmPause) || (playModeM == pmStill)) {
               sleep = true;
               continue;
               }
            {
-             LOCK_THREAD;
+             cMutexLock MutexLock(&mutexM);
 
              if (!readFrameM) {
-                if ((modeM == MODE_REW) || (modeM == MODE_SREW)) {
+                if (playDirM == pdBackward) {
                    if (timeout.TimedOut()) {
-                      timeout.Set(TRICKPLAY_TIMEOUT_MS);
-                      SkipTime(-TRICKPLAY_SKIP_MS);
+                      timeout.Set(eTrickplayTimeout * 1000);
+                      SkipTime((playModeM == pmFast) ? (trickSpeedM - spNormalIndex) * -eTrickplaySkipLength : -eTrickplaySkipLength, true, false);
+                      }
+                   }
+                else if (Setup.MultiSpeedMode && (playDirM == pdForward) && (playModeM == pmFast) && (trickSpeedM >= spSkipLimitIndex)) {
+                   if (timeout.TimedOut()) {
+                      timeout.Set(eTrickplayTimeout * 1000);
+                      SkipTime((trickSpeedM - spNormalIndex) * eTrickplaySkipLength, true, false);
                       }
                    }
                 if (readerM) {
@@ -618,7 +708,7 @@ cElvisPlayerControl::~cElvisPlayerControl()
   Hide();
   cStatus::MsgReplaying(this, NULL, "elvis.ts", false);
   if (playerM)
-     playerM->Stop();
+     playerM->Clear();
   DELETE_POINTER(playerM);
 }
 
@@ -661,6 +751,8 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
          break;
     case kFastRew|k_Release:
     case kLeft|k_Release:
+         if (Setup.MultiSpeedMode)
+            break;
     case kFastRew:
     case kLeft:
          if (playerM)
@@ -668,6 +760,8 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
          break;
     case kFastFwd|k_Release:
     case kRight|k_Release:
+         if (Setup.MultiSpeedMode)
+            break;
     case kFastFwd:
     case kRight:
          if (playerM)
@@ -676,49 +770,49 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
     case kGreen|k_Repeat:
     case kGreen:
          if (playerM)
-            playerM->SkipTime(-TIME_1_MINUTE_MS);
+            playerM->SkipTime(-60);
          break;
     case kYellow|k_Repeat:
     case kYellow:
          if (playerM)
-            playerM->SkipTime(TIME_1_MINUTE_MS);
+            playerM->SkipTime(60);
          break;
     case k1|k_Repeat:
     case k1:
          if (playerM)
-            playerM->SkipTime(-TIME_20_SECONDS_MS);
+            playerM->SkipTime(-20);
          break;
     case k3|k_Repeat:
     case k3:
          if (playerM)
-            playerM->SkipTime(TIME_20_SECONDS_MS);
+            playerM->SkipTime(20);
          break;
     case k4|k_Repeat:
     case k4:
          if (playerM)
-            playerM->SkipTime(-TIME_5_MINUTES_MS);
+            playerM->SkipTime(-5 * 60);
          break;
     case k6|k_Repeat:
     case k6:
          if (playerM)
-            playerM->SkipTime(TIME_5_MINUTES_MS);
+            playerM->SkipTime(5 * 60);
          break;
     case k7|k_Repeat:
     case k7:
          if (playerM)
-            playerM->SkipTime(-TIME_15_MINUTES_MS);
+            playerM->SkipTime(-15 * 60);
          break;
     case k9|k_Repeat:
     case k9:
          if (playerM)
-            playerM->SkipTime(TIME_15_MINUTES_MS);
+            playerM->SkipTime(15 * 60);
          break;
     case kStop:
     case kBlue:
     case kBack:
          Hide();
          if (playerM)
-            playerM->Stop();
+            playerM->Clear();
          DELETE_POINTER(playerM);
          return osEnd;
     case kOk:

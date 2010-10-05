@@ -437,7 +437,7 @@ void cElvisFetcher::Action()
            }
 
         timeout.tv_sec  = 0;
-        timeout.tv_usec = TIMEOUT_MS * 1000;
+        timeout.tv_usec = eTimeoutMs * 1000;
         FD_ZERO(&fdread);
         FD_ZERO(&fdwrite);
         FD_ZERO(&fdexcep);
@@ -445,6 +445,6 @@ void cElvisFetcher::Action()
         if (maxfd >= 0)
            select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
         else
-           cCondWait::SleepMs(TIMEOUT_MS);
+           cCondWait::SleepMs(eTimeoutMs);
         }
 }

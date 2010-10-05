@@ -60,7 +60,7 @@ public:
 class cElvisFetcher : public cThread {
 private:
   enum {
-    TIMEOUT_MS = 10
+    eTimeoutMs = 10
   };
   static cElvisFetcher *instanceS;
   cMutex mutexM;

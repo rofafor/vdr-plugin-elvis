@@ -1029,7 +1029,7 @@ cElvisMenu::cElvisMenu()
 
 void cElvisMenu::SetHelpKeys()
 {
-  SetHelp(NULL, NULL, fetchCountM ? tr("Abort") : NULL, NULL);
+  SetHelp(NULL, NULL, fetchCountM ? tr("Abort fetch") : NULL, NULL);
 }
 
 void cElvisMenu::Setup()

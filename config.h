@@ -13,7 +13,7 @@
 class cElvisConfig : public cConfig<cSetupLine> {
 private:
   enum {
-    MaxCredentials = 32
+    eMaxCredentials = 32
   };
   static const char *confBaseNameS;
   bool Parse(const char *Name, const char *Value);
@@ -25,8 +25,8 @@ public:
   int HideMenu;
   int Service;
   int Ssl;
-  char Username[MaxCredentials];
-  char Password[MaxCredentials];
+  char Username[eMaxCredentials];
+  char Password[eMaxCredentials];
   int __EndData__;
   cElvisConfig(void);
   cElvisConfig& operator= (const cElvisConfig &s);

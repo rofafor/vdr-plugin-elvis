@@ -140,8 +140,8 @@ msgstr "Poistetaanko hakuajastin?"
 msgid "Top events"
 msgstr "Suosituimmat"
 
-msgid "Abort"
-msgstr "Keskeytä"
+msgid "Abort fetch"
+msgstr "Keskeytä haku"
 
 #, c-format
 msgid "Now fetching recordings: %d"
