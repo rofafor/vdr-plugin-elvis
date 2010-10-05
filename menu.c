@@ -1024,6 +1024,12 @@ cElvisMenu::cElvisMenu()
   fetchCountM(cElvisFetcher::GetInstance()->FetchCount())
 {
   Setup();
+  SetHelpKeys();
+}
+
+void cElvisMenu::SetHelpKeys()
+{
+  SetHelp(NULL, NULL, fetchCountM ? tr("Abort") : NULL, NULL);
 }
 
 void cElvisMenu::Setup()
@@ -1060,6 +1066,16 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
          return AddSubMenu(new cElvisEPGMenu);
     case osUser5:
          return AddSubMenu(new cElvisTopEventsMenu);
+    case osUnknown:
+         switch (keyP) {
+           case kYellow:
+                if (Interface->Confirm(tr("Abort fetching?")))
+                   cElvisFetcher::GetInstance()->Abort();
+                state = osContinue;
+           default:
+                break;
+           }
+         break;
     default:
          break;
     }
@@ -1068,6 +1084,7 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
   if (count != fetchCountM) {
      fetchCountM = count;
      Setup();
+     SetHelpKeys();
      }
 
   return state;

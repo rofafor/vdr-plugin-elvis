@@ -437,12 +437,12 @@ void cElvisPlayer::Backward()
   modeM = MODE_REW;
 }
 
-void cElvisPlayer::SkipSeconds(int secondsP)
+void cElvisPlayer::SkipTime(long milliSecondsP)
 {
   cMutexLock MutexLock(&mutexM);
-  debug("cElvisPlayer::SkipSeconds(%d)", secondsP);
+  debug("cElvisPlayer::SkipTime(%ld)", milliSecondsP);
   unsigned long filesize = readerM ? readerM->GetRangeSize() : 0;
-  long skip = lengthM ? secondsP * (filesize / lengthM) : 0;
+  long skip = lengthM ? milliSecondsP * (filesize / lengthM) / 1000 : 0;
   if ((skip < 0) && (readSizeM < (unsigned long)labs(skip)))
      readSizeM = 0;
   else if ((readSizeM + skip) > filesize)
@@ -521,8 +521,8 @@ void cElvisPlayer::Action()
              if (!readFrameM) {
                 if ((modeM == MODE_REW) || (modeM == MODE_SREW)) {
                    if (timeout.TimedOut()) {
-                      timeout.Set(TIMEOUT_TRICKPLAY_MS);
-                      SkipSeconds(-1);
+                      timeout.Set(TRICKPLAY_TIMEOUT_MS);
+                      SkipTime(-TRICKPLAY_SKIP_MS);
                       }
                    }
                 if (readerM) {
@@ -676,42 +676,42 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
     case kGreen|k_Repeat:
     case kGreen:
          if (playerM)
-            playerM->SkipSeconds(-60);
+            playerM->SkipTime(-TIME_1_MINUTE_MS);
          break;
     case kYellow|k_Repeat:
     case kYellow:
          if (playerM)
-            playerM->SkipSeconds(60);
+            playerM->SkipTime(TIME_1_MINUTE_MS);
          break;
     case k1|k_Repeat:
     case k1:
          if (playerM)
-            playerM->SkipSeconds(-20);
+            playerM->SkipTime(-TIME_20_SECONDS_MS);
          break;
     case k3|k_Repeat:
     case k3:
          if (playerM)
-            playerM->SkipSeconds(20);
+            playerM->SkipTime(TIME_20_SECONDS_MS);
          break;
     case k4|k_Repeat:
     case k4:
          if (playerM)
-            playerM->SkipSeconds(-300);
+            playerM->SkipTime(-TIME_5_MINUTES_MS);
          break;
     case k6|k_Repeat:
     case k6:
          if (playerM)
-            playerM->SkipSeconds(300);
+            playerM->SkipTime(TIME_5_MINUTES_MS);
          break;
     case k7|k_Repeat:
     case k7:
          if (playerM)
-            playerM->SkipSeconds(-900);
+            playerM->SkipTime(-TIME_15_MINUTES_MS);
          break;
     case k9|k_Repeat:
     case k9:
          if (playerM)
-            playerM->SkipSeconds(900);
+            playerM->SkipTime(TIME_15_MINUTES_MS);
          break;
     case kStop:
     case kBlue:

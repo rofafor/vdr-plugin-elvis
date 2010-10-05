@@ -233,6 +233,7 @@ public:
 class cElvisMenu: public cOsdMenu {
 private:
   unsigned int fetchCountM;
+  void SetHelpKeys();
   void Setup();
 public:
   cElvisMenu();

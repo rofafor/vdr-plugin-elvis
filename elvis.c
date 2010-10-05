@@ -18,7 +18,7 @@
 #error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.0.3";
+       const char VERSION[]       = "0.0.4";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 
@@ -160,13 +160,30 @@ bool cPluginElvis::Service(const char *Id, void *Data)
 
 const char **cPluginElvis::SVDRPHelpPages(void)
 {
-  // Return help text for SVDRP commands this plugin implements
-  return NULL;
+  static const char *HelpPages[] = {
+    "ABRT\n"
+    "    Abort fetch queue transfers.",
+    "LIST\n"
+    "    List fetch queue.",
+    NULL
+    };
+  return HelpPages;
 }
 
 cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int &ReplyCode)
 {
-  // Process SVDRP commands this plugin implements
+  if (strcasecmp(Command, "ABRT") == 0) {
+     cElvisFetcher::GetInstance()->Abort();
+     return cString("Fetching aborted");
+     }
+  else if (strcasecmp(Command, "LIST") == 0) {
+     cString list = cElvisFetcher::GetInstance()->List();
+     if (isempty(*list)) {
+        ReplyCode = 901;
+        list = "Empty fetch queue";
+        }
+     return list;
+     }
   return NULL;
 }
 

@@ -285,15 +285,7 @@ cElvisFetcher::~cElvisFetcher()
 {
   debug("cElvisFetcher::~cElvisFetcher()");
   Cancel(3);
-  for (int i = 0; i < itemsM.Size(); ++i) {
-      cElvisFetchItem *item = itemsM[i];
-      if (item) {
-         // remove handle from multi set
-         if (multiM && item->Handle())
-            curl_multi_remove_handle(multiM, item->Handle());
-         delete item;
-         }
-      }
+  Abort();
   if (multiM) {
      curl_multi_cleanup(multiM);
      multiM = NULL;
@@ -335,7 +327,7 @@ void cElvisFetcher::New(const char *urlP, const char *nameP, const char *descrip
 void cElvisFetcher::Remove(CURL *handleP, bool statusP)
 {
   cMutexLock MutexLock(&mutexM);
-  debug("cElvisFetcher::Remove()");
+  debug("cElvisFetcher::Remove(): status=%d", statusP);
 
   int i = 0;
   bool found = false;
@@ -374,6 +366,40 @@ void cElvisFetcher::Cleanup()
          DELETE_POINTER(item);
          }
       }
+}
+
+void cElvisFetcher::Abort()
+{
+  cMutexLock MutexLock(&mutexM);
+  debug("cElvisFetcher::Abort()");
+
+  for (int i = 0; i < itemsM.Size(); ++i) {
+      cElvisFetchItem *item = itemsM[i];
+      if (item) {
+         itemsM.Remove(i);
+         // remove handle from multi set
+         if (multiM && item->Handle())
+            curl_multi_remove_handle(multiM, item->Handle());
+         DELETE_POINTER(item);
+         }
+      }
+}
+
+cString cElvisFetcher::List(int prefixP)
+{
+  cMutexLock MutexLock(&mutexM);
+  cString list("");
+  debug("cElvisFetcher::List()");
+
+  if (itemsM.Size() > 0) {
+     for (int i = 0; i < itemsM.Size(); ++i) {
+         cElvisFetchItem *item = itemsM[i];
+         if (item)
+            list = cString::sprintf("%s\n%03d%c%d;%s;%s", *list, prefixP, (i == itemsM.Size()) ? '-' : ' ', i, item->Url(), item->Name());
+         }
+     }
+
+  return list;
 }
 
 void cElvisFetcher::Action()

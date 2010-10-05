@@ -67,7 +67,8 @@ private:
     MODE_SFWD            = 4,
     MODE_SREW            = 5,
 
-    TIMEOUT_TRICKPLAY_MS = 3000
+    TRICKPLAY_TIMEOUT_MS = 1000L,
+    TRICKPLAY_SKIP_MS    = 1000L
   };
   const unsigned long lengthM;
   cElvisReader *readerM;
@@ -89,7 +90,7 @@ public:
   void Stop();
   void Backward();
   void Forward();
-  void SkipSeconds(int secondsP);
+  void SkipTime(long milliSecondsP);
   bool Finished() { return !Active(); }
   unsigned long Total() { return lengthM; }
   unsigned long Current() { return (readerM && readerM->GetRangeSize() && lengthM) ? (readSizeM / (readerM->GetRangeSize() / lengthM)) : 0; }
@@ -101,6 +102,12 @@ public:
 
 class cElvisPlayerControl : public cControl {
 private:
+  enum {
+    TIME_20_SECONDS_MS   = 20000L,
+    TIME_1_MINUTE_MS     = 60000L,
+    TIME_5_MINUTES_MS    = 300000L,
+    TIME_15_MINUTES_MS   = 900000L,
+  };
   cElvisPlayer *playerM;
   cSkinDisplayReplay *displayM;
   cString urlM;

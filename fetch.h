@@ -80,6 +80,8 @@ public:
   static void Destroy();
   virtual ~cElvisFetcher();
   void New(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
+  void Abort();
+  cString List(int prefixP = 900);
   unsigned int FetchCount() { return itemsM.Size(); }
   bool Fetching() { return (itemsM.Size() > 0); }
 };
