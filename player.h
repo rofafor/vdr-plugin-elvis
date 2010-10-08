@@ -61,8 +61,8 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    eTrickplayTimeout    = 1, // in seconds
-    eTrickplaySkipLength = 2  // in seconds
+    eTrickplaySkipLength = 3,   // in seconds
+    eTrickplayTimeoutMs  = 1000 // in milliseconds
   };
   enum eSpeedValues {
     spMaxOffset      = 3,  // offset of the maximum speed from normal speed in either direction
@@ -119,19 +119,64 @@ public:
 class cElvisPlayerControl : public cControl {
 private:
   cElvisPlayer *playerM;
-  cSkinDisplayReplay *displayM;
+public:
+  cElvisPlayerControl(const char *urlP, unsigned int lengthP);
+  virtual ~cElvisPlayerControl();
+  bool Active();
+  void Stop();
+  void Pause();
+  void Play();
+  void Forward();
+  void Backward();
+  void SkipSeconds(int secondsP);
+  bool GetProgress(int &currentP, int &totalP);
+  bool GetIndex(unsigned long &currentP, unsigned long &totalP);
+  bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);
+  void Goto(int secondsP, bool playP = true);
+};
+
+// --- cElvisReplayControl ---------------------------------------------
+
+class cElvisReplayControl : public cElvisPlayerControl {
+private:
+  enum {
+    eModeTimeout       = 3,
+    eStaySecondsOffEnd = 10
+  };
+  cSkinDisplayReplay *displayReplayM;
   cString urlM;
   cString nameM;
   cString descriptionM;
   cString startTimeM;
   unsigned int lengthM;
+  bool visibleM;
+  bool modeOnlyM;
+  bool shownM;
+  unsigned long lastCurrentM;
+  unsigned long lastTotalM;
+  bool lastPlayM;
+  bool lastForwardM;
+  int lastSpeedM;
+  time_t timeoutShowM;
+  bool timeSearchActiveM;
+  bool timeSearchHideM;
+  int timeSearchTimeM;
+  int timeSearchPosM;
+  void TimeSearchDisplay();
+  void TimeSearchProcess(eKeys keyP);
+  void TimeSearch();
+  void ShowTimed(int secondsP = 0);
+  void ShowMode();
+  bool ShowProgress(bool initialP);
+  cString SecondsToHMSF(unsigned long secondsP);
 public:
-  cElvisPlayerControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
-  virtual ~cElvisPlayerControl();
+  cElvisReplayControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
+  virtual ~cElvisReplayControl();
+  void Stop();
+  virtual cOsdObject *GetInfo();
+  virtual eOSState ProcessKey(eKeys keyP);
   virtual void Show();
   virtual void Hide();
-  virtual eOSState ProcessKey(eKeys Key);
-  virtual cOsdObject *GetInfo();
 };
 
 #endif // __ELVIS_PLAYER_H

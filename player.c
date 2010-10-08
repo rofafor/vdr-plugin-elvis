@@ -549,6 +549,7 @@ void cElvisPlayer::Backward()
 void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
   cMutexLock MutexLock(&mutexM);
+  debug("cElvisPlayer::SkipTime()");
   unsigned long filesize = readerM ? readerM->GetRangeSize() : 0;
   long skip = lengthM ? secondsP * (filesize / lengthM) : 0;
   debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, filesize);
@@ -605,13 +606,13 @@ void cElvisPlayer::Action()
              if (!readFrameM) {
                 if (playDirM == pdBackward) {
                    if (timeout.TimedOut()) {
-                      timeout.Set(eTrickplayTimeout * 1000);
+                      timeout.Set(eTrickplayTimeoutMs);
                       SkipTime((playModeM == pmFast) ? (trickSpeedM - spNormalIndex) * -eTrickplaySkipLength : -eTrickplaySkipLength, true, false);
                       }
                    }
                 else if (Setup.MultiSpeedMode && (playDirM == pdForward) && (playModeM == pmFast) && (trickSpeedM >= spSkipLimitIndex)) {
                    if (timeout.TimedOut()) {
-                      timeout.Set(eTrickplayTimeout * 1000);
+                      timeout.Set(eTrickplayTimeoutMs);
                       SkipTime((trickSpeedM - spNormalIndex) * eTrickplaySkipLength, true, false);
                       }
                    }
@@ -691,63 +692,370 @@ void cElvisPlayer::Action()
 
 // --- cElvisPlayerControl ---------------------------------------------
 
-cElvisPlayerControl::cElvisPlayerControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
-: cControl(playerM = new cElvisPlayer(urlP, lengthP)),
-  displayM(NULL),
-  urlM(urlP),
-  nameM(nameP),
-  descriptionM(descriptionP),
-  startTimeM(startTimeP),
-  lengthM(lengthP)
+cElvisPlayerControl::cElvisPlayerControl(const char *urlP, unsigned int lengthP)
+: cControl(playerM = new cElvisPlayer(urlP, lengthP))
 {
-  cStatus::MsgReplaying(this, nameP, "elvis.ts", true);
+  debug("cElvisPlayerControl::cElvisPlayerControl(%s, %d)", urlP, lengthP);
 }
 
 cElvisPlayerControl::~cElvisPlayerControl()
 {
+  debug("cElvisPlayerControl::~cElvisPlayerControl()");
+  Stop();
+}
+
+bool cElvisPlayerControl::Active()
+{
+  //debug("cElvisPlayerControl::Active()");
+  return (playerM && !playerM->Finished());
+}
+
+void cElvisPlayerControl::Stop()
+{
+  //debug("cElvisPlayerControl::Stop()");
+  DELETENULL(playerM);
+}
+
+void cElvisPlayerControl::Pause()
+{
+  debug("cElvisPlayerControl::Pause()");
+  if (playerM)
+     playerM->Pause();
+}
+
+void cElvisPlayerControl::Play()
+{
+  debug("cElvisPlayerControl::Play()");
+  if (playerM)
+     playerM->Play();
+}
+
+void cElvisPlayerControl::Forward()
+{
+  debug("cElvisPlayerControl::Forward()");
+  if (playerM)
+     playerM->Forward();
+}
+
+void cElvisPlayerControl::Backward()
+{
+  debug("cElvisPlayerControl::Backward()");
+  if (playerM)
+     playerM->Backward();
+}
+
+void cElvisPlayerControl::SkipSeconds(int secondsP)
+{
+  debug("cElvisPlayerControl::SkipSeconds(%d)", secondsP);
+  if (playerM)
+     playerM->SkipTime(secondsP);
+}
+
+bool cElvisPlayerControl::GetProgress(int &currentP, int &totalP)
+{
+  //debug("cElvisPlayerControl::GetProgress()");
+  if (playerM) {
+     currentP = playerM->Progress();
+     totalP = 100;
+     return true;
+     }
+  return false;
+}
+
+bool cElvisPlayerControl::GetIndex(unsigned long &currentP, unsigned long &totalP)
+{
+  //debug("cElvisPlayerControl::GetIndex()");
+  if (playerM) {
+     currentP = playerM->Current();
+     totalP = playerM->Total();
+     return true;
+     }
+  return false;
+}
+
+bool cElvisPlayerControl::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
+{
+  //debug("cElvisPlayerControl::GetReplayMode()");
+  return (playerM && playerM->GetReplayMode(playP, forwardP, speedP));
+}
+
+void cElvisPlayerControl::Goto(int secondsP, bool playP)
+{
+  debug("cElvisPlayerControl::Goto()");
+  if (playerM)
+     playerM->SkipTime(secondsP, false, playP);
+}
+
+// --- cElvisReplayControl ---------------------------------------------------
+
+cElvisReplayControl::cElvisReplayControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
+: cElvisPlayerControl(urlP, lengthP),
+  displayReplayM(NULL),
+  urlM(urlP),
+  nameM(nameP),
+  descriptionM(descriptionP),
+  startTimeM(startTimeP),
+  lengthM(lengthP),
+  visibleM(false),
+  modeOnlyM(false),
+  shownM(false),
+  lastCurrentM(-1),
+  lastTotalM(-1),
+  lastPlayM(false),
+  lastForwardM(false),
+  lastSpeedM(-2), // an invalid value
+  timeoutShowM(0),
+  timeSearchActiveM(false),
+  timeSearchHideM(false),
+  timeSearchTimeM(-1),
+  timeSearchPosM(-1)
+{
+  debug("cElvisReplayControl::cElvisReplayControl()");
+  cStatus::MsgReplaying(this, nameP, "elvis.ts", true);
+  cDevice::PrimaryDevice()->ClrAvailableTracks(true);
+}
+
+cElvisReplayControl::~cElvisReplayControl()
+{
+  debug("cElvisReplayControl::~cElvisReplayControl()");
   Hide();
   cStatus::MsgReplaying(this, NULL, "elvis.ts", false);
-  if (playerM)
-     playerM->Clear();
-  DELETE_POINTER(playerM);
+  Stop();
 }
 
-void cElvisPlayerControl::Show()
+void cElvisReplayControl::Stop()
 {
+  debug("cElvisReplayControl::Stop()");
+  cElvisPlayerControl::Stop();
 }
 
-void cElvisPlayerControl::Hide()
+void cElvisReplayControl::ShowTimed(int secondsP)
 {
-  DELETENULL(displayM);
+  //debug("cElvisReplayControl::ShowTimed(%d)", secondsP);
+  if (modeOnlyM)
+     Hide();
+  if (!visibleM) {
+     shownM = ShowProgress(true);
+     timeoutShowM = (shownM && secondsP > 0) ? time(NULL) + secondsP : 0;
+     }
 }
 
-cOsdObject *cElvisPlayerControl::GetInfo()
+void cElvisReplayControl::Show()
 {
+  //debug("cElvisReplayControl::Show()");
+  ShowTimed();
+}
+
+void cElvisReplayControl::Hide()
+{
+  //debug("cElvisReplayControl::Hide()");
+  if (visibleM) {
+     DELETENULL(displayReplayM);
+     SetNeedsFastResponse(false);
+     visibleM = false;
+     modeOnlyM = false;
+     lastPlayM = lastForwardM = false;
+     lastSpeedM = -2; // an invalid value
+     timeSearchActiveM = false;
+     }
+}
+
+void cElvisReplayControl::ShowMode()
+{
+  //debug("cElvisReplayControl::ShowMode()");
+  if (visibleM || Setup.ShowReplayMode && !cOsd::IsOpen()) {
+     bool play, forward;
+     int speed;
+     if (GetReplayMode(play, forward, speed) && (!visibleM || play != lastPlayM || forward != lastForwardM || speed != lastSpeedM)) {
+        bool normalPlay = (play && speed == -1);
+        if (!visibleM) {
+           if (normalPlay)
+              return; // no need to do indicate ">" unless there was a different mode displayed before
+           visibleM = modeOnlyM = true;
+           displayReplayM = Skins.Current()->DisplayReplay(modeOnlyM);
+           }
+
+        if (modeOnlyM && !timeoutShowM && normalPlay)
+           timeoutShowM = time(NULL) + eModeTimeout;
+        displayReplayM->SetMode(play, forward, speed);
+        lastPlayM = play;
+        lastForwardM = forward;
+        lastSpeedM = speed;
+        }
+     }
+}
+
+cString cElvisReplayControl::SecondsToHMSF(unsigned long secondsP)
+{
+  //debug("cElvisReplayControl::SecondsToHMSF(%ld)", secondsP);
+  return cString::sprintf("%ld:%02ld:%02ld", secondsP / 3600, (secondsP % 3600) / 60, secondsP % 60);
+}
+
+bool cElvisReplayControl::ShowProgress(bool initialP)
+{
+  unsigned long current, total;
+  //debug("cElvisReplayControl::ShowProgress(%d)", initialP);
+
+  if (GetIndex(current, total) && (total > 0)) {
+     if (!visibleM) {
+        displayReplayM = Skins.Current()->DisplayReplay(modeOnlyM);
+        SetNeedsFastResponse(true);
+        visibleM = true;
+        }
+     if (initialP) {
+        if (!isempty(*nameM))
+           displayReplayM->SetTitle(*nameM);
+        lastCurrentM = lastTotalM = -1;
+        }
+     if (total != lastTotalM) {
+        displayReplayM->SetTotal(SecondsToHMSF(total));
+        if (!initialP)
+           displayReplayM->Flush();
+        }
+     if (current != lastCurrentM || total != lastTotalM) {
+        int current2, total2;
+        if (GetProgress(current2, total2))
+           displayReplayM->SetProgress(current2, total2);
+        if (!initialP)
+           displayReplayM->Flush();
+        displayReplayM->SetCurrent(SecondsToHMSF(current));
+        displayReplayM->Flush();
+        lastCurrentM = current;
+        }
+     lastTotalM = total;
+     ShowMode();
+     return true;
+     }
+  return false;
+}
+
+void cElvisReplayControl::TimeSearchDisplay()
+{
+  char buf[64];
+  //debug("cElvisReplayControl::TimeSearchDisplay()");
+  strcpy(buf, trVDR("Jump: "));
+  size_t len = strlen(buf);
+  char h10 = (char)('0' + (timeSearchTimeM >> 24));
+  char h1  = (char)('0' + ((timeSearchTimeM & 0x00FF0000) >> 16));
+  char m10 = (char)('0' + ((timeSearchTimeM & 0x0000FF00) >> 8));
+  char m1  = (char)('0' + (timeSearchTimeM & 0x000000FF));
+  char ch10 = timeSearchPosM > 3 ? h10 : '-';
+  char ch1  = timeSearchPosM > 2 ? h1  : '-';
+  char cm10 = timeSearchPosM > 1 ? m10 : '-';
+  char cm1  = timeSearchPosM > 0 ? m1  : '-';
+  sprintf(buf + len, "%c%c:%c%c", ch10, ch1, cm10, cm1);
+  displayReplayM->SetJump(buf);
+}
+
+void cElvisReplayControl::TimeSearchProcess(eKeys keyP)
+{
+  //debug("cElvisReplayControl::TimeSearchProcess(%d)", keyP);
+  int seconds = (timeSearchTimeM >> 24) * 36000 + ((timeSearchTimeM & 0x00FF0000) >> 16) * 3600 + ((timeSearchTimeM & 0x0000FF00) >> 8) * 600 + (timeSearchTimeM & 0x000000FF) * 60;
+  unsigned long current = lastCurrentM;
+  unsigned long total = lastTotalM;
+  switch (keyP) {
+    case k0 ... k9:
+         if (timeSearchPosM < 4) {
+            timeSearchTimeM <<= 8;
+            timeSearchTimeM |= keyP - k0;
+            timeSearchPosM++;
+            TimeSearchDisplay();
+            }
+         break;
+    case kFastRew:
+    case kLeft:
+    case kFastFwd:
+    case kRight: {
+         int dir = (((keyP == kRight) || (keyP == kFastFwd)) ? 1 : -1);
+         if (dir > 0)
+            seconds = min((int)(total - current - eStaySecondsOffEnd), seconds);
+         SkipSeconds(seconds * dir);
+         timeSearchActiveM = false;
+         }
+         break;
+    case kPlay:
+    case kUp:
+    case kPause:
+    case kDown:
+    case kOk:
+         seconds = min((int)(total - eStaySecondsOffEnd), seconds);
+         Goto(seconds, ((keyP != kDown) && (keyP != kPause) && (keyP != kOk)));
+         timeSearchActiveM = false;
+         break;
+    default:
+         if (!(keyP & k_Flags)) // ignore repeat/release keys
+            timeSearchActiveM = false;
+         break;
+    }
+
+  if (!timeSearchActiveM) {
+     if (timeSearchHideM)
+        Hide();
+     else
+        displayReplayM->SetJump(NULL);
+     ShowMode();
+     }
+}
+
+void cElvisReplayControl::TimeSearch()
+{
+  //debug("cElvisReplayControl::TimeSearch()");
+  timeSearchTimeM = 0;
+  timeSearchPosM = 0;
+  timeSearchHideM = false;
+  if (modeOnlyM)
+     Hide();
+  if (!visibleM) {
+     Show();
+     if (visibleM)
+        timeSearchHideM = true;
+     else
+        return;
+     }
+  timeoutShowM = 0;
+  TimeSearchDisplay();
+  timeSearchActiveM = true;
+}
+
+cOsdObject *cElvisReplayControl::GetInfo()
+{
+  //debug("cElvisReplayControl::GetInfo()");
   if (!isempty(*descriptionM))
     return new cElvisRecordingInfoMenu(*urlM, *nameM, *descriptionM, *startTimeM, lengthM);
-
   return NULL;
 }
 
-eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
+eOSState cElvisReplayControl::ProcessKey(eKeys keyP)
 {
-  if (playerM->Finished()) {
-     DELETE_POINTER(playerM);
+  //debug("cElvisReplayControl::ProcessKey(%d)", keyP);
+  if (!Active())
      return osEnd;
+
+  if (visibleM) {
+     if (timeoutShowM && (time(NULL) > timeoutShowM)) {
+        Hide();
+        ShowMode();
+        timeoutShowM = 0;
+        }
+     else if (modeOnlyM)
+        ShowMode();
+     else
+        shownM = ShowProgress(!shownM) || shownM;
      }
 
-  eOSState state = cControl::ProcessKey(keyP);
+  if (timeSearchActiveM && (keyP != kNone)) {
+     TimeSearchProcess(keyP);
+     return osContinue;
+     }
 
   switch (keyP) {
     case kPlay:
     case kUp:
-         if (playerM)
-            playerM->Play();
+         Play();
          break;
     case kPause:
     case kDown:
-         if (playerM)
-            playerM->Pause();
+         Pause();
          break;
     case kFastRew|k_Release:
     case kLeft|k_Release:
@@ -755,8 +1063,7 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
             break;
     case kFastRew:
     case kLeft:
-         if (playerM)
-            playerM->Backward();
+         Backward();
          break;
     case kFastFwd|k_Release:
     case kRight|k_Release:
@@ -764,77 +1071,60 @@ eOSState cElvisPlayerControl::ProcessKey(eKeys keyP)
             break;
     case kFastFwd:
     case kRight:
-         if (playerM)
-            playerM->Forward();
+         Forward();
+         break;
+    case kRed:
+         TimeSearch();
          break;
     case kGreen|k_Repeat:
     case kGreen:
-         if (playerM)
-            playerM->SkipTime(-60);
+         SkipSeconds(-60);
          break;
     case kYellow|k_Repeat:
     case kYellow:
-         if (playerM)
-            playerM->SkipTime(60);
+         SkipSeconds(60);
          break;
     case k1|k_Repeat:
     case k1:
-         if (playerM)
-            playerM->SkipTime(-20);
+         SkipSeconds(-20);
          break;
     case k3|k_Repeat:
     case k3:
-         if (playerM)
-            playerM->SkipTime(20);
+         SkipSeconds(20);
          break;
     case k4|k_Repeat:
     case k4:
-         if (playerM)
-            playerM->SkipTime(-5 * 60);
+         SkipSeconds(-5 * 60);
          break;
     case k6|k_Repeat:
     case k6:
-         if (playerM)
-            playerM->SkipTime(5 * 60);
+         SkipSeconds(5 * 60);
          break;
     case k7|k_Repeat:
     case k7:
-         if (playerM)
-            playerM->SkipTime(-15 * 60);
+         SkipSeconds(-15 * 60);
          break;
     case k9|k_Repeat:
     case k9:
-         if (playerM)
-            playerM->SkipTime(15 * 60);
+         SkipSeconds(15 * 60);
          break;
+    case kBack:
     case kStop:
     case kBlue:
-    case kBack:
          Hide();
-         if (playerM)
-            playerM->Clear();
-         DELETE_POINTER(playerM);
+         Stop();
          return osEnd;
     case kOk:
-         if (!displayM) {
-            displayM = Skins.Current()->DisplayReplay(false);
-            displayM->SetTitle(*nameM);
-            }
-         else
+         if (visibleM && !modeOnlyM)
             Hide();
-   default:
+         else
+            Show();
          break;
-   }
-
-   if (displayM && playerM) {
-        bool play = true, forward = true;
-        int speed = -1;
-        displayM->SetCurrent(playerM ? *cString::sprintf("%ld:%02ld:%02ld", playerM->Current() / 3600, (playerM->Current() % 3600) / 60, playerM->Current() % 60) : "0:00:00");
-        displayM->SetTotal(playerM ? *cString::sprintf("%ld:%02ld:%02ld", playerM->Total() / 3600, (playerM->Total() % 3600) / 60, playerM->Total() % 60) : "0:00:00");
-        displayM->SetProgress(playerM ? playerM->Progress() : 0, 100);
-        if (playerM->GetReplayMode(play, forward, speed))
-           displayM->SetMode(play, forward, speed);
+    default:
+         break;
     }
 
-  return state;
+  ShowMode();
+
+  return osContinue;
 }

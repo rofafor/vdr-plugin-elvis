@@ -26,10 +26,11 @@ VDR Plugin 'elvis' Revision History
 - Tweaked skip durations of green/yellow (+-60s) and 1/3
   (+-20s) keys in replaying mode.
 - Mapped 4/6 (+-5min) and 7/9 (+-15min) keys for longer
-  skips in replaying mode.
+  skips in replay mode.
 
 2010-xx-xx: Version 0.0.4
 
 - Added functionality to abort current fetching.
 - Added 'ABRT' and 'LIST' commands for SVDRP interface.
 - Tweaked trickplay functionality.
+- Enabled jump (red) key in replay mode.

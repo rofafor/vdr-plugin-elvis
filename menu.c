@@ -165,7 +165,7 @@ eOSState cElvisRecordingsMenu::Play()
      if (item->IsFolder())
         return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
      else if (item->Recording()->Info()) {
-        cControl::Launch(new cElvisPlayerControl(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
+        cControl::Launch(new cElvisReplayControl(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
         return osEnd;
         }
      }
