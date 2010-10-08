@@ -73,6 +73,7 @@ private:
   cElvisFetcher& operator=(const cElvisFetcher&);
   void Remove(CURL *handleP, bool statusP);
   void Cleanup();
+  void Update(int countP = -1);
 protected:
   virtual void Action();
 public:

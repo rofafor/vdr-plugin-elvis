@@ -402,15 +402,30 @@ cString cElvisFetcher::List(int prefixP)
   return list;
 }
 
+void cElvisFetcher::Update(int countP)
+{
+  cMutexLock MutexLock(&mutexM);
+  //debug("cElvisFetcher::Update()");
+  if (countP > itemsM.Size()) {
+     debug("cElvisFetcher::Update(touch)");
+     Recordings.ChangeState();
+     Recordings.TouchUpdate();
+     }
+}
+
 void cElvisFetcher::Action()
 {
   debug("cElvisFetcher::Action(): start");
   while (Running()) {
         CURLMcode err;
-        int running_handles, maxfd;
+        int running_handles, maxfd, count;
         fd_set fdread, fdwrite, fdexcep;
         struct timeval timeout;
-        int count = itemsM.Size();
+
+        // store recordings queue size
+        mutexM.Lock();
+        count = itemsM.Size();
+        mutexM.Unlock();
 
         do {
           err = curl_multi_perform(multiM, &running_handles);
@@ -430,11 +445,7 @@ void cElvisFetcher::Action()
         Cleanup();
 
         // update recordings list
-        if (count > itemsM.Size()) {
-           debug("cElvisFetcher::Action(touch)");
-           Recordings.ChangeState();
-           Recordings.TouchUpdate();
-           }
+        Update(count);
 
         timeout.tv_sec  = 0;
         timeout.tv_usec = eTimeoutMs * 1000;
