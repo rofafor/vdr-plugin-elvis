@@ -253,6 +253,14 @@ void cElvisFetchItem::GenerateIndex()
      indexGeneratorM = new cElvisIndexGenerator(*dirNameM);
 }
 
+void cElvisFetchItem::Remove()
+{
+  debug("cElvisFetchItem::Remove(%s)", filenameM ? fileNameM->Name() : "");
+
+  if (fileNameM)
+     RemoveVideoFile(fileNameM->Name());
+}
+
 // --- cElvisFetcher ---------------------------------------------------
 
 cElvisFetcher *cElvisFetcher::instanceS = NULL;
@@ -352,20 +360,24 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
      }
 }
 
-void cElvisFetcher::Cleanup()
+bool cElvisFetcher::Cleanup()
 {
   cMutexLock MutexLock(&mutexM);
+  bool found = false;
   //debug("cElvisFetcher::Cleanup()");
 
   for (int i = 0; i < itemsM.Size(); ++i) {
       cElvisFetchItem *item = itemsM[i];
       if (item->Handle() && item->Ready()) {
+         found = true;
          itemsM.Remove(i);
          debug("cElvisFetcher::Cleanup(): name='%s'", item->Name());
          Skins.Message(mtInfo, *cString::sprintf(tr("Fetched: %s"), item->Name()));
          DELETE_POINTER(item);
          }
       }
+
+  return found;
 }
 
 void cElvisFetcher::Abort()
@@ -380,6 +392,8 @@ void cElvisFetcher::Abort()
          // remove handle from multi set
          if (multiM && item->Handle())
             curl_multi_remove_handle(multiM, item->Handle());
+         // remove recording
+         item->Remove();
          DELETE_POINTER(item);
          }
       }
@@ -402,31 +416,15 @@ cString cElvisFetcher::List(int prefixP)
   return list;
 }
 
-void cElvisFetcher::Update(int countP)
-{
-  cMutexLock MutexLock(&mutexM);
-  //debug("cElvisFetcher::Update()");
-  if (countP > itemsM.Size()) {
-     debug("cElvisFetcher::Update(touch)");
-     Recordings.ChangeState();
-     Recordings.TouchUpdate();
-     }
-}
-
 void cElvisFetcher::Action()
 {
   debug("cElvisFetcher::Action(): start");
   while (Running()) {
         CURLMcode err;
-        int running_handles, maxfd, count;
+        int running_handles, maxfd;
         fd_set fdread, fdwrite, fdexcep;
         struct timeval timeout;
-
-        // store recordings queue size
-        mutexM.Lock();
-        count = itemsM.Size();
-        mutexM.Unlock();
-
+        
         do {
           err = curl_multi_perform(multiM, &running_handles);
         } while (err == CURLM_CALL_MULTI_PERFORM);
@@ -442,10 +440,11 @@ void cElvisFetcher::Action()
            }
 
         // cleanup ready made transfers
-        Cleanup();
-
-        // update recordings list
-        Update(count);
+        if (Cleanup()) {
+           debug("cElvisFetcher::Action(touch)");
+           Recordings.ChangeState();
+           Recordings.TouchUpdate();
+           }
 
         timeout.tv_sec  = 0;
         timeout.tv_usec = eTimeoutMs * 1000;

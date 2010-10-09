@@ -47,6 +47,7 @@ public:
   cElvisFetchItem(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
   virtual ~cElvisFetchItem();
   void GenerateIndex();
+  void Remove();
   CURL *Handle() { return handleM; }
   const char *Url() { return *urlM; }
   const char *Name() { return *nameM; }
@@ -72,8 +73,7 @@ private:
   cElvisFetcher(const cElvisFetcher&);
   cElvisFetcher& operator=(const cElvisFetcher&);
   void Remove(CURL *handleP, bool statusP);
-  void Cleanup();
-  void Update(int countP = -1);
+  bool Cleanup();
 protected:
   virtual void Action();
 public:
