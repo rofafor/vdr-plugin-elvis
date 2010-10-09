@@ -255,10 +255,12 @@ void cElvisFetchItem::GenerateIndex()
 
 void cElvisFetchItem::Remove()
 {
-  debug("cElvisFetchItem::Remove(%s)", filenameM ? fileNameM->Name() : "");
+  debug("cElvisFetchItem::Remove(%s)", fileNameM ? fileNameM->Name() : "");
 
-  if (fileNameM)
+  if (fileNameM) {
+     info("removing recording '%s'", fileNameM->Name());
      RemoveVideoFile(fileNameM->Name());
+     }
 }
 
 // --- cElvisFetcher ---------------------------------------------------
