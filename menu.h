@@ -232,6 +232,10 @@ public:
 
 class cElvisMenu: public cOsdMenu {
 private:
+  enum {
+    eUpdateTimeoutMs = 5000
+  };
+  cTimeMs updateTimeoutM;
   unsigned int fetchCountM;
   void SetHelpKeys();
   void Setup();

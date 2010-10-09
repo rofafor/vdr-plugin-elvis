@@ -1021,6 +1021,7 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
 
 cElvisMenu::cElvisMenu()
 : cOsdMenu(tr("Elvis")),
+  updateTimeoutM(0),
   fetchCountM(cElvisFetcher::GetInstance()->FetchCount())
 {
   Setup();
@@ -1045,6 +1046,11 @@ void cElvisMenu::Setup()
   Add(new cOsdItem(hk(tr("Top events")),    osUser5));
   if (fetchCountM > 0) {
      Add(new cOsdItem(*cString::sprintf(tr("Now fetching recordings: %d"), fetchCountM), osUnknown, false));
+     for (unsigned int i = 0; i < fetchCountM; ++i) {
+         cElvisFetchItem *obj = cElvisFetcher::GetInstance()->Get(i);
+         if (obj)
+            Add(new cOsdItem(*cString::sprintf("%2d%%: %s", obj->Progress(), obj->Name()), osUnknown, false));
+         }
      }
 
   SetCurrent(Get(current));
@@ -1081,11 +1087,14 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
     }
 
   unsigned int count = cElvisFetcher::GetInstance()->FetchCount();
-  if (count != fetchCountM) {
+  if ((count != fetchCountM) || (updateTimeoutM.Elapsed() >= eUpdateTimeoutMs)) {
+     updateTimeoutM.Set(0);
      fetchCountM = count;
      Setup();
-     SetHelpKeys();
      }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
 
   return state;
 }

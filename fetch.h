@@ -31,6 +31,7 @@ public:
 class cElvisFetchItem {
 private:
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
+  static size_t HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   CURL *handleM;
   struct curl_slist *headerListM;
   cString urlM;
@@ -42,7 +43,10 @@ private:
   cFileName *fileNameM;
   cUnbufferedFile *recordFileM;
   cElvisIndexGenerator *indexGeneratorM;
+  unsigned long sizeM;
+  unsigned long fetchedM;
   void WriteData(uchar *dataP, int lenP);
+  void SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP);
 public:
   cElvisFetchItem(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
   virtual ~cElvisFetchItem();
@@ -54,6 +58,7 @@ public:
   const char *Description() { return *descriptionM; }
   unsigned int Length() { return lengthM; }
   bool Ready() { return (indexGeneratorM && !indexGeneratorM->Active()); }
+  int Progress() { return (sizeM > 0) ? (int)(100L * fetchedM / sizeM) : 0; }
 };
 
 // --- cElvisFetcher ---------------------------------------------------
@@ -81,8 +86,9 @@ public:
   static void Destroy();
   virtual ~cElvisFetcher();
   void New(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
-  void Abort();
+  void Abort(int indexP = -1);
   cString List(int prefixP = 900);
+  cElvisFetchItem *Get(int indexP);
   unsigned int FetchCount() { return itemsM.Size(); }
   bool Fetching() { return (itemsM.Size() > 0); }
 };

@@ -161,7 +161,7 @@ bool cPluginElvis::Service(const char *Id, void *Data)
 const char **cPluginElvis::SVDRPHelpPages(void)
 {
   static const char *HelpPages[] = {
-    "ABRT\n"
+    "ABRT [id]\n"
     "    Abort fetch queue transfers.",
     "LIST\n"
     "    List fetch queue.",
@@ -173,7 +173,10 @@ const char **cPluginElvis::SVDRPHelpPages(void)
 cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int &ReplyCode)
 {
   if (strcasecmp(Command, "ABRT") == 0) {
-     cElvisFetcher::GetInstance()->Abort();
+     int index = -1;
+     if (*Option && isnumber(Option))
+        index = (int)strtol(Option, NULL, 10);
+     cElvisFetcher::GetInstance()->Abort(index);
      return cString("Fetching aborted");
      }
   else if (strcasecmp(Command, "LIST") == 0) {

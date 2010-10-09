@@ -35,3 +35,4 @@ VDR Plugin 'elvis' Revision History
 - Tweaked trickplay functionality.
 - Enabled jump (red) key in replay mode.
 - Fixed possible locking problems in fetcher.
+- Added a progress meter for fetching.

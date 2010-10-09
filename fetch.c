@@ -29,7 +29,6 @@ cElvisIndexGenerator::~cElvisIndexGenerator()
   Cancel(3);
 }
 
-// copied from vdr-1.7.15/recording.c
 void cElvisIndexGenerator::Action(void)
 {
   debug("cElvisIndexGenerator::Action()");
@@ -138,7 +137,9 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
   dirNameM(""),
   fileNameM(NULL),
   recordFileM(NULL),
-  indexGeneratorM(NULL)
+  indexGeneratorM(NULL),
+  sizeM(0),
+  fetchedM(0)
 {
   debug("cElvisFetchItem::cElvisFetchItem(): url=%s", *urlM);
 
@@ -189,6 +190,8 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
      // set callbacks
      curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisFetchItem::WriteCallback);
      curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
+     curl_easy_setopt(handleM, CURLOPT_HEADERFUNCTION, cElvisFetchItem::HeaderCallback);
+     curl_easy_setopt(handleM, CURLOPT_HEADERDATA, this);
 
      // no progress meter and no signaling
      curl_easy_setopt(handleM, CURLOPT_NOPROGRESS, 1L);
@@ -237,12 +240,33 @@ size_t cElvisFetchItem::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, v
   return len;
 }
 
+size_t cElvisFetchItem::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
+{
+  cElvisFetchItem *obj = (cElvisFetchItem *)dataP;
+  size_t len = sizeP * nmembP;
+
+  if (obj && strstr((const char*)ptrP, "Content-Range:")) {
+     unsigned long start, stop, size;
+     if (sscanf((const char*)ptrP, "Content-Range: bytes %ld-%ld/%ld", &start, &stop, &size) == 3)
+        obj->SetRange(start, stop, size);
+     }
+
+  return len;
+}
+
 void cElvisFetchItem::WriteData(uchar *dataP, int lenP)
 {
   //debug("cElvisFetchItem::WriteData(%d)", lenP);
 
+  fetchedM += lenP;
   if (recordFileM && recordFileM->Write(dataP, lenP) < 0)
      LOG_ERROR_STR(fileNameM->Name());
+}
+
+void cElvisFetchItem::SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP)
+{
+  //debug("cElvisFetchItem::SetRange(): start=%ld stop=%ld filesize=%ld", startP, stopP, sizeP);
+  sizeM = sizeP;
 }
 
 void cElvisFetchItem::GenerateIndex()
@@ -259,7 +283,7 @@ void cElvisFetchItem::Remove()
 
   if (fileNameM) {
      info("removing recording '%s'", fileNameM->Name());
-     RemoveVideoFile(fileNameM->Name());
+     RemoveVideoFile(*dirNameM);
      }
 }
 
@@ -352,12 +376,15 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
      cElvisFetchItem *item = itemsM[i];
      debug("cElvisFetcher::Remove(%d): name='%s'", statusP, item->Name());
      if (item) {
-        if (!statusP)
-           Skins.Message(mtInfo, *cString::sprintf(tr("Fetching failed: %s"), item->Name()));
         // remove handle from multi set
         if (multiM && item->Handle())
            curl_multi_remove_handle(multiM, item->Handle());
-        item->GenerateIndex();
+        if (!statusP) {
+           item->Remove();
+           Skins.Message(mtInfo, *cString::sprintf(tr("Fetching failed: %s"), item->Name()));
+           }
+        else
+           item->GenerateIndex();
         }
      }
 }
@@ -382,23 +409,36 @@ bool cElvisFetcher::Cleanup()
   return found;
 }
 
-void cElvisFetcher::Abort()
+void cElvisFetcher::Abort(int indexP)
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisFetcher::Abort()");
 
-  for (int i = 0; i < itemsM.Size(); ++i) {
-      cElvisFetchItem *item = itemsM[i];
-      if (item) {
+  if (indexP < 0) {
+     for (int i = 0; i < itemsM.Size(); ++i) {
+         cElvisFetchItem *item = itemsM[i];
          itemsM.Remove(i);
-         // remove handle from multi set
-         if (multiM && item->Handle())
-            curl_multi_remove_handle(multiM, item->Handle());
-         // remove recording
-         item->Remove();
-         DELETE_POINTER(item);
+         if (item) {
+            // remove handle from multi set
+            if (multiM && item->Handle())
+               curl_multi_remove_handle(multiM, item->Handle());
+            // remove recording
+            item->Remove();
+            DELETE_POINTER(item);
+            }
          }
-      }
+     }
+  else if (indexP < itemsM.Size()) {
+     cElvisFetchItem *item = itemsM[indexP];
+     if (item) {
+        // remove handle from multi set
+        if (multiM && item->Handle())
+           curl_multi_remove_handle(multiM, item->Handle());
+        // remove recording
+        item->Remove();
+        DELETE_POINTER(item);
+        }
+     }
 }
 
 cString cElvisFetcher::List(int prefixP)
@@ -411,11 +451,20 @@ cString cElvisFetcher::List(int prefixP)
      for (int i = 0; i < itemsM.Size(); ++i) {
          cElvisFetchItem *item = itemsM[i];
          if (item)
-            list = cString::sprintf("%s\n%03d%c%d;%s;%s", *list, prefixP, (i == itemsM.Size()) ? '-' : ' ', i, item->Url(), item->Name());
+            list = cString::sprintf("%s\n%03d%c%d;%d;%s;%s", *list, prefixP, (i == itemsM.Size()) ? '-' : ' ', i, item->Progress(), item->Url(), item->Name());
          }
      }
 
   return list;
+}
+
+cElvisFetchItem *cElvisFetcher::Get(int indexP)
+{
+  cMutexLock MutexLock(&mutexM);
+  //debug("cElvisFetcher::Get(%d)", indexP);
+  if (indexP < itemsM.Size())
+     return itemsM[indexP];
+  return NULL;
 }
 
 void cElvisFetcher::Action()
