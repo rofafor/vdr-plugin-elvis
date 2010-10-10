@@ -569,6 +569,45 @@ bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
   return true;
 }
 
+int cElvisPlayer::GetForwardJumpPeriod()
+{
+  int interval = cTrickplayJumpBase;
+
+  if (trickSpeedM > 0) {
+     switch (playModeM) {
+       case pmFast:
+            interval *= trickSpeedM * 2;
+            break;
+       default:
+            break;
+       }
+     }
+
+  return interval;
+}
+
+int cElvisPlayer::GetBackwardJumpPeriod()
+{
+  int interval = cTrickplayJumpBase;
+
+  if (trickSpeedM < 0) {
+     switch (playModeM) {
+       case pmFast:
+            interval *= trickSpeedM * 2;
+            break;
+       case pmSlow:
+            interval *= trickSpeedM;
+            break;
+       default:
+            break;
+       }
+    }
+  else
+    interval = -interval;
+
+  return interval;
+}
+
 void cElvisPlayer::Action()
 {
   debug("cElvisPlayer::Action(): start");
@@ -594,20 +633,14 @@ void cElvisPlayer::Action()
              if (!readFrameM) {
                 if (playDirM == pdBackward) {
                    if (timeout.TimedOut()) {
-                      if (playModeM == pmFast) {
-                         timeout.Set(eTrickplayTimeoutMs);
-                         SkipTime(abs(trickSpeedM) * -eTrickplayTimeoutMs, true, false);
-                         }
-                      else {
-                         timeout.Set(abs(trickSpeedM) * eTrickplayTimeoutMs);
-                         SkipTime(-eTrickplaySkipLength, true, false);
-                         }
+                      timeout.Set(eTrickplayTimeoutMs);
+                      SkipTime(GetBackwardJumpPeriod(), true, false);
                       }
                    }
                 else if (Setup.MultiSpeedMode && (trickSpeedM > 2) && (playDirM == pdForward) && (playModeM == pmFast)) {
                    if (timeout.TimedOut()) {
                       timeout.Set(eTrickplayTimeoutMs);
-                      SkipTime(eTrickplaySkipLength, true, false);
+                      SkipTime(GetForwardJumpPeriod(), true, false);
                       }
                    }
                 if (readerM) {
@@ -713,8 +746,10 @@ void cElvisPlayerControl::Stop()
 void cElvisPlayerControl::Pause()
 {
   debug("cElvisPlayerControl::Pause()");
-  if (playerM)
+  if (playerM) {
+     playerM->ClearJump();
      playerM->Pause();
+     }
 }
 
 void cElvisPlayerControl::Play()

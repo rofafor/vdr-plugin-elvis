@@ -61,8 +61,8 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    eTrickplaySkipLength = 5,  // in seconds
-    eTrickplayTimeoutMs  = 600 // in milliseconds
+    cTrickplayJumpBase  = 2,  // in seconds
+    eTrickplayTimeoutMs = 750 // in milliseconds
   };
   enum ePlayModes {
     pmPlay,
@@ -86,6 +86,8 @@ private:
   cFrame *playFrameM;
   cFrame *dropFrameM;
   void TrickSpeed(int incrementP);
+  int GetForwardJumpPeriod();
+  int GetBackwardJumpPeriod();
 protected:
   virtual void Activate(bool onP);
   virtual void Action();
