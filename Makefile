@@ -72,7 +72,7 @@ all: libvdr-$(PLUGIN).so i18n
 
 ### Implicit rules:
 
-%.o: %.c
+%.o: %.c Makefile
 	$(CXX) $(CXXFLAGS) -c $(DEFINES) $(INCLUDES) $<
 
 ### Dependencies:

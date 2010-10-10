@@ -36,3 +36,5 @@ VDR Plugin 'elvis' Revision History
 - Enabled jump (red) key in replay mode.
 - Fixed possible locking problems in fetcher.
 - Added a progress meter for fetching.
+- Added Makefile depencency for objects (Thanks to
+  Antti Seppälä).

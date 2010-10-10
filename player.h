@@ -61,28 +61,19 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    eTrickplaySkipLength = 3,   // in seconds
+    eTrickplaySkipLength = 5,   // in seconds
     eTrickplayTimeoutMs  = 1000 // in milliseconds
-  };
-  enum eSpeedValues {
-    spMaxOffset      = 3,  // offset of the maximum speed from normal speed in either direction
-    spNormalIndex    = 4,  // index of the '1' entry in the speedS array
-    spSkipLimitIndex = 6,  // index of entry when fastforwarding is done by skipping in the speedS array
-    spMultiplier     = 12, // speed multiplier
-    spClampValue     = 63  // max value for clamping
   };
   enum ePlayModes {
     pmPlay,
     pmPause,
     pmSlow,
-    pmFast,
-    pmStill
+    pmFast
   };
   enum ePlayDirs {
     pdForward,
     pdBackward
   };
-  static int speedS[];
   ePlayModes playModeM;
   ePlayDirs playDirM;
   int trickSpeedM;
