@@ -61,8 +61,8 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    eTrickplaySkipLength = 5,   // in seconds
-    eTrickplayTimeoutMs  = 1000 // in milliseconds
+    eTrickplaySkipLength = 5,  // in seconds
+    eTrickplayTimeoutMs  = 600 // in milliseconds
   };
   enum ePlayModes {
     pmPlay,
@@ -102,6 +102,7 @@ public:
   unsigned long Total() { return lengthM; }
   unsigned long Current() { return (readerM && readerM->GetRangeSize() && lengthM) ? (readSizeM / (readerM->GetRangeSize() / lengthM)) : 0; }
   unsigned int Progress() { return (readerM && readerM->GetRangeSize()) ? (unsigned int)((double)readSizeM / (double)readerM->GetRangeSize() * 100.0) : 0; }
+  void ClearJump() { if (readerM) readerM->JumpRequest(0); } 
   bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);
 };
 
