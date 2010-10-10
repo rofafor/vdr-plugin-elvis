@@ -384,8 +384,10 @@ void cElvisPlayer::TrickSpeed(int incrementP)
      }
   else if ((nts >= -3) && (nts <= 3)) {
      trickSpeedM = nts;
-     if ((trickSpeedM < 0) && (playDirM == pdBackward))
+     if ((trickSpeedM < 0) && (playDirM == pdBackward)) {
         DevicePlay();
+        DeviceMute();
+        }
      else if ((trickSpeedM == 1) && (playDirM == pdForward))
         DeviceTrickSpeed((playModeM == pmSlow) ? 8 : 6);
      else if ((trickSpeedM == 2) && (playDirM == pdForward))
