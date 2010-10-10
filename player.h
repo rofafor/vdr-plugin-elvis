@@ -61,7 +61,7 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    cTrickplayJumpBase  = 2,  // in seconds
+    eTrickplayJumpBase  = 2,  // in seconds
     eTrickplayTimeoutMs = 750 // in milliseconds
   };
   enum ePlayModes {

@@ -518,7 +518,6 @@ void cElvisPlayer::Backward()
             Pause();
             break;
             }
-         Clear();
          // run into pmPause
     case pmPause:
          Clear();
@@ -571,7 +570,7 @@ bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
 
 int cElvisPlayer::GetForwardJumpPeriod()
 {
-  int interval = cTrickplayJumpBase;
+  int interval = eTrickplayJumpBase;
 
   if (trickSpeedM > 0) {
      switch (playModeM) {
@@ -588,7 +587,7 @@ int cElvisPlayer::GetForwardJumpPeriod()
 
 int cElvisPlayer::GetBackwardJumpPeriod()
 {
-  int interval = cTrickplayJumpBase;
+  int interval = eTrickplayJumpBase;
 
   if (trickSpeedM < 0) {
      switch (playModeM) {
