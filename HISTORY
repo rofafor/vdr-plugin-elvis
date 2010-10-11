@@ -38,3 +38,8 @@ VDR Plugin 'elvis' Revision History
 - Added a progress meter for fetching.
 - Added Makefile depencency for objects
 - Documented Antti Seppälä as co-author.
+
+2010-xx-xx: Version 0.0.5
+
+- Updated widget API.
+
