@@ -5,6 +5,7 @@
  *
  */
 
+#include <vdr/remote.h>
 #include <vdr/status.h>
 
 #include "common.h"
@@ -1068,8 +1069,11 @@ cOsdObject *cElvisReplayControl::GetInfo()
 eOSState cElvisReplayControl::ProcessKey(eKeys keyP)
 {
   //debug("cElvisReplayControl::ProcessKey(%d)", keyP);
-  if (!Active())
+  if (!Active()) {
+     cRemote::CallPlugin(PLUGIN_NAME_I18N);
+     cRemote::Put(k1);
      return osEnd;
+     }
 
   if (visibleM) {
      if (timeoutShowM && (time(NULL) > timeoutShowM)) {
@@ -1153,6 +1157,8 @@ eOSState cElvisReplayControl::ProcessKey(eKeys keyP)
     case kBlue:
          Hide();
          Stop();
+         cRemote::CallPlugin(PLUGIN_NAME_I18N);
+         cRemote::Put(k1);
          return osEnd;
     case kOk:
          if (visibleM && !modeOnlyM)
