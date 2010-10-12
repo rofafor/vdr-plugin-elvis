@@ -33,6 +33,8 @@
 extern const char VERSION[];
 extern cString    strunescape(const char *s);
 extern cString    strescape(const char *s);
+extern cString    timetostr(time_t timeP, const char delimP);
+extern time_t     strtotime(const char *s);
 
 class cMenuEditHiddenStrItem : public cMenuEditItem {
 private:

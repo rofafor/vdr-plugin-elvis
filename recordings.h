@@ -21,11 +21,13 @@ private:
   int idM;
   int programIdM;
   int folderIdM;
+  int watchCountM;
   cString nameM;
   cString channelM;
   cString startTimeM;
   cString sizeM;
   cElvisWidgetInfo *infoM;
+  time_t startTimeValueM;
   // to prevent default constructor
   cElvisRecording();
   // to prevent copy constructor and assignment
@@ -41,7 +43,9 @@ public:
   const char *Name() { return *nameM; }
   const char *Channel() { return *channelM; }
   const char *StartTime() { return *startTimeM; }
+  time_t StartTimeValue() { return startTimeValueM; }
   bool IsFolder() { return (programIdM < 0); }
+  bool IsNew() { return (watchCountM == 0); }
 };
 
 // --- cElvisRecordings ------------------------------------------------

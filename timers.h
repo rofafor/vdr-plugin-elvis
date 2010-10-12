@@ -26,6 +26,7 @@ private:
   cString startTimeM;
   cString wildcardM;
   cElvisWidgetInfo *infoM;
+  time_t startTimeValueM;
   // to prevent default constructor
   cElvisTimer();
   // to prevent copy constructor and assignment
@@ -42,6 +43,7 @@ public:
   const char *Channel() { return *channelM; }
   const char *StartTime() { return *startTimeM; }
   const char *WildCard() { return *wildcardM; }
+  time_t StartTimeValue() { return startTimeValueM; }
 };
 
 // --- cElvisTimers ----------------------------------------------------

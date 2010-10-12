@@ -15,11 +15,13 @@ cElvisRecording::cElvisRecording(int idP, int programIdP, int folderIdP, const c
 : idM(idP),
   programIdM(programIdP),
   folderIdM(folderIdP),
+  watchCountM(0),
   nameM(nameP),
   channelM(channelP),
   startTimeM(startTimeP),
   sizeM(sizeP),
-  infoM(NULL)
+  infoM(NULL),
+  startTimeValueM(strtotime(startTimeP))
 {
 }
 

@@ -17,7 +17,8 @@ cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTime
   simpleEndTimeM(simpleEndTimeP),
   startTimeM(startTimeP),
   endTimeM(endTimeP),
-  infoM(NULL)
+  infoM(NULL),
+  startTimeValueM(strtotime(startTimeP))
 {
 }
 
@@ -29,7 +30,8 @@ cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *channelP, const
   simpleEndTimeM(NULL),
   startTimeM(startTimeP),
   endTimeM(endTimeP),
-  infoM(NULL)
+  infoM(NULL),
+  startTimeValueM(strtotime(startTimeP))
 {
 }
 

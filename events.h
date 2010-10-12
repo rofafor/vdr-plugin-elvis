@@ -24,6 +24,7 @@ private:
   cString startTimeM;
   cString endTimeM;
   cElvisWidgetInfo *infoM;
+  time_t startTimeValueM;
   // to prevent default constructor
   cElvisEvent();
   // to prevent copy constructor and assignment
@@ -39,6 +40,7 @@ public:
   const char *Channel() { return *channelM; }
   const char *StartTime() { return *startTimeM; }
   const char *EndTime() { return *endTimeM; }
+  time_t StartTimeValue() { return startTimeValueM; }
 };
 
 // --- cElvisChannel ---------------------------------------------------

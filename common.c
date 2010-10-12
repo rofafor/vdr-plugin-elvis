@@ -68,6 +68,39 @@ cString strescape(const char *s)
   return res;
 }
 
+cString timetostr(time_t timeP, const char delimP)
+{
+  struct tm tm_r;
+  struct tm *t = localtime_r(&timeP, &tm_r);
+
+  return cString::sprintf("%02d.%02d.%02d%c%02d:%02d", t->tm_mday, t->tm_mon + 1, t->tm_year % 100, delimP, t->tm_hour, t->tm_min);
+}
+
+time_t strtotime(const char *s)
+{
+  if (s && *s) {
+     struct tm t;
+     char weekday[4];
+
+     // example inputs: "ke 22.09.2010 21:00", "19.10.2010 23:50:00"
+     if ((sscanf(s, "%s %d.%d.%d %d:%d", &weekday[0], &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 6) ||
+         (sscanf(s, "%d.%d.%d %d:%d", &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 5)) {
+
+        t.tm_sec   = 0;
+        t.tm_mon  -= 1;
+        t.tm_year -= 1900;
+        t.tm_isdst = -1;
+        t.tm_zone  = "EET";
+
+        return mktime(&t);
+        }
+     else
+        error("string to time conversion failed: %s", s);
+     }
+
+  return 0;
+}
+
 // --- cMenuEditHiddenStrItem -------------------------------------------
 
 #define AUTO_ADVANCE_TIMEOUT  1500 // ms before auto advance when entering characters via numeric keys

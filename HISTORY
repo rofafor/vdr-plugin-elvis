@@ -44,3 +44,4 @@ VDR Plugin 'elvis' Revision History
 - Updated widget API.
 - Added a return back to the recordings menu after exiting
   the player.
+- Modified menu layouts.

@@ -19,7 +19,8 @@ cElvisTimer::cElvisTimer(int idP, int programIdP, int lengthP, const char *nameP
   channelM(channelP),
   startTimeM(startTimeP),
   wildcardM(wildcardP),
-  infoM(NULL)
+  infoM(NULL),
+  startTimeValueM(strtotime(startTimeP))
 {
 }
 

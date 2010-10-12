@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.0.4\n"
+"Project-Id-Version: elvis 0.0.5\n"
 "Report-Msgid-Bugs-To: <see README>\n"
 "POT-Creation-Date: 2010-10-10 10:10+0300\n"
 "PO-Revision-Date: 2010-10-10 10:10+0300\n"
@@ -84,7 +84,7 @@ msgid "Button$Fetch"
 msgstr "Hae"
 
 msgid "[DIR]"
-msgstr "[hakemisto]"
+msgstr "[...]"
 
 msgid "Cannot delete folder!"
 msgstr "Kansiota ei voida poistaa!"
