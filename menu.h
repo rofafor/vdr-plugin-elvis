@@ -162,6 +162,7 @@ class cElvisChannelEventInfoMenu : public cOsdMenu {
 private:
   cElvisEvent *eventM;
   cString textM;
+  void SetHelpKeys();
   eOSState Record(bool quickP = true);
 public:
   cElvisChannelEventInfoMenu(cElvisEvent *eventP, const char *channelP);

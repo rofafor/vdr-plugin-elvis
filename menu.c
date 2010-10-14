@@ -86,10 +86,11 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
      if (recordingM->IsFolder())
         SetText(cString::sprintf("%s\t\t\t%s", tr("[DIR]"), recordingM->Name()));
      else
-        SetText(cString::sprintf("%s\t%c\t%s", *timetostr(recordingM->StartTimeValue(), '\t'), recordingM->IsNew() ? '*' : ' ', recordingM->Name()));
+        SetText(cString::sprintf("%s\t%s\t%c\t%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                 recordingM->IsNew() ? '*' : ' ', recordingM->Name()));
      if (recordingM->Info()) {
-        descriptionM = cString::sprintf("%s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", *timetostr(recordingM->StartTimeValue(), ' '),
-                                        *timetostr(recordingM->StartTimeValue() + (recordingM->Info()->LengthInMinutes() * 60), ' '), recordingM->Info()->Length(),
+        descriptionM = cString::sprintf("%s %s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                        *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(),
                                         recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
         }
      else
@@ -163,7 +164,8 @@ eOSState cElvisRecordingsMenu::Info()
 
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
-     return AddSubMenu(new cElvisRecordingInfoMenu(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
+     return AddSubMenu(new cElvisRecordingInfoMenu(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
+                                                   item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue()));
 
   return osContinue;
 }
@@ -175,7 +177,8 @@ eOSState cElvisRecordingsMenu::Play()
      if (item->IsFolder())
         return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
      else if (item->Recording()->Info()) {
-        cControl::Launch(new cElvisReplayControl(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes()));
+        cControl::Launch(new cElvisReplayControl(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
+                                                 item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue()));
         return osEnd;
         }
      }
@@ -187,7 +190,8 @@ eOSState cElvisRecordingsMenu::Fetch()
 {
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
-     cElvisFetcher::GetInstance()->New(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthInMinutes());
+     cElvisFetcher::GetInstance()->New(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
+                                       item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue());
 
   return osContinue;
 }
@@ -309,11 +313,14 @@ eOSState cElvisTimerCreateMenu::ProcessKey(eKeys keyP)
 // --- cElvisTimerInfoMenu ---------------------------------------------
 
 cElvisTimerInfoMenu::cElvisTimerInfoMenu(cElvisTimer *timerP)
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers"))),
-  textM(cString::sprintf("%s - %s (%s)\n%s%s\n\n%s\n\n%s\n\n%s", timerP->Info()->StartTime(), timerP->Info()->EndTime(), timerP->Info()->Length(),
-        timerP->Channel(), isempty(timerP->WildCard()) ? "" : *cString::sprintf(" (%s)", timerP->WildCard()), timerP->Name(), timerP->Info()->ShortText(),
-        timerP->Info()->Description()))
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")))
 {
+  if (timerP)
+     textM = cString::sprintf("%s %s - %s (%d %s)\n%s%s\n\n%s\n\n%s\n\n%s", *DateString(timerP->Info()->StartTimeValue()), *TimeString(timerP->Info()->StartTimeValue()),
+                              *TimeString(timerP->Info()->EndTimeValue()), timerP->Info()->LengthValue(), tr("min"), timerP->Channel(),
+                              isempty(timerP->WildCard()) ? "" : *cString::sprintf(" (%s)", timerP->WildCard()), timerP->Name(), timerP->Info()->ShortText(),
+                              timerP->Info()->Description());
+
 }
 
 void cElvisTimerInfoMenu::Display()
@@ -366,13 +373,14 @@ cElvisTimerItem::cElvisTimerItem(cElvisTimer *timerP)
 : timerM(timerP)
 {
   if (timerM)
-     SetText(cString::sprintf("%s\t%s\t%s\t%s", timerM->Channel(), *timetostr(timerM->StartTimeValue(), '\t'), (timerM->Id() > 0) ? "" : "*", timerM->Name()));
+     SetText(cString::sprintf("%s\t%s\t%s\t%s\t%s", timerM->Channel(), *WeekDateString(timerM->StartTimeValue()), *TimeString(timerM->StartTimeValue()),
+                              (timerM->Id() > 0) ? "" : "*", timerM->Name()));
 }
 
 // --- cElvisTimersMenu ------------------------------------------------
 
 cElvisTimersMenu::cElvisTimersMenu()
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 8, 8, 6, 3)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 8, 6, 6, 2)
 {
   Setup();
   SetHelpKeys();
@@ -567,9 +575,10 @@ eOSState cElvisSearchTimerEditMenu::ProcessKey(eKeys keyP)
 // --- cElvisSearchTimerItem -------------------------------------------
 
 cElvisSearchTimerItem::cElvisSearchTimerItem(cElvisSearchTimer *timerP)
-: cOsdItem(*cString::sprintf("%s\t%s\t%s", timerP->Channel(), timerP->Folder(), timerP->Wildcard())),
-  timerM(timerP)
+: timerM(timerP)
 {
+  if (timerM)
+     SetText(*cString::sprintf("%s\t%s\t%s", timerM->Channel(), timerM->Folder(), timerM->Wildcard()));
 }
 
 // --- cElvisSearchTimersMenu ------------------------------------------
@@ -677,9 +686,16 @@ eOSState cElvisSearchTimersMenu::ProcessKey(eKeys keyP)
 
 cElvisChannelEventInfoMenu::cElvisChannelEventInfoMenu(cElvisEvent *eventP, const char *channelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG"))),
-  eventM(eventP),
-  textM(cString::sprintf("%s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", eventP->Info()->StartTime(), eventP->Info()->EndTime(), eventP->Info()->Length(),
-        channelP ? channelP : "", eventP->Name(), eventP->Info()->ShortText(), eventP->Info()->Description()))
+  eventM(eventP)
+{
+  if (eventM && eventM->Info())
+     textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s\n\n%s", *DateString(eventM->Info()->StartTimeValue()), *TimeString(eventP->Info()->StartTimeValue()),
+                              *TimeString(eventM->Info()->EndTimeValue()), eventM->Info()->LengthValue(), tr("min"),
+                              channelP ? channelP : "", eventM->Name(), eventM->Info()->ShortText(), eventM->Info()->Description());
+  SetHelpKeys();
+}
+
+void cElvisChannelEventInfoMenu::SetHelpKeys()
 {
   if (eventM)
      SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, NULL);
@@ -745,24 +761,25 @@ eOSState cElvisChannelEventInfoMenu::ProcessKey(eKeys keyP)
      state = osContinue;
      }
 
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
   return state;
 }
 
 // --- cElvisChannelEventItem -----------------------------------------------
 
 cElvisChannelEventItem::cElvisChannelEventItem(cElvisEvent *eventP)
-: cOsdItem(eventP ? *cString::sprintf("%s\t%s", eventP->StartTime(), eventP->Name()) : ""),
-  eventM(eventP)
+: eventM(eventP)
 {
   if (eventM)
-     SetText(cString::sprintf("%s\t%s", *timetostr(eventM->StartTimeValue(), '\t'), eventM->Name()));
-
+     SetText(cString::sprintf("%s\t%s\t%s", *WeekDateString(eventM->StartTimeValue()), *TimeString(eventM->StartTimeValue()), eventM->Name()));
 }
 
 // --- cElvisChannelEventsMenu ------------------------------------------------
 
 cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 8, 6),
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 6, 6),
   channelM(channelP)
 {
   Setup();
@@ -939,7 +956,7 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
 // --- cElvisTopEventsMenu ---------------------------------------------
 
 cElvisTopEventsMenu::cElvisTopEventsMenu()
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 8, 6)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 6, 6)
 {
   Setup();
   SetHelpKeys();

@@ -68,12 +68,29 @@ cString strescape(const char *s)
   return res;
 }
 
-cString timetostr(time_t timeP, const char delimP)
+cString WeekDateString(time_t t)
 {
+  char buf[32];
   struct tm tm_r;
-  struct tm *t = localtime_r(&timeP, &tm_r);
+  tm *tm = localtime_r(&t, &tm_r);
+  char *p = stpcpy(buf, WeekDayName(tm->tm_wday));
 
-  return cString::sprintf("%02d.%02d.%02d%c%02d:%02d", t->tm_mday, t->tm_mon + 1, t->tm_year % 100, delimP, t->tm_hour, t->tm_min);
+  *p++ = ' ';
+  strftime(p, sizeof(buf) - (p - buf), "%d", tm);
+
+  return buf;
+}
+
+cString ShortDateString(time_t t)
+{
+  char buf[32];
+  struct tm tm_r;
+  tm *tm = localtime_r(&t, &tm_r);
+  char *p = buf;
+
+  strftime(p, sizeof(buf) - (p - buf), "%d.%m.%y", tm);
+
+  return buf;
 }
 
 time_t strtotime(const char *s)

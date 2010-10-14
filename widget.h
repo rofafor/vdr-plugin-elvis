@@ -88,6 +88,8 @@ private:
   cString startTimeM;
   cString endTimeM;
   cString urlM;
+  time_t startTimeValueM;
+  time_t endTimeValueM;
   // to prevent default constructor
   cElvisWidgetInfo();
   // to prevent copy constructor and assignment
@@ -99,7 +101,7 @@ public:
                     bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP);
   virtual ~cElvisWidgetInfo();
   int Id() { return idM; }
-  int LengthInMinutes() { return lengthM; }
+  int LengthValue() { return lengthM; }
   const char *Name() { return *nameM; }
   const char *ShortText() { return *shortTextM; }
   const char *Description() { return *descriptionM; }
@@ -108,6 +110,8 @@ public:
   const char *Channel() { return *channelM; }
   const char *Url() { return *urlM; }
   const char *Length() { return *fLengthM; }
+  time_t StartTimeValue() { return startTimeValueM; }
+  time_t EndTimeValue() { return endTimeValueM; }
 };
 
 // --- cElvisWidget ----------------------------------------------------

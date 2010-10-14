@@ -107,6 +107,9 @@ msgstr "Ajastin luotu"
 msgid "Cannot create timer!"
 msgstr "Ajastimen luonti epäonnistui!"
 
+msgid "min"
+msgstr "min"
+
 msgid "Cannot delete search timer!"
 msgstr "Hakuajastinta ei voida poistaa!"
 

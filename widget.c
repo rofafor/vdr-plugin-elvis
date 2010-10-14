@@ -32,7 +32,9 @@ cElvisWidgetInfo::cElvisWidgetInfo(int idP, const char *nameP, const char *chann
   thumbnailM(thumbnailP),
   startTimeM(startTimeP),
   endTimeM(endTimeP),
-  urlM(urlP)
+  urlM(urlP),
+  startTimeValueM(strtotime(startTimeP)),
+  endTimeValueM(strtotime(endTimeP))
 {
 }
 
