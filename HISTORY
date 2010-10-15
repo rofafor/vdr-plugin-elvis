@@ -45,3 +45,5 @@ VDR Plugin 'elvis' Revision History
 - Added a return back to the recordings menu after exiting
   the player.
 - Modified menu layouts.
+- Added preliminary support for adding/removing timers via
+  service and SVDRP interfaces.

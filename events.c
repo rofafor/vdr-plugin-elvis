@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "config.h"
+#include "timers.h"
 #include "events.h"
 
 cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP)
@@ -114,6 +115,86 @@ bool cElvisChannels::Update()
   return (Count() > 0);
 }
 
+bool cElvisChannels::AddTimer(tEventID eventIdP)
+{
+  cEvent *event = NULL;
+  cSchedulesLock SchedulesLock(false, 100);
+  error("cElvisChannels::AddTimer(%d)", eventIdP);
+  const cSchedules *Schedules = cSchedules::Schedules(SchedulesLock);
+  for (const cSchedule *s = Schedules->First(); s; s = Schedules->Next(s)) {
+      for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
+          if (e->EventID() == eventIdP) {
+             event = e;
+             debug("cElvisChannels::AddTimer(%d): found event", eventIdP);
+             break;
+             }
+          }
+      }
+  if (event) {
+     cElvisChannel *channel = NULL;
+     Update();
+     for (cElvisChannel *c = First(); c; c = Next(c)) {
+         cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
+         if (!strcmp(c->Name(), c2->Name())) {
+            channel = c;
+            debug("cElvisChannels::AddTimer(%d): found channel '%s'", eventIdP, c->Name());
+            break;
+            }
+         }
+     if (channel) {
+        channel->Update();
+        for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
+            if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
+               info("cElvisChannels::AddTimer(%d): creating %d", eventIdP, i->Id());
+               return cElvisTimers::GetInstance()->Create(i->Id());
+               }
+            }
+        }
+     }
+
+  return false;
+}
+
+bool cElvisChannels::DelTimer(tEventID eventIdP)
+{
+  cEvent *event = NULL;
+  cSchedulesLock SchedulesLock(false, 100);
+  debug("cElvisChannels::DelTimer(%d)", eventIdP);
+  const cSchedules *Schedules = cSchedules::Schedules(SchedulesLock);
+  for (const cSchedule *s = Schedules->First(); s; s = Schedules->Next(s)) {
+      for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
+          if (e->EventID() == eventIdP) {
+             event = e;
+             debug("cElvisChannels::DelTimer(): found event %d", eventIdP);
+             break;
+             }
+          }
+      }
+  if (event) {
+     cElvisChannel *channel = NULL;
+     Update();
+     for (cElvisChannel *c = First(); c; c = Next(c)) {
+         cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
+         if (!strcmp(c->Name(), c2->Name())) {
+            channel = c;
+            debug("cElvisChannels::DelTimer(): found channel '%s'", channel->Name());
+            break;
+            }
+         }
+     if (channel) {
+        channel->Update();
+        for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
+            if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
+               info("cElvisChannels::DelTimer(%d): deleting %d", eventIdP, i->Id());
+               return cElvisTimers::GetInstance()->Delete(i->Id());
+               }
+            }
+        }
+     }
+
+  return false;
+}
+
 // --- cElvisTopEvents -------------------------------------------------
 
 cElvisTopEvents *cElvisTopEvents::instanceS = NULL;
@@ -153,4 +234,3 @@ bool cElvisTopEvents::Update()
   cElvisWidget::GetInstance()->GetTopEvents(*this);
   return (Count() > 0);
 }
-

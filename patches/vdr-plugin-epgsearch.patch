@@ -1,0 +1,107 @@
+diff --git a/menu_commands.c b/menu_commands.c
+index 418dea9..5ae2762 100644
+--- a/menu_commands.c
++++ b/menu_commands.c
+@@ -40,11 +40,19 @@ The project's page is at http://winni.vdr-developer.org/epgsearch
+ #include <vdr/menu.h>
+ #include "menu_deftimercheckmethod.h"
+ 
++// --- imported from elvisservice.h ------------------------------------------------
++
++struct ElvisService_Timer_v1_0 {
++   bool     addMode;
++   tEventID eventId;
++};
++
+ // --- cMenuSearchCommands ---------------------------------------------------------
+ 
+ cMenuSearchCommands::cMenuSearchCommands(const char *Title, const cEvent* Event, bool DirectCall, cSearchExt* Search)
+    :cOsdMenu(Title)
+ {
++   pluginElvis = cPluginManager::CallFirstService("ElvisService-Timer-v1.0", NULL);
+    directCall = DirectCall;
+    SetHasHotkeys();
+    LoadCommands();
+@@ -59,6 +67,10 @@ cMenuSearchCommands::cMenuSearchCommands(const char *Title, const cEvent* Event,
+    Add(new cOsdItem(hk(tr("Mark as 'already recorded'?"))));
+    Add(new cOsdItem(hk(tr("Add/Remove to/from switch list?"))));
+    Add(new cOsdItem(hk(tr("Create blacklist"))));
++   if (pluginElvis)
++   {
++      Add(new cOsdItem(hk(tr("Create Elvis timer"))));
++   }
+    for (cCommand *command = commands.First(); command; command = commands.Next(command))
+       Add(new cOsdItem(hk(command->Title())));
+    if (event)
+@@ -245,10 +257,23 @@ eOSState cMenuSearchCommands::CreateBlacklist(void)
+    return AddSubMenu(new cMenuBlacklistEdit(pNew, true));
+ }
+ 
++eOSState cMenuSearchCommands::CreateElvisTimer(void)
++{
++   ElvisService_Timer_v1_0 data;
++   if (!event) return osContinue;
++
++   data.addMode = true;
++   data.eventId = event->EventID();
++   cPluginManager::CallFirstService("ElvisService-Timer-v1.0", &data);
++
++   return osBack;
++}
++
+ eOSState cMenuSearchCommands::Execute(void)
+ {
++   int internalCmdCount = pluginElvis ? 9 : 8;
+    int current = Current();
+-   if (current <= 7)
++   if (current < internalCmdCount)
+    {
+       if (current == 0)
+          return AddSubMenu(new cMenuSearchResultsForQuery(event->Title(), true));
+@@ -266,9 +291,11 @@ eOSState cMenuSearchCommands::Execute(void)
+          return AddToSwitchList(); 
+       if (current == 7)
+          return CreateBlacklist(); 
++      if (pluginElvis && (current == 8))
++         return CreateElvisTimer(); 
+    }
+ 
+-   cCommand *command = commands.Get(current-8);
++   cCommand *command = commands.Get(current-internalCmdCount);
+    if (command) {
+       cString buffer;
+       bool confirmed = true;
+diff --git a/menu_commands.h b/menu_commands.h
+index a743fb2..c243144 100644
+--- a/menu_commands.h
++++ b/menu_commands.h
+@@ -36,6 +36,7 @@ private:
+   const cEvent* event;
+   cSearchExt* search;
+   bool directCall;
++  cPlugin *pluginElvis;
+ public:
+   cMenuSearchCommands(const char *Title, const cEvent* Event, bool DirectCall = false, cSearchExt* Search = NULL);
+   virtual ~cMenuSearchCommands();
+@@ -47,6 +48,7 @@ public:
+   virtual eOSState MarkAsRecorded(void);
+   virtual eOSState AddToSwitchList(void);
+   virtual eOSState CreateBlacklist(void);
++  virtual eOSState CreateElvisTimer(void);
+   void LoadCommands();
+ };
+ 
+diff --git a/po/fi_FI.po b/po/fi_FI.po
+index 5036c10..2d9e762 100644
+--- a/po/fi_FI.po
++++ b/po/fi_FI.po
+@@ -779,6 +779,9 @@ msgstr "Lisää/poista kanavanvaihtolistalle"
+ msgid "Create blacklist"
+ msgstr "Lisää mustalle listalle"
+ 
++msgid "Create Elvis timer"
++msgstr "Lisää Elvis-ajastin"
++
+ msgid "EPG Commands"
+ msgstr "Komennot"
+ 

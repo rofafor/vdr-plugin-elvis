@@ -10,6 +10,7 @@
 
 #include <vdr/thread.h>
 #include <vdr/tools.h>
+#include <vdr/epg.h>
 
 #include "widget.h"
 
@@ -80,6 +81,8 @@ public:
   virtual ~cElvisChannels();
   virtual void AddChannel(const char *nameP);
   bool Update();
+  bool AddTimer(tEventID eventIdP);
+  bool DelTimer(tEventID eventIdP);
 };
 
 // --- cElvisTopEvents -------------------------------------------------

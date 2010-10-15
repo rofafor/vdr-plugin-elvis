@@ -64,6 +64,7 @@ public:
   virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP);
   bool Update();
   bool Create(int idP, int folderIdP = -1);
+  bool Delete(int idP);
   bool Delete(cElvisTimer *timerP);
 };
 

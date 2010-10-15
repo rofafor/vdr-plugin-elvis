@@ -13,6 +13,7 @@
 #include "fetch.h"
 #include "menu.h"
 #include "widget.h"
+#include "elvisservice.h"
 
 #if defined(APIVERSNUM) && APIVERSNUM < 10716
 #error "VDR-1.7.16 API version or greater is required!"
@@ -154,7 +155,17 @@ bool cPluginElvis::SetupParse(const char *Name, const char *Value)
 
 bool cPluginElvis::Service(const char *Id, void *Data)
 {
-  // Handle custom service requests from other plugins
+  if (strcmp(Id,"ElvisService-Timer-v1.0") == 0) {
+     if (Data) {
+        ElvisService_Timer_v1_0 *data = (ElvisService_Timer_v1_0*)Data;
+        if (data->addMode)
+           cElvisChannels::GetInstance()->AddTimer(data->eventId);
+        else
+           cElvisChannels::GetInstance()->DelTimer(data->eventId);
+        }
+     return true;
+     }
+
   return false;
 }
 
@@ -165,6 +176,10 @@ const char **cPluginElvis::SVDRPHelpPages(void)
     "    Abort fetch queue transfers.",
     "LIST\n"
     "    List fetch queue.",
+    "ADDT [eventid]\n"
+    "    Add a new timer.",
+    "DELT [eventid]\n"
+    "    Delete an existing timer.",
     NULL
     };
   return HelpPages;
@@ -187,6 +202,27 @@ cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int 
         }
      return list;
      }
+  else if (strcasecmp(Command, "ADDT") == 0) {
+     tEventID eventid = 0;
+     if (*Option && isnumber(Option))
+        eventid = (int)strtol(Option, NULL, 10);
+     if (!cElvisChannels::GetInstance()->AddTimer(eventid)) {
+        ReplyCode = 901;
+        return cString("Timer action failed");
+        }
+     return cString("Timer added");
+     }
+  else if (strcasecmp(Command, "DELT") == 0) {
+     tEventID eventid = 0;
+     if (*Option && isnumber(Option))
+        eventid = (int)strtol(Option, NULL, 10);
+     if (!cElvisChannels::GetInstance()->DelTimer(eventid)) {
+        ReplyCode = 901;
+        return cString("Timer action failed");
+        }
+     return cString("Timer deleted");
+     }
+
   return NULL;
 }
 

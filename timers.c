@@ -87,6 +87,18 @@ bool cElvisTimers::Create(int idP, int folderIdP)
   return false;
 }
 
+bool cElvisTimers::Delete(int idP)
+{
+  cMutexLock(mutexM);
+  Update();
+  for (cElvisTimer *timer = First(); timer; timer = Next(timer)) {
+      if (timer->ProgramId() == idP)
+         return Delete(timer);
+      }
+
+  return false;
+}
+
 bool cElvisTimers::Delete(cElvisTimer *timerP)
 {
   cMutexLock(mutexM);
