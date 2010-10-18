@@ -138,6 +138,7 @@ private:
   inline bool Perform(const char *msgP, const char *testP = NULL);
   bool Login();
   bool Logout();
+  bool IsLogged();
   cElvisWidget();
   // to prevent copy constructor and assignment
   cElvisWidget(const cElvisWidget&);

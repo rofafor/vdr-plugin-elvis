@@ -111,8 +111,10 @@ cElvisWidget::cElvisWidget()
 
 cElvisWidget::~cElvisWidget()
 {
+  cMutexLock(mutexM);
+
   if (handleM) {
-     Logout();
+     //Logout();
 
      // cleanup curl stuff
      if (headerListM) {
@@ -802,9 +804,21 @@ bool cElvisWidget::Logout()
 {
   cMutexLock(mutexM);
 
-  if (handleM) {
+  if (IsLogged() && handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/logout.sl?ajax=true", GetBase()));
      return Perform("Logout");
+     }
+
+  return false;
+}
+
+bool cElvisWidget::IsLogged()
+{
+  cMutexLock(mutexM);
+
+  if (handleM) {
+     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?islogged", GetBase()));
+     return Perform("IsLogged", "TRUE");
      }
 
   return false;

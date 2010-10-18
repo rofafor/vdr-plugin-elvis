@@ -242,8 +242,10 @@ bool cElvisReader::Disconnect()
   debug("cElvisReader::Disconnect()");
   if (handleM) {
      // cleanup curl stuff
-     curl_slist_free_all(headerListM);
-     headerListM = NULL;
+     if (headerListM) {
+        curl_slist_free_all(headerListM);
+        headerListM = NULL;
+        }
      curl_multi_remove_handle(multiM, handleM);
      curl_multi_cleanup(multiM);
      multiM = NULL;

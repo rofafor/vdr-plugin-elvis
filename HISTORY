@@ -47,3 +47,4 @@ VDR Plugin 'elvis' Revision History
 - Modified menu layouts.
 - Added preliminary support for adding/removing timers via
   service and SVDRP interfaces.
+- Fixed a possible crash in shutdown.
