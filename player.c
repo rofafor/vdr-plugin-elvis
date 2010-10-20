@@ -15,7 +15,7 @@
 // --- cElvisReader ----------------------------------------------------
 
 cElvisReader::cElvisReader(const char *urlP)
-: cThread("elvisreader"),
+: cThread("cElvisReader"),
   urlM(urlP),
   rangeStartM(0),
   rangeSizeM(0),
@@ -341,7 +341,7 @@ void cElvisReader::Action()
 // --- cElvisPlayer ----------------------------------------------------
 
 cElvisPlayer::cElvisPlayer(const char *urlP, unsigned long lengthP)
-: cThread("elvisplayer"),
+: cThread("cElvisPlayer"),
   playModeM(pmPlay),
   playDirM(pdForward),
   trickSpeedM(0),

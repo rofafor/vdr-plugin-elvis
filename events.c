@@ -58,8 +58,6 @@ cElvisChannel::cElvisChannel(const char *nameP)
 
 cElvisChannel::~cElvisChannel()
 {
-  cMutexLock(mutexM);
-  Clear();
 }
 
 void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP)
@@ -93,26 +91,63 @@ void cElvisChannels::Destroy()
 }
 
 cElvisChannels::cElvisChannels()
+: cThread("cElvisChannels"),
+  mutexM(),
+  stateM(0),
+  lastUpdateM(0)
 {
 }
 
 cElvisChannels::~cElvisChannels()
 {
   cMutexLock(mutexM);
-  Clear();
+
+  Cancel(3);
 }
 
 void cElvisChannels::AddChannel(const char *nameP)
 {
   Add(new cElvisChannel(nameP));
+  ChangeState();
 }
 
-bool cElvisChannels::Update()
+void cElvisChannels::Refresh(bool foregroundP)
+{
+  lastUpdateM = time(NULL);
+  mutexM.Lock();
+  Clear();
+  ChangeState();
+  mutexM.Unlock();
+  cElvisWidget::GetInstance()->GetChannels(*this);
+  for (cElvisChannel *channel = First(); channel; channel = Next(channel))
+      channel->Update();
+}
+
+bool cElvisChannels::Update(bool waitP)
+{
+  if (waitP) {
+     Refresh(true);
+     return (Count() > 0);
+     }
+  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+     Start();
+
+  return false;
+}
+
+bool cElvisChannels::StateChanged(int &stateP)
 {
   cMutexLock(mutexM);
-  Clear();
-  cElvisWidget::GetInstance()->GetChannels(*this);
-  return (Count() > 0);
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
+}
+
+void cElvisChannels::Action()
+{
+  Refresh();
 }
 
 bool cElvisChannels::AddTimer(tEventID eventIdP)
@@ -132,7 +167,6 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
       }
   if (event) {
      cElvisChannel *channel = NULL;
-     Update();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
          if (!strcmp(c->Name(), c2->Name())) {
@@ -142,7 +176,6 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
             }
          }
      if (channel) {
-        channel->Update();
         for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
             if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
                info("cElvisChannels::AddTimer(%d): creating %d", eventIdP, i->Id());
@@ -172,7 +205,6 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
       }
   if (event) {
      cElvisChannel *channel = NULL;
-     Update();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
          if (!strcmp(c->Name(), c2->Name())) {
@@ -182,7 +214,6 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
             }
          }
      if (channel) {
-        channel->Update();
         for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
             if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
                info("cElvisChannels::DelTimer(%d): deleting %d", eventIdP, i->Id());

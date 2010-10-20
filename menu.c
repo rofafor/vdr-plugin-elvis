@@ -383,6 +383,7 @@ cElvisTimersMenu::cElvisTimersMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 8, 6, 6, 2)
 {
   cElvisTimers::GetInstance()->StateChanged(stateM);
+  cElvisTimers::GetInstance()->Update();
   Setup();
   SetHelpKeys();
 }
@@ -400,13 +401,12 @@ void cElvisTimersMenu::SetHelpKeys()
      SetHelp(tr("Button$Refresh"), NULL, NULL, NULL);
 }
 
-void cElvisTimersMenu::Setup(bool forceP)
+void cElvisTimersMenu::Setup()
 {
   int current = Current();
 
   Clear();
 
-  cElvisTimers::GetInstance()->Update(forceP);
   for (cElvisTimer *item = cElvisTimers::GetInstance()->First(); item; item = cElvisTimers::GetInstance()->Next(item))
       Add(new cElvisTimerItem(item));
 
@@ -455,8 +455,8 @@ eOSState cElvisTimersMenu::ProcessKey(eKeys keyP)
   if (state == osUnknown) {
      switch (keyP) {
        case kRed:
-            Setup(true);
-            break;
+            cElvisTimers::GetInstance()->Update(true);
+            return osContinue;
        case kYellow:
             return Delete();
        case kBlue:
@@ -464,6 +464,7 @@ eOSState cElvisTimersMenu::ProcessKey(eKeys keyP)
        case kInfo:
             return Info();
        case kNone:
+            cElvisTimers::GetInstance()->Update();
             if (cElvisTimers::GetInstance()->StateChanged(stateM))
                Setup();
             break;
@@ -595,6 +596,7 @@ cElvisSearchTimersMenu::cElvisSearchTimersMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Search timers")), 10, 12)
 {
   cElvisSearchTimers::GetInstance()->StateChanged(stateM);
+  cElvisSearchTimers::GetInstance()->Update();
   Setup();
   SetHelpKeys();
 }
@@ -608,13 +610,12 @@ void cElvisSearchTimersMenu::SetHelpKeys()
      SetHelp(NULL, NULL, NULL, tr("Button$Refresh"));
 }
 
-void cElvisSearchTimersMenu::Setup(bool forceP)
+void cElvisSearchTimersMenu::Setup()
 {
   int current = Current();
 
   Clear();
 
-  cElvisSearchTimers::GetInstance()->Update(forceP);
   for (cElvisSearchTimer *item = cElvisSearchTimers::GetInstance()->First(); item; item = cElvisSearchTimers::GetInstance()->Next(item))
       Add(new cElvisSearchTimerItem(item));
 
@@ -674,9 +675,10 @@ eOSState cElvisSearchTimersMenu::ProcessKey(eKeys keyP)
        case kYellow:
             return Delete();
        case kBlue:
-            Setup(true);
-            break;
+            cElvisSearchTimers::GetInstance()->Update(true);
+            return osContinue;
        case kNone:
+            cElvisSearchTimers::GetInstance()->Update();
             if (cElvisSearchTimers::GetInstance()->StateChanged(stateM))
                Setup();
             break;
@@ -818,7 +820,6 @@ void cElvisChannelEventsMenu::Setup()
   Clear();
 
   if (channelM) {
-     channelM->Update();
      for (cElvisEvent *item = channelM->cList<cElvisEvent>::First(); item; item = channelM->cList<cElvisEvent>::Next(item))
          Add(new cElvisChannelEventItem(item));
      }
@@ -907,6 +908,8 @@ cElvisChannelItem::cElvisChannelItem(cElvisChannel *channelP)
 cElvisEPGMenu::cElvisEPGMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG")), 17)
 {
+  cElvisChannels::GetInstance()->StateChanged(stateM);
+  cElvisChannels::GetInstance()->Update();
   Setup();
   SetHelpKeys();
 }
@@ -915,9 +918,9 @@ void cElvisEPGMenu::SetHelpKeys()
 {
   cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
+     SetHelp(trVDR("Button$Open"), NULL, NULL, tr("Button$Refresh"));
   else
-     SetHelp(NULL, NULL, NULL, NULL);
+     SetHelp(NULL, NULL, NULL, tr("Button$Refresh"));
 }
 
 void cElvisEPGMenu::Setup()
@@ -926,7 +929,6 @@ void cElvisEPGMenu::Setup()
 
   Clear();
 
-  cElvisChannels::GetInstance()->Update();
   for (cElvisChannel *item = cElvisChannels::GetInstance()->First(); item; item = cElvisChannels::GetInstance()->Next(item)) {
       if (item->Name())
          Add(new cElvisChannelItem(item));
@@ -957,6 +959,14 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
        case kRed:
        case kOk:
             return Select();
+       case kBlue:
+            cElvisChannels::GetInstance()->Update(true);
+            return osContinue;
+       case kNone:
+            cElvisChannels::GetInstance()->Update();
+            if (cElvisChannels::GetInstance()->StateChanged(stateM))
+               Setup();
+            break;
        default:
             break;
        }
@@ -975,6 +985,7 @@ cElvisTopEventsMenu::cElvisTopEventsMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 6, 6)
 {
   cElvisTopEvents::GetInstance()->StateChanged(stateM);
+  cElvisTopEvents::GetInstance()->Update();
   Setup();
   SetHelpKeys();
 }
@@ -988,13 +999,12 @@ void cElvisTopEventsMenu::SetHelpKeys()
      SetHelp(NULL, NULL, tr("Button$Refresh"), NULL);
 }
 
-void cElvisTopEventsMenu::Setup(bool forceP)
+void cElvisTopEventsMenu::Setup()
 {
   int current = Current();
 
   Clear();
 
-  cElvisTopEvents::GetInstance()->Update(forceP);
   for (cElvisEvent *item = cElvisTopEvents::GetInstance()->First(); item; item = cElvisTopEvents::GetInstance()->Next(item))
       Add(new cElvisChannelEventItem(item));
 
@@ -1048,13 +1058,14 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
        case kGreen:
             return Record(false);
        case kYellow:
-            Setup(true);
-            break;
+            cElvisTopEvents::GetInstance()->Update(true);
+            return osContinue;
        case kOk:
        case kBlue:
        case kInfo:
             return Info();
        case kNone:
+            cElvisTopEvents::GetInstance()->Update();
             if (cElvisTopEvents::GetInstance()->StateChanged(stateM))
                Setup();
             break;

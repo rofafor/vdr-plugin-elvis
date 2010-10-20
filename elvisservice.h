@@ -15,5 +15,14 @@ struct ElvisService_Timer_v1_0 {
   tEventID eventId;
 };
 
+struct ElvisService_Update_v1_0 {
+  bool     forceUpdate;
+  bool     timers;
+  bool     searchTimers;
+  bool     favourites;
+  bool     recordings;
+  bool     epg;
+};
+
 #endif //__ELVISSERVICE_H
 

@@ -66,21 +66,31 @@ public:
 
 // --- cElvisChannels --------------------------------------------------
 
-class cElvisChannels : public cList<cElvisChannel>, public cElvisWidgetChannelCallbackIf {
+class cElvisChannels : public cList<cElvisChannel>, public cThread, public cElvisWidgetChannelCallbackIf {
 private:
   static cElvisChannels *instanceS;
+  enum {
+    eUpdateInterval = 7200 // 120min
+  };
   cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   // constructor
   cElvisChannels();
   // to prevent copy constructor and assignment
   cElvisChannels(const cElvisChannels&);
   cElvisChannels& operator=(const cElvisChannels&);
+protected:
+  void Action();
 public:
   static cElvisChannels *GetInstance();
   static void Destroy();
   virtual ~cElvisChannels();
   virtual void AddChannel(const char *nameP);
-  bool Update();
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
   bool AddTimer(tEventID eventIdP);
   bool DelTimer(tEventID eventIdP);
 };

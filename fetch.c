@@ -16,7 +16,7 @@
 // --- cElvisIndexGenerator --------------------------------------------
 
 cElvisIndexGenerator::cElvisIndexGenerator(const char *recordingNameP)
-: cThread("elvisindexgenerator"),
+: cThread("cElvisIndexGenerator"),
   recordingNameM(recordingNameP)
 {
   debug("cElvisIndexGenerator::cElvisIndexGenerator(): rec=%s", recordingNameP);
@@ -305,7 +305,7 @@ void cElvisFetcher::Destroy()
 }
 
 cElvisFetcher::cElvisFetcher()
-: cThread("elvisfetcher"),
+: cThread("cElvisFetcher"),
   mutexM(),
   itemsM(),
   multiM(NULL)

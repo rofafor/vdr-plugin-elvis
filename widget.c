@@ -201,7 +201,7 @@ bool cElvisWidget::Perform(const char *msgP, const char *testP)
         }
 
      if (!IsValidData()) {
-        error("cElvisWidget::Perform(%s): empty data", msgP ? msgP : "unknown");
+        debug("cElvisWidget::Perform(%s): empty data", msgP ? msgP : "unknown");
         return false;
         }
 
