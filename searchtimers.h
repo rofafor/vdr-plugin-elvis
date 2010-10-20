@@ -40,21 +40,31 @@ public:
 
 // --- cElvisSearchTimers ----------------------------------------------
 
-class cElvisSearchTimers : public cList<cElvisSearchTimer>, public cElvisWidgetSearchTimerCallbackIf {
+class cElvisSearchTimers : public cList<cElvisSearchTimer>, public cThread, public cElvisWidgetSearchTimerCallbackIf {
 private:
   static cElvisSearchTimers *instanceS;
+  enum {
+    eUpdateInterval = 900 // 15min
+  };
   cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   // constructor
   cElvisSearchTimers();
   // to prevent copy constructor and assignment
   cElvisSearchTimers(const cElvisSearchTimers&);
   cElvisSearchTimers& operator=(const cElvisSearchTimers&);
+protected:
+  void Action();
 public:
   static cElvisSearchTimers *GetInstance();
   static void Destroy();
   virtual ~cElvisSearchTimers();
   virtual void AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP);
-  bool Update();
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
   bool Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP);
   bool Delete(cElvisSearchTimer *timerP);
 };

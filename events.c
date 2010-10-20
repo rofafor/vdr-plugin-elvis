@@ -213,24 +213,61 @@ void cElvisTopEvents::Destroy()
 }
 
 cElvisTopEvents::cElvisTopEvents()
+: cThread("cElvisTimers"),
+  mutexM(),
+  stateM(0),
+  lastUpdateM(0)
 {
+  Clear();
 }
 
 cElvisTopEvents::~cElvisTopEvents()
 {
   cMutexLock(mutexM);
-  Clear();
+
+  Cancel(3);
 }
 
 void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP)
 {
   Add(new cElvisEvent(idP, nameP, channelP, starttimeP, endtimeP));
+  ChangeState();
 }
 
-bool cElvisTopEvents::Update()
+void cElvisTopEvents::Refresh(bool foregroundP)
+{
+  lastUpdateM = time(NULL);
+  mutexM.Lock();
+  Clear();
+  ChangeState();
+  mutexM.Unlock();
+  cElvisWidget::GetInstance()->GetTopEvents(*this);
+}
+
+bool cElvisTopEvents::Update(bool waitP)
+{
+  if (waitP) {
+     Refresh(true);
+     return (Count() > 0);
+     }
+  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+     Start();
+
+  return false;
+}
+
+bool cElvisTopEvents::StateChanged(int &stateP)
 {
   cMutexLock(mutexM);
-  Clear();
-  cElvisWidget::GetInstance()->GetTopEvents(*this);
-  return (Count() > 0);
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
 }
+
+void cElvisTopEvents::Action()
+{
+  Refresh();
+}
+

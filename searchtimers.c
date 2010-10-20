@@ -42,32 +42,33 @@ void cElvisSearchTimers::Destroy()
 }
 
 cElvisSearchTimers::cElvisSearchTimers()
+: cThread("cElvisSearchTimers"),
+  mutexM(),
+  stateM(0),
+  lastUpdateM(0)
 {
   Clear();
 }
 
 cElvisSearchTimers::~cElvisSearchTimers()
 {
+  cMutexLock(mutexM);
+
+  Cancel(3);
 }
 
 void cElvisSearchTimers::AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP)
 {
-  Add(new cElvisSearchTimer(idP, folderP, addedP, channelP, wildcardP));
-}
-
-bool cElvisSearchTimers::Update()
-{
   cMutexLock(mutexM);
-  Clear();
-  cElvisWidget::GetInstance()->GetSearchTimers(*this);
-  return (Count() > 0);
+  Add(new cElvisSearchTimer(idP, folderP, addedP, channelP, wildcardP));
+  ChangeState();
 }
 
 bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP)
 {
   cMutexLock(mutexM);
   if (cElvisWidget::GetInstance()->AddSearchTimer(channelP, wildcardP, folderIdP, timerP ? timerP->Id() : -1)) {
-     //Update();
+     ChangeState();
      return true;
      }
 
@@ -78,10 +79,46 @@ bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
 {
   cMutexLock(mutexM);
   if (timerP && cElvisWidget::GetInstance()->RemoveSearchTimer(timerP->Id())) {
-     //Del(timerP);
-     //Update();
+     ChangeState();
      return true;
      }
 
   return false;
+}
+
+void cElvisSearchTimers::Refresh(bool foregroundP)
+{
+  lastUpdateM = time(NULL);
+  mutexM.Lock();
+  Clear();
+  ChangeState();
+  mutexM.Unlock();
+  cElvisWidget::GetInstance()->GetSearchTimers(*this);
+}
+
+bool cElvisSearchTimers::Update(bool waitP)
+{
+  if (waitP) {
+     Refresh(true);
+     return (Count() > 0);
+     }
+  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+     Start();
+
+  return false;
+}
+
+bool cElvisSearchTimers::StateChanged(int &stateP)
+{
+  cMutexLock(mutexM);
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
+}
+
+void cElvisSearchTimers::Action()
+{
+  Refresh();
 }

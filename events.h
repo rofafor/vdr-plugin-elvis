@@ -87,21 +87,31 @@ public:
 
 // --- cElvisTopEvents -------------------------------------------------
 
-class cElvisTopEvents : public cList<cElvisEvent>, public cElvisWidgetTopEventCallbackIf {
+class cElvisTopEvents : public cList<cElvisEvent>, public cThread, public cElvisWidgetTopEventCallbackIf {
 private:
   static cElvisTopEvents *instanceS;
+  enum {
+    eUpdateInterval = 900 // 15min
+  };
   cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   // constructor
   cElvisTopEvents();
   // to prevent copy constructor and assignment
   cElvisTopEvents(const cElvisTopEvents&);
   cElvisTopEvents& operator=(const cElvisTopEvents&);
+protected:
+  void Action();
 public:
   static cElvisTopEvents *GetInstance();
   static void Destroy();
   virtual ~cElvisTopEvents();
   virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP);
-  bool Update();
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
 };
 
 #endif // __ELVIS_EVENTS_H

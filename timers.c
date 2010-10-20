@@ -55,32 +55,32 @@ void cElvisTimers::Destroy()
 }
 
 cElvisTimers::cElvisTimers()
+: cThread("cElvisTimers"),
+  mutexM(),
+  stateM(0),
+  lastUpdateM(0)
 {
   Clear();
 }
 
 cElvisTimers::~cElvisTimers()
 {
+  cMutexLock(mutexM);
+
+  Cancel(3);
 }
 
 void cElvisTimers::AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP)
 {
   Add(new cElvisTimer(idP, programIdP, lengthP, nameP, channelP, starttimeP, wildcardP));
-}
-
-bool cElvisTimers::Update()
-{
-  cMutexLock(mutexM);
-  Clear();
-  cElvisWidget::GetInstance()->GetTimers(*this);
-  return (Count() > 0);
+  ChangeState();
 }
 
 bool cElvisTimers::Create(int idP, int folderIdP)
 {
   cMutexLock(mutexM);
   if (cElvisWidget::GetInstance()->AddTimer(idP, folderIdP)) {
-     //Update();
+     ChangeState();
      return true;
      }
 
@@ -103,10 +103,46 @@ bool cElvisTimers::Delete(cElvisTimer *timerP)
 {
   cMutexLock(mutexM);
   if (timerP && cElvisWidget::GetInstance()->RemoveTimer(timerP->Id())) {
-     //Del(timerP);
-     //Update();
+     ChangeState();
      return true;
      }
 
   return false;
+}
+
+void cElvisTimers::Refresh(bool foregroundP)
+{
+  lastUpdateM = time(NULL);
+  mutexM.Lock();
+  Clear();
+  ChangeState();
+  mutexM.Unlock();
+  cElvisWidget::GetInstance()->GetTimers(*this);
+}
+
+bool cElvisTimers::Update(bool waitP)
+{
+  if (waitP) {
+     Refresh(true);
+     return (Count() > 0);
+     }
+  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+     Start();
+
+  return false;
+}
+
+bool cElvisTimers::StateChanged(int &stateP)
+{
+  cMutexLock(mutexM);
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
+}
+
+void cElvisTimers::Action()
+{
+  Refresh();
 }

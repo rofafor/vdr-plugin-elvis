@@ -48,21 +48,31 @@ public:
 
 // --- cElvisTimers ----------------------------------------------------
 
-class cElvisTimers : public cList<cElvisTimer>, public cElvisWidgetTimerCallbackIf {
+class cElvisTimers : public cList<cElvisTimer>, public cThread, public cElvisWidgetTimerCallbackIf {
 private:
   static cElvisTimers *instanceS;
+  enum {
+    eUpdateInterval = 900 // 15min
+  };
   cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   // constructor
   cElvisTimers();
   // to prevent copy constructor and assignment
   cElvisTimers(const cElvisTimers&);
   cElvisTimers& operator=(const cElvisTimers&);
+protected:
+  void Action();
 public:
   static cElvisTimers *GetInstance();
   static void Destroy();
   virtual ~cElvisTimers();
   virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP);
-  bool Update();
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
   bool Create(int idP, int folderIdP = -1);
   bool Delete(int idP);
   bool Delete(cElvisTimer *timerP);

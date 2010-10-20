@@ -103,8 +103,9 @@ public:
 
 class cElvisTimersMenu : public cOsdMenu {
 private:
+  int stateM;
   void SetHelpKeys();
-  void Setup();
+  void Setup(bool forceP = false);
   eOSState Delete();
   eOSState Info();
 public:
@@ -146,8 +147,9 @@ public:
 
 class cElvisSearchTimersMenu : public cOsdMenu {
 private:
+  int stateM;
   void SetHelpKeys();
-  void Setup();
+  void Setup(bool forceP = false);
   eOSState Delete();
   eOSState New();
   eOSState Edit();
@@ -220,8 +222,9 @@ public:
 
 class cElvisTopEventsMenu : public cOsdMenu {
 private:
+  int stateM;
   void SetHelpKeys();
-  void Setup();
+  void Setup(bool forceP = false);
   eOSState Record(bool quickP = true);
   eOSState Info();
 public:

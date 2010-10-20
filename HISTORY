@@ -48,3 +48,4 @@ VDR Plugin 'elvis' Revision History
 - Added preliminary support for adding/removing timers via
   service and SVDRP interfaces.
 - Fixed a possible crash in shutdown.
+- Added preliminary support for widget data caching.
