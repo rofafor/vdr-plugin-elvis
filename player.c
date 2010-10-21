@@ -854,7 +854,7 @@ cElvisReplayControl::cElvisReplayControl(const char *urlP, const char *nameP, co
   timeSearchPosM(-1)
 {
   debug("cElvisReplayControl::cElvisReplayControl()");
-  cStatus::MsgReplaying(this, nameP, "elvis.ts", true);
+  cStatus::MsgReplaying(this, nameP, PLUGIN_NAME_I18N ".ts", true);
   cDevice::PrimaryDevice()->ClrAvailableTracks(true);
 }
 
@@ -862,7 +862,7 @@ cElvisReplayControl::~cElvisReplayControl()
 {
   debug("cElvisReplayControl::~cElvisReplayControl()");
   Hide();
-  cStatus::MsgReplaying(this, NULL, "elvis.ts", false);
+  cStatus::MsgReplaying(this, NULL, PLUGIN_NAME_I18N ".ts", false);
   Stop();
 }
 

@@ -46,21 +46,31 @@ public:
 
 // --- cElvisChannel ---------------------------------------------------
 
-class cElvisChannel : public cListObject, public cList<cElvisEvent>, public cElvisWidgetEventCallbackIf {
+class cElvisChannel : public cListObject, public cList<cElvisEvent>, public cThread, public cElvisWidgetEventCallbackIf {
   friend class cElvisChannels;
 private:
-  cMutex  mutexM;
+ enum {
+    eUpdateInterval = 7200 // 120min
+  };
+  cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   cString nameM;
   // to prevent default constructor
   cElvisChannel();
   // to prevent copy and assignment constructors
   cElvisChannel(const cElvisChannel&);
   cElvisChannel &operator=(const cElvisChannel &);
+protected:
+  void Action();
 public:
   cElvisChannel(const char *nameP);
   virtual ~cElvisChannel();
   virtual void AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP);
-  bool Update();
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
   const char *Name() { return *nameM; }
 };
 

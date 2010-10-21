@@ -57,7 +57,6 @@ void cElvisRecordings::Destroy()
 
 cElvisRecordings::cElvisRecordings()
 {
-  Clear();
 }
 
 cElvisRecordings::~cElvisRecordings()
@@ -67,6 +66,11 @@ cElvisRecordings::~cElvisRecordings()
 void cElvisRecordings::AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *starttimeP, const char *sizeP)
 {
   Add(new cElvisRecording(idP, programIdP, folderIdP, nameP, channelP, starttimeP, sizeP));
+}
+
+bool cElvisRecordings::Update(bool forceP)
+{
+  return false;
 }
 
 bool cElvisRecordings::Update(int folderIdP)
@@ -82,7 +86,7 @@ bool cElvisRecordings::Delete(cElvisRecording *recordingP)
   cMutexLock(mutexM);
   if (recordingP && cElvisWidget::GetInstance()->RemoveRecording(recordingP->Id())) {
      //Del(recordingP);
-     Update();
+     Update(-1);
      return true;
      }
 

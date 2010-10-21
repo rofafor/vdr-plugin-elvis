@@ -16,7 +16,6 @@ struct ElvisService_Timer_v1_0 {
 };
 
 struct ElvisService_Update_v1_0 {
-  bool     forceUpdate;
   bool     timers;
   bool     searchTimers;
   bool     favourites;

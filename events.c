@@ -52,12 +52,18 @@ cElvisWidgetInfo *cElvisEvent::Info()
 // --- cElvisChannel ---------------------------------------------------
 
 cElvisChannel::cElvisChannel(const char *nameP)
-: nameM(nameP)
+: cThread(*cString::sprintf("cElvisChannel(%s)", nameP ? nameP : "")),
+  mutexM(),
+  stateM(0),
+  lastUpdateM(0),
+  nameM(nameP)
 {
 }
 
 cElvisChannel::~cElvisChannel()
 {
+  cMutexLock(mutexM);
+  Cancel(3);
 }
 
 void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP)
@@ -65,12 +71,41 @@ void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStart
   Add(new cElvisEvent(idP, nameP, simpleStarttimeP, simpleEndtimeP, starttimeP, endtimeP));
 }
 
-bool cElvisChannel::Update()
+void cElvisChannel::Refresh(bool foregroundP)
+{
+  lastUpdateM = time(NULL);
+  mutexM.Lock();
+  Clear();
+  ChangeState();
+  mutexM.Unlock();
+  cElvisWidget::GetInstance()->GetEvents(*this, *nameM);
+}
+
+bool cElvisChannel::Update(bool waitP)
+{
+  if (waitP) {
+     Refresh(true);
+     return (Count() > 0);
+     }
+  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+     Start();
+
+  return false;
+}
+
+bool cElvisChannel::StateChanged(int &stateP)
 {
   cMutexLock(mutexM);
-  Clear();
-  cElvisWidget::GetInstance()->GetEvents(*this, *nameM);
-  return (Count() > 0);
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
+}
+
+void cElvisChannel::Action()
+{
+  Refresh();
 }
 
 // --- cElvisChannels --------------------------------------------------
@@ -101,12 +136,12 @@ cElvisChannels::cElvisChannels()
 cElvisChannels::~cElvisChannels()
 {
   cMutexLock(mutexM);
-
   Cancel(3);
 }
 
 void cElvisChannels::AddChannel(const char *nameP)
 {
+  cMutexLock(mutexM);
   Add(new cElvisChannel(nameP));
   ChangeState();
 }
@@ -119,8 +154,6 @@ void cElvisChannels::Refresh(bool foregroundP)
   ChangeState();
   mutexM.Unlock();
   cElvisWidget::GetInstance()->GetChannels(*this);
-  for (cElvisChannel *channel = First(); channel; channel = Next(channel))
-      channel->Update();
 }
 
 bool cElvisChannels::Update(bool waitP)
@@ -249,18 +282,17 @@ cElvisTopEvents::cElvisTopEvents()
   stateM(0),
   lastUpdateM(0)
 {
-  Clear();
 }
 
 cElvisTopEvents::~cElvisTopEvents()
 {
   cMutexLock(mutexM);
-
   Cancel(3);
 }
 
 void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP)
 {
+  cMutexLock(mutexM);
   Add(new cElvisEvent(idP, nameP, channelP, starttimeP, endtimeP));
   ChangeState();
 }

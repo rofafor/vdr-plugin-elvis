@@ -187,6 +187,7 @@ public:
 class cElvisChannelEventsMenu : public cOsdMenu {
 private:
   cElvisChannel *channelM;
+  int stateM;
   void SetHelpKeys();
   void Setup();
   eOSState Record(bool quickP = true);

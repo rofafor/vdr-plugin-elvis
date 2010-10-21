@@ -47,13 +47,11 @@ cElvisSearchTimers::cElvisSearchTimers()
   stateM(0),
   lastUpdateM(0)
 {
-  Clear();
 }
 
 cElvisSearchTimers::~cElvisSearchTimers()
 {
   cMutexLock(mutexM);
-
   Cancel(3);
 }
 

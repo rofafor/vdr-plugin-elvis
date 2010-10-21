@@ -64,6 +64,7 @@ public:
   static void Destroy();
   virtual ~cElvisRecordings();
   virtual void AddRecording(int id, int program_id, int folder_id, const char *name, const char *channel, const char *start_time, const char *size);
+  bool Update(bool waitP = false);
   bool Update(int folderIdP = -1);
   bool Delete(cElvisRecording *recordingP);
 };

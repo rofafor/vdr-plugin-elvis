@@ -169,15 +169,18 @@ bool cPluginElvis::Service(const char *Id, void *Data)
      if (Data) {
         ElvisService_Update_v1_0 *data = (ElvisService_Update_v1_0*)Data;
         if (data->timers)
-           cElvisTimers::GetInstance()->Update(data->forceUpdate ? true : false);
+           cElvisTimers::GetInstance()->Update(true);
         if (data->searchTimers)
-           cElvisSearchTimers::GetInstance()->Update(data->forceUpdate ? true : false);
+           cElvisSearchTimers::GetInstance()->Update(true);
         if (data->favourites)
-           cElvisTopEvents::GetInstance()->Update(data->forceUpdate ? true : false);
+           cElvisTopEvents::GetInstance()->Update(true);
         if (data->recordings)
-           cElvisRecordings::GetInstance()->Update(/*data->forceUpdate ? true : false*/);
-        if (data->epg)
-           cElvisChannels::GetInstance()->Update(data->forceUpdate ? true : false);
+           cElvisRecordings::GetInstance()->Update(true);
+        if (data->epg) {
+           cElvisChannels::GetInstance()->Update(true);
+           for (cElvisChannel *channel = cElvisChannels::GetInstance()->First(); channel; channel = cElvisChannels::GetInstance()->Next(channel))
+               channel->Update(true);
+           }
         }
      return true;
      }
@@ -196,7 +199,7 @@ const char **cPluginElvis::SVDRPHelpPages(void)
     "    Add a new timer.",
     "DELT [eventid]\n"
     "    Delete an existing timer.",
-    "UPDT [force]\n"
+    "UPDT\n"
     "    Update timers.",
     NULL
     };
@@ -241,8 +244,8 @@ cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int 
      return cString("Timer deleted");
      }
   else if (strcasecmp(Command, "UPDT") == 0) {
-     cElvisChannels::GetInstance()->Update(*Option ? true : false);
-     cElvisTimers::GetInstance()->Update(*Option ? true : false);
+     cElvisChannels::GetInstance()->Update(true);
+     cElvisTimers::GetInstance()->Update(true);
      return cString("Timers updated");
      }
 

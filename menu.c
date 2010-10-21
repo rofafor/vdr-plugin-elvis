@@ -241,7 +241,7 @@ cElvisTimerCreateMenu::cElvisTimerCreateMenu(cElvisEvent *eventP)
 
   folderM = i;
   numFoldersM = 1;
-  cElvisRecordings::GetInstance()->Update();
+  cElvisRecordings::GetInstance()->Update(-1);
   for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item)) {
       if (item->IsFolder() && !isempty(item->Name()))
          ++numFoldersM;
@@ -505,7 +505,7 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
       ++i;
       }
 
-  cElvisRecordings::GetInstance()->Update();
+  cElvisRecordings::GetInstance()->Update(-1);
   i = 0;
   folderM = i;
   numFoldersM = 1;
@@ -800,6 +800,10 @@ cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 6, 6),
   channelM(channelP)
 {
+  if (channelM) {
+     channelM->StateChanged(stateM);
+     channelM->Update();
+     }
   Setup();
   SetHelpKeys();
 }
@@ -808,9 +812,9 @@ void cElvisChannelEventsMenu::SetHelpKeys()
 {
   cElvisEvent *item = (cElvisEvent *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, trVDR("Button$Info"));
+     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), tr("Button$Refresh"), trVDR("Button$Info"));
   else
-     SetHelp(NULL, NULL, NULL, NULL);
+     SetHelp(NULL, NULL, tr("Button$Refresh"), NULL);
 }
 
 void cElvisChannelEventsMenu::Setup()
@@ -873,10 +877,21 @@ eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
             return Record(true);
        case kGreen:
             return Record(false);
+       case kYellow:
+            if (channelM)
+               channelM->Update(true);
+            return osContinue;
        case kBlue:
        case kOk:
        case kInfo:
             return Info();
+       case kNone:
+            if (channelM) {
+               channelM->Update();
+               if (channelM->StateChanged(stateM))
+                  Setup();
+               }
+            break;
        default:
             break;
        }
