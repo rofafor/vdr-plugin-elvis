@@ -149,7 +149,7 @@ cMenuEditHiddenStrItem::~cMenuEditHiddenStrItem()
   delete[] charMapUtf8;
 }
 
-void cMenuEditHiddenStrItem::EnterEditMode(void)
+void cMenuEditHiddenStrItem::EnterEditMode()
 {
   if (!valueUtf8) {
      valueUtf8 = new uint[length];
@@ -186,7 +186,7 @@ void cMenuEditHiddenStrItem::LeaveEditMode(bool SaveValue)
      }
 }
 
-void cMenuEditHiddenStrItem::SetHelpKeys(void)
+void cMenuEditHiddenStrItem::SetHelpKeys()
 {
   if (InEditMode())
      cSkinDisplay::Current()->SetButtons(trVDR("Button$ABC/abc"), insert ? trVDR("Button$Overwrite") : trVDR("Button$Insert"), trVDR("Button$Delete"));
@@ -205,7 +205,7 @@ uint *cMenuEditHiddenStrItem::IsAllowed(uint c)
   return NULL;
 }
 
-void cMenuEditHiddenStrItem::AdvancePos(void)
+void cMenuEditHiddenStrItem::AdvancePos()
 {
   if (pos < length - 2 && pos < lengthUtf8) {
      if (++pos >= lengthUtf8) {
@@ -223,7 +223,7 @@ void cMenuEditHiddenStrItem::AdvancePos(void)
      uppercase = Utf8is(upper, valueUtf8[pos]);
 }
 
-void cMenuEditHiddenStrItem::Set(void)
+void cMenuEditHiddenStrItem::Set()
 {
   if (InEditMode()) {
      // This is an ugly hack to make editing strings work with the 'skincurses' plugin.
@@ -321,14 +321,14 @@ void cMenuEditHiddenStrItem::Type(uint c)
      }
 }
 
-void cMenuEditHiddenStrItem::Insert(void)
+void cMenuEditHiddenStrItem::Insert()
 {
   memmove(valueUtf8 + pos + 1, valueUtf8 + pos, (lengthUtf8 - pos + 1) * sizeof(*valueUtf8));
   lengthUtf8++;
   valueUtf8[pos] = ' ';
 }
 
-void cMenuEditHiddenStrItem::Delete(void)
+void cMenuEditHiddenStrItem::Delete()
 {
   memmove(valueUtf8 + pos, valueUtf8 + pos + 1, (lengthUtf8 - pos) * sizeof(*valueUtf8));
   lengthUtf8--;

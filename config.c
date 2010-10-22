@@ -10,7 +10,7 @@
 
 cElvisConfig ElvisConfig;
 
-const char *cElvisConfig::confBaseNameS = "elvis.conf";
+const char *cElvisConfig::confBaseNameS = PLUGIN_NAME_I18N ".conf";
 
 cElvisConfig::cElvisConfig()
 : HideMenu(0),
@@ -21,40 +21,40 @@ cElvisConfig::cElvisConfig()
   memset(Password, 0, sizeof(Password));
 }
 
-cElvisConfig& cElvisConfig::operator=(const cElvisConfig &s)
+cElvisConfig& cElvisConfig::operator=(const cElvisConfig &objP)
 {
-  memcpy(&__BeginData__, &s.__BeginData__, (char *)&s.__EndData__ - (char *)&s.__BeginData__);
+  memcpy(&__BeginData__, &objP.__BeginData__, (char *)&objP.__EndData__ - (char *)&objP.__BeginData__);
   return *this;
 }
 
-cSetupLine *cElvisConfig::Get(const char *Name)
+cSetupLine *cElvisConfig::Get(const char *nameP)
 {
   for (cSetupLine *l = First(); l; l = Next(l)) {
-      if ((l->Plugin() == NULL) && (strcasecmp(l->Name(), Name) == 0))
+      if ((l->Plugin() == NULL) && (strcasecmp(l->Name(), nameP) == 0))
          return l;
       }
   return NULL;
 }
 
-void cElvisConfig::Store(const char *Name, const char *Value)
+void cElvisConfig::Store(const char *nameP, const char *valueP)
 {
-  if (Name && *Name) {
-     cSetupLine *l = Get(Name);
+  if (nameP && *nameP) {
+     cSetupLine *l = Get(nameP);
      if (l)
         Del(l);
-     if (Value)
-        Add(new cSetupLine(Name, Value));
+     if (valueP)
+        Add(new cSetupLine(nameP, valueP));
      }
 }
 
-void cElvisConfig::Store(const char *Name, int Value)
+void cElvisConfig::Store(const char *nameP, int valueP)
 {
-  Store(Name, cString::sprintf("%d", Value));
+  Store(nameP, cString::sprintf("%d", valueP));
 }
 
-bool cElvisConfig::Load(const char *Directory)
+bool cElvisConfig::Load(const char *directoryP)
 {
-  if (cConfig<cSetupLine>::Load(*cString::sprintf("%s/%s", Directory, confBaseNameS), true)) {
+  if (cConfig<cSetupLine>::Load(*cString::sprintf("%s/%s", directoryP, confBaseNameS), true)) {
      bool result = true;
      for (cSetupLine *l = First(); l; l = Next(l)) {
          bool error = false;
@@ -72,19 +72,19 @@ bool cElvisConfig::Load(const char *Directory)
   return false;
 }
 
-bool cElvisConfig::Parse(const char *Name, const char *Value)
+bool cElvisConfig::Parse(const char *nameP, const char *valueP)
 {
-  if      (!strcasecmp(Name, "Username")) Utf8Strn0Cpy(Username, Value, sizeof(Username));
-  else if (!strcasecmp(Name, "Password")) Utf8Strn0Cpy(Password, Value, sizeof(Password));
-  else if (!strcasecmp(Name, "HideMenu")) HideMenu = atoi(Value);
-  else if (!strcasecmp(Name, "Service"))  Service  = atoi(Value);
-  else if (!strcasecmp(Name, "Ssl"))      Ssl      = atoi(Value);
+  if      (!strcasecmp(nameP, "Username")) Utf8Strn0Cpy(Username, valueP, sizeof(Username));
+  else if (!strcasecmp(nameP, "Password")) Utf8Strn0Cpy(Password, valueP, sizeof(Password));
+  else if (!strcasecmp(nameP, "HideMenu")) HideMenu = atoi(valueP);
+  else if (!strcasecmp(nameP, "Service"))  Service  = atoi(valueP);
+  else if (!strcasecmp(nameP, "Ssl"))      Ssl      = atoi(valueP);
   else
      return false;
   return true;
 }
 
-bool cElvisConfig::Save(void)
+bool cElvisConfig::Save()
 {
   Store("HideMenu",  HideMenu);
   Store("Service",   Service);

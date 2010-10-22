@@ -16,10 +16,10 @@ private:
     eMaxCredentials = 32
   };
   static const char *confBaseNameS;
-  bool Parse(const char *Name, const char *Value);
-  cSetupLine *Get(const char *Name);
-  void Store(const char *Name, const char *Value);
-  void Store(const char *Name, int Value);
+  bool Parse(const char *nameP, const char *valueP);
+  cSetupLine *Get(const char *nameP);
+  void Store(const char *nameP, const char *valueP);
+  void Store(const char *nameP, int valueP);
 public:
   int __BeginData__;
   int HideMenu;
@@ -28,10 +28,10 @@ public:
   char Username[eMaxCredentials];
   char Password[eMaxCredentials];
   int __EndData__;
-  cElvisConfig(void);
-  cElvisConfig& operator= (const cElvisConfig &s);
-  bool Load(const char *Directory);
-  bool Save(void);
+  cElvisConfig();
+  cElvisConfig& operator= (const cElvisConfig &objP);
+  bool Load(const char *directoryP);
+  bool Save();
 };
 
 extern cElvisConfig ElvisConfig;

@@ -63,7 +63,7 @@ public:
   virtual ~cElvisSearchTimers();
   virtual void AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP);
   bool Update(bool waitP = false);
-  void ChangeState(void) { ++stateM; }
+  void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
   bool Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP);
   bool Delete(cElvisSearchTimer *timerP);

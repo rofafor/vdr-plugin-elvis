@@ -20,7 +20,7 @@ class cElvisIndexGenerator : public cThread {
 private:
   cString recordingNameM;
 protected:
-  virtual void Action(void);
+  virtual void Action();
 public:
   cElvisIndexGenerator(const char *recordingNameP);
   virtual ~cElvisIndexGenerator();

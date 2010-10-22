@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "menu.h"
+#include "resume.h"
 #include "player.h"
 
 // --- cElvisReader ----------------------------------------------------
@@ -340,20 +341,29 @@ void cElvisReader::Action()
 
 // --- cElvisPlayer ----------------------------------------------------
 
-cElvisPlayer::cElvisPlayer(const char *urlP, unsigned long lengthP)
+cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP, unsigned long lengthP)
 : cThread("cElvisPlayer"),
   playModeM(pmPlay),
   playDirM(pdForward),
   trickSpeedM(0),
+  programIdM(programIdP),
   lengthM((lengthP + 1 + 5) * 60), // remember to add start & stop marginals
   readerM(new cElvisReader(urlP)),
   readSizeM(0),
+  fileSizeM(0),
   ringBufferM(new cRingBufferFrame(MEGABYTE(1))),
   readFrameM(NULL),
   playFrameM(NULL),
   dropFrameM(NULL)
 {
+  unsigned long offset = 0;
   debug("cElvisPlayer::cElvisPlayer()");
+  if (cElvisResumeItems::GetInstance()->HasResume(programIdM, offset) && (offset > 0)) {
+     readSizeM = offset;
+     debug("cElvisPlayer::cElvisPlayer(): resuming to %ld", readSizeM);
+     if (readerM)
+        readerM->JumpRequest(readSizeM);
+     }
 }
 
 cElvisPlayer::~cElvisPlayer()
@@ -363,6 +373,7 @@ cElvisPlayer::~cElvisPlayer()
   DELETE_POINTER(readerM);
   DELETE_POINTER(readFrameM);
   DELETE_POINTER(ringBufferM);
+  cElvisResumeItems::GetInstance()->Store(programIdM, IsEOF() ? 0 : readSizeM);
 }
 
 void cElvisPlayer::Activate(bool onP)
@@ -372,6 +383,14 @@ void cElvisPlayer::Activate(bool onP)
      Start();
   else
      Cancel(9);
+}
+
+bool cElvisPlayer::IsEOF()
+{
+  cMutexLock MutexLock(&mutexM);
+  unsigned long limit = lengthM ? (lengthM - eEOFMark) * (fileSizeM / lengthM) : 0;
+  debug("cElvisPlayer::IsEOF(): readSize=%ld limit=%ld", readSizeM, limit);
+  return (readSizeM >= limit);
 }
 
 void cElvisPlayer::TrickSpeed(int incrementP)
@@ -542,14 +561,13 @@ void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
   cMutexLock MutexLock(&mutexM);
   debug("cElvisPlayer::SkipTime()");
-  unsigned long filesize = readerM ? readerM->GetRangeSize() : 0;
-  long skip = lengthM ? secondsP * (filesize / lengthM) : 0;
-  debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, filesize);
+  long skip = lengthM ? secondsP * (fileSizeM / lengthM) : 0;
+  debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, fileSizeM);
   if (!relativeP)
      readSizeM = 0;
   if ((skip < 0) && (readSizeM < (unsigned long)labs(skip)))
      readSizeM = 0;
-  else if ((readSizeM + skip) > filesize)
+  else if ((readSizeM + skip) > fileSizeM)
      return;
   else
      readSizeM += skip;
@@ -650,6 +668,8 @@ void cElvisPlayer::Action()
                 if (readerM) {
                    int len = 0;
                    uchar *data = readerM->GetData(&len);
+                   if (fileSizeM == 0)
+                      fileSizeM = readerM->GetRangeSize();
                    if (len < 0) {
                       debug("cElvisPlayer::Action(recv): EOF");
                       break;
@@ -723,8 +743,8 @@ void cElvisPlayer::Action()
 
 // --- cElvisPlayerControl ---------------------------------------------
 
-cElvisPlayerControl::cElvisPlayerControl(const char *urlP, unsigned int lengthP)
-: cControl(playerM = new cElvisPlayer(urlP, lengthP))
+cElvisPlayerControl::cElvisPlayerControl(int programIdP, const char *urlP, unsigned int lengthP)
+: cControl(playerM = new cElvisPlayer(programIdP, urlP, lengthP))
 {
   debug("cElvisPlayerControl::cElvisPlayerControl(%s, %d)", urlP, lengthP);
 }
@@ -831,8 +851,8 @@ void cElvisPlayerControl::Goto(int secondsP, bool playP)
 
 // --- cElvisReplayControl ---------------------------------------------------
 
-cElvisReplayControl::cElvisReplayControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
-: cElvisPlayerControl(urlP, lengthP),
+cElvisReplayControl::cElvisReplayControl(int programIdP, const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
+: cElvisPlayerControl(programIdP, urlP, lengthP),
   displayReplayM(NULL),
   urlM(urlP),
   nameM(nameP),

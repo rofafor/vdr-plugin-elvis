@@ -71,7 +71,7 @@ public:
   virtual ~cElvisTimers();
   virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP);
   bool Update(bool waitP = false);
-  void ChangeState(void) { ++stateM; }
+  void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
   bool Create(int idP, int folderIdP = -1);
   bool Delete(int idP);

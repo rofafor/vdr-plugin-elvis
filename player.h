@@ -61,8 +61,9 @@ public:
 class cElvisPlayer : public cPlayer, cThread {
 private:
   enum {
-    eTrickplayJumpBase  = 2,  // in seconds
-    eTrickplayTimeoutMs = 750 // in milliseconds
+    eTrickplayJumpBase  = 2,   // in seconds
+    eTrickplayTimeoutMs = 750, // in milliseconds
+    eEOFMark            = 15   // in seconds
   };
   enum ePlayModes {
     pmPlay,
@@ -77,14 +78,17 @@ private:
   ePlayModes playModeM;
   ePlayDirs playDirM;
   int trickSpeedM;
+  int programIdM;
   const unsigned long lengthM;
   cElvisReader *readerM;
   unsigned long readSizeM;
+  unsigned long fileSizeM;
   cMutex mutexM;
   cRingBufferFrame *ringBufferM;
   cFrame *readFrameM;
   cFrame *playFrameM;
   cFrame *dropFrameM;
+  bool IsEOF();
   void TrickSpeed(int incrementP);
   int GetForwardJumpPeriod();
   int GetBackwardJumpPeriod();
@@ -92,7 +96,7 @@ protected:
   virtual void Activate(bool onP);
   virtual void Action();
 public:
-  cElvisPlayer(const char *urlP, unsigned long lengthP);
+  cElvisPlayer(int programIdP, const char *urlP, unsigned long lengthP);
   virtual ~cElvisPlayer();
   void Play();
   void Pause();
@@ -114,7 +118,7 @@ class cElvisPlayerControl : public cControl {
 private:
   cElvisPlayer *playerM;
 public:
-  cElvisPlayerControl(const char *urlP, unsigned int lengthP);
+  cElvisPlayerControl(int programIdP, const char *urlP, unsigned int lengthP);
   virtual ~cElvisPlayerControl();
   bool Active();
   void Stop();
@@ -164,7 +168,7 @@ private:
   bool ShowProgress(bool initialP);
   cString SecondsToHMSF(unsigned long secondsP);
 public:
-  cElvisReplayControl(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
+  cElvisReplayControl(int programIdP, const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
   virtual ~cElvisReplayControl();
   void Stop();
   virtual cOsdObject *GetInfo();

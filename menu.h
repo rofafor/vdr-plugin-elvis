@@ -54,7 +54,7 @@ private:
   void Setup();
   eOSState Delete();
   eOSState Info();
-  eOSState Play();
+  eOSState Play(bool rewindP = false);
   eOSState Fetch();
 public:
   cElvisRecordingsMenu(int folderIdP = -1, int levelP = 0);

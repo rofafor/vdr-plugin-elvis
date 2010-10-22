@@ -12,6 +12,7 @@
 #include "config.h"
 #include "fetch.h"
 #include "menu.h"
+#include "resume.h"
 #include "widget.h"
 #include "elvisservice.h"
 
@@ -27,42 +28,43 @@ class cPluginElvis : public cPlugin {
 private:
   // Add any member variables or functions you may need here.
 public:
-  cPluginElvis(void);
+  cPluginElvis();
   virtual ~cPluginElvis();
-  virtual const char *Version(void) { return VERSION; }
-  virtual const char *Description(void) { return tr(DESCRIPTION); }
-  virtual const char *CommandLineHelp(void);
+  virtual const char *Version() { return VERSION; }
+  virtual const char *Description() { return tr(DESCRIPTION); }
+  virtual const char *CommandLineHelp();
   virtual bool ProcessArgs(int argc, char *argv[]);
-  virtual bool Initialize(void);
-  virtual bool Start(void);
-  virtual void Stop(void);
-  virtual void Housekeeping(void);
-  virtual void MainThreadHook(void);
-  virtual cString Active(void);
-  virtual time_t WakeupTime(void);
-  virtual const char *MainMenuEntry(void) { return ((ElvisConfig.HideMenu || isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) ? NULL : tr(MAINMENUENTRY)); }
-  virtual cOsdObject *MainMenuAction(void);
-  virtual cMenuSetupPage *SetupMenu(void);
-  virtual bool SetupParse(const char *Name, const char *Value);
-  virtual bool Service(const char *Id, void *Data = NULL);
-  virtual const char **SVDRPHelpPages(void);
-  virtual cString SVDRPCommand(const char *Command, const char *Option, int &ReplyCode);
+  virtual bool Initialize();
+  virtual bool Start();
+  virtual void Stop();
+  virtual void Housekeeping();
+  virtual void MainThreadHook();
+  virtual cString Active();
+  virtual time_t WakeupTime();
+  virtual const char *MainMenuEntry() { return ((ElvisConfig.HideMenu || isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) ? NULL : tr(MAINMENUENTRY)); }
+  virtual cOsdObject *MainMenuAction();
+  virtual cMenuSetupPage *SetupMenu();
+  virtual bool SetupParse(const char *nameP, const char *valueP);
+  virtual bool Service(const char *idP, void *dataP = NULL);
+  virtual const char **SVDRPHelpPages();
+  virtual cString SVDRPCommand(const char *commandP, const char *optionP, int &replyCodeP);
   };
 
 class cPluginElvisSetup : public cMenuSetupPage
 {
 private:
-  cElvisConfig data;
-  cVector<const char*> help;
-  void Setup(void);
+  cElvisConfig dataM;
+  cVector<const char*> helpM;
+  void SetHelpKeys();
+  void Setup();
 protected:
-  virtual eOSState ProcessKey(eKeys Key);
-  virtual void Store(void);
+  virtual eOSState ProcessKey(eKeys keyP);
+  virtual void Store();
 public:
-  cPluginElvisSetup(void);
+  cPluginElvisSetup();
 };
 
-cPluginElvis::cPluginElvis(void)
+cPluginElvis::cPluginElvis()
 {
   // Initialize any member variables here.
   // DON'T DO ANYTHING ELSE THAT MAY HAVE SIDE EFFECTS, REQUIRE GLOBAL
@@ -74,7 +76,7 @@ cPluginElvis::~cPluginElvis()
   // Clean up after yourself!
 }
 
-const char *cPluginElvis::CommandLineHelp(void)
+const char *cPluginElvis::CommandLineHelp()
 {
   // Return a string that describes all known command line options.
   return NULL;
@@ -86,21 +88,22 @@ bool cPluginElvis::ProcessArgs(int argc, char *argv[])
   return true;
 }
 
-bool cPluginElvis::Initialize(void)
+bool cPluginElvis::Initialize()
 {
   // Initialize any background activities the plugin shall perform.
   ElvisConfig.Load(ConfigDirectory(PLUGIN_NAME_I18N));
+  cElvisResumeItems::GetInstance()->Load(ConfigDirectory(PLUGIN_NAME_I18N));
   return true;
 }
 
-bool cPluginElvis::Start(void)
+bool cPluginElvis::Start()
 {
   // Start any background activities the plugin shall perform.
   curl_global_init(CURL_GLOBAL_ALL);
   return true;
 }
 
-void cPluginElvis::Stop(void)
+void cPluginElvis::Stop()
 {
   // Stop any background activities the plugin is performing.
   cElvisRecordings::Destroy();
@@ -110,54 +113,55 @@ void cPluginElvis::Stop(void)
   cElvisChannels::Destroy();
   cElvisWidget::Destroy();
   cElvisFetcher::Destroy();
+  cElvisResumeItems::Destroy();
   curl_global_cleanup();
 }
 
-void cPluginElvis::Housekeeping(void)
+void cPluginElvis::Housekeeping()
 {
   // Perform any cleanup or other regular tasks.
 }
 
-void cPluginElvis::MainThreadHook(void)
+void cPluginElvis::MainThreadHook()
 {
   // Perform actions in the context of the main program thread.
   // WARNING: Use with great care - see PLUGINS.html!
 }
 
-cString cPluginElvis::Active(void)
+cString cPluginElvis::Active()
 {
   // Return a message string if shutdown should be postponed
   return cElvisFetcher::GetInstance()->Fetching() ? tr("Elvis is alive!") : NULL;
 }
 
-time_t cPluginElvis::WakeupTime(void)
+time_t cPluginElvis::WakeupTime()
 {
   // Return custom wakeup time for shutdown script
   return 0;
 }
 
-cOsdObject *cPluginElvis::MainMenuAction(void)
+cOsdObject *cPluginElvis::MainMenuAction()
 {
   // Perform the action when selected from the main VDR menu.
   return new cElvisMenu();
 }
 
-cMenuSetupPage *cPluginElvis::SetupMenu(void)
+cMenuSetupPage *cPluginElvis::SetupMenu()
 {
   // Return a setup menu in case the plugin supports one.
   return new cPluginElvisSetup();
 }
 
-bool cPluginElvis::SetupParse(const char *Name, const char *Value)
+bool cPluginElvis::SetupParse(const char *nameP, const char *valueP)
 {
   return false;
 }
 
-bool cPluginElvis::Service(const char *Id, void *Data)
+bool cPluginElvis::Service(const char *idP, void *dataP)
 {
-  if (strcmp(Id, "ElvisService-Timer-v1.0") == 0) {
-     if (Data) {
-        ElvisService_Timer_v1_0 *data = (ElvisService_Timer_v1_0*)Data;
+  if (strcmp(idP, "ElvisService-Timer-v1.0") == 0) {
+     if (dataP) {
+        ElvisService_Timer_v1_0 *data = (ElvisService_Timer_v1_0*)dataP;
         if (data->addMode)
            cElvisChannels::GetInstance()->AddTimer(data->eventId);
         else
@@ -165,9 +169,9 @@ bool cPluginElvis::Service(const char *Id, void *Data)
         }
      return true;
      }
-  else if (strcmp(Id, "ElvisService-Update-v1.0") == 0) {
-     if (Data) {
-        ElvisService_Update_v1_0 *data = (ElvisService_Update_v1_0*)Data;
+  else if (strcmp(idP, "ElvisService-Update-v1.0") == 0) {
+     if (dataP) {
+        ElvisService_Update_v1_0 *data = (ElvisService_Update_v1_0*)dataP;
         if (data->timers)
            cElvisTimers::GetInstance()->Update(true);
         if (data->searchTimers)
@@ -188,7 +192,7 @@ bool cPluginElvis::Service(const char *Id, void *Data)
   return false;
 }
 
-const char **cPluginElvis::SVDRPHelpPages(void)
+const char **cPluginElvis::SVDRPHelpPages()
 {
   static const char *HelpPages[] = {
     "ABRT [id]\n"
@@ -206,44 +210,44 @@ const char **cPluginElvis::SVDRPHelpPages(void)
   return HelpPages;
 }
 
-cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int &ReplyCode)
+cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, int &replyCodeP)
 {
-  if (strcasecmp(Command, "ABRT") == 0) {
+  if (strcasecmp(commandP, "ABRT") == 0) {
      int index = -1;
-     if (*Option && isnumber(Option))
-        index = (int)strtol(Option, NULL, 10);
+     if (*optionP && isnumber(optionP))
+        index = (int)strtol(optionP, NULL, 10);
      cElvisFetcher::GetInstance()->Abort(index);
      return cString("Fetching aborted");
      }
-  else if (strcasecmp(Command, "LIST") == 0) {
+  else if (strcasecmp(commandP, "LIST") == 0) {
      cString list = cElvisFetcher::GetInstance()->List();
      if (isempty(*list)) {
-        ReplyCode = 901;
+        replyCodeP = 901;
         list = "Empty fetch queue";
         }
      return list;
      }
-  else if (strcasecmp(Command, "ADDT") == 0) {
+  else if (strcasecmp(commandP, "ADDT") == 0) {
      tEventID eventid = 0;
-     if (*Option && isnumber(Option))
-        eventid = (int)strtol(Option, NULL, 10);
+     if (*optionP && isnumber(optionP))
+        eventid = (int)strtol(optionP, NULL, 10);
      if (!cElvisChannels::GetInstance()->AddTimer(eventid)) {
-        ReplyCode = 901;
+        replyCodeP = 901;
         return cString("Timer action failed");
         }
      return cString("Timer added");
      }
-  else if (strcasecmp(Command, "DELT") == 0) {
+  else if (strcasecmp(commandP, "DELT") == 0) {
      tEventID eventid = 0;
-     if (*Option && isnumber(Option))
-        eventid = (int)strtol(Option, NULL, 10);
+     if (*optionP && isnumber(optionP))
+        eventid = (int)strtol(optionP, NULL, 10);
      if (!cElvisChannels::GetInstance()->DelTimer(eventid)) {
-        ReplyCode = 901;
+        replyCodeP = 901;
         return cString("Timer action failed");
         }
      return cString("Timer deleted");
      }
-  else if (strcasecmp(Command, "UPDT") == 0) {
+  else if (strcasecmp(commandP, "UPDT") == 0) {
      cElvisChannels::GetInstance()->Update(true);
      cElvisTimers::GetInstance()->Update(true);
      return cString("Timers updated");
@@ -252,51 +256,69 @@ cString cPluginElvis::SVDRPCommand(const char *Command, const char *Option, int 
   return NULL;
 }
 
-cPluginElvisSetup::cPluginElvisSetup(void)
+cPluginElvisSetup::cPluginElvisSetup()
 {
-  data = ElvisConfig;
+  dataM = ElvisConfig;
   Setup();
+  SetHelpKeys();
 }
 
-void cPluginElvisSetup::Setup(void)
+void cPluginElvisSetup::SetHelpKeys()
+{
+  SetHelp(trVDR("Button$Reset"), NULL, NULL, NULL);
+}
+
+void cPluginElvisSetup::Setup()
 {
   int current = Current();
 
   Clear();
-  help.Clear();
+  helpM.Clear();
 
-  Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &data.HideMenu));
-  help.Append(tr("Define whether the main manu entry is hidden."));
+  Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &dataM.HideMenu));
+  helpM.Append(tr("Define whether the main manu entry is hidden."));
 
-  Add(new cMenuEditBoolItem(tr("Use service"), &data.Service, tr("Elisa Viihde"), tr("Saunavisio")));
-  help.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
+  Add(new cMenuEditBoolItem(tr("Use service"), &dataM.Service, tr("Elisa Viihde"), tr("Saunavisio")));
+  helpM.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
 
-  Add(new cMenuEditBoolItem(tr("Use SSL connection"), &data.Ssl));
-  help.Append(tr("Define whether SSL connection is used."));
+  Add(new cMenuEditBoolItem(tr("Use SSL connection"), &dataM.Ssl));
+  helpM.Append(tr("Define whether SSL connection is used."));
 
-  Add(new cMenuEditStrItem(tr("Username"), data.Username, sizeof(data.Username)));
-  help.Append(tr("Define your username for the service."));
+  Add(new cMenuEditStrItem(tr("Username"), dataM.Username, sizeof(dataM.Username)));
+  helpM.Append(tr("Define your username for the service."));
 
-  Add(new cMenuEditHiddenStrItem(tr("Password"), data.Password, sizeof(data.Password)));
-  help.Append(tr("Define your password for the service."));
+  Add(new cMenuEditHiddenStrItem(tr("Password"), dataM.Password, sizeof(dataM.Password)));
+  helpM.Append(tr("Define your password for the service."));
 
   SetCurrent(Get(current));
   Display();
 }
 
-eOSState cPluginElvisSetup::ProcessKey(eKeys Key)
+eOSState cPluginElvisSetup::ProcessKey(eKeys keyP)
 {
-  eOSState state = cMenuSetupPage::ProcessKey(Key);
+  eOSState state = cMenuSetupPage::ProcessKey(keyP);
 
-  if ((state == osUnknown) && (Key == kInfo) && (Current() < help.Size()))
-     return AddSubMenu(new cMenuText(cString::sprintf("%s - %s '%s'", tr("Help"), trVDR("Plugin"), PLUGIN_NAME_I18N), help[Current()]));
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRed:
+            cElvisResumeItems::GetInstance()->Reset();
+            state = osContinue;
+            break;
+       case kInfo:
+            if (Current() < helpM.Size())
+               return AddSubMenu(new cMenuText(cString::sprintf("%s - %s '%s'", tr("Help"), trVDR("Plugin"), PLUGIN_NAME_I18N), helpM[Current()]));
+            break;
+       default:
+            break;
+            }
+     }
 
   return state;
 }
 
-void cPluginElvisSetup::Store(void)
+void cPluginElvisSetup::Store()
 {
-  ElvisConfig = data;
+  ElvisConfig = dataM;
   ElvisConfig.Save();
 }
 

@@ -69,7 +69,7 @@ public:
   virtual ~cElvisChannel();
   virtual void AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP);
   bool Update(bool waitP = false);
-  void ChangeState(void) { ++stateM; }
+  void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
   const char *Name() { return *nameM; }
 };
@@ -99,7 +99,7 @@ public:
   virtual ~cElvisChannels();
   virtual void AddChannel(const char *nameP);
   bool Update(bool waitP = false);
-  void ChangeState(void) { ++stateM; }
+  void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
   bool AddTimer(tEventID eventIdP);
   bool DelTimer(tEventID eventIdP);
@@ -130,7 +130,7 @@ public:
   virtual ~cElvisTopEvents();
   virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP);
   bool Update(bool waitP = false);
-  void ChangeState(void) { ++stateM; }
+  void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
 };
 

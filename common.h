@@ -51,18 +51,18 @@ private:
   uint *currentCharUtf8;
   eKeys lastKey;
   cTimeMs autoAdvanceTimeout;
-  void SetHelpKeys(void);
+  void SetHelpKeys();
   uint *IsAllowed(uint c);
-  void AdvancePos(void);
-  virtual void Set(void);
+  void AdvancePos();
+  virtual void Set();
   uint Inc(uint c, bool Up);
   void Type(uint c);
-  void Insert(void);
-  void Delete(void);
+  void Insert();
+  void Delete();
 protected:
-  void EnterEditMode(void);
+  void EnterEditMode();
   void LeaveEditMode(bool SaveValue = false);
-  bool InEditMode(void) { return valueUtf8 != NULL; }
+  bool InEditMode() { return valueUtf8 != NULL; }
 public:
   cMenuEditHiddenStrItem(const char *Name, char *Value, int Length, const char *Allowed = NULL);
   ~cMenuEditHiddenStrItem();

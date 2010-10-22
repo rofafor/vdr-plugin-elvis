@@ -29,7 +29,7 @@ cElvisIndexGenerator::~cElvisIndexGenerator()
   Cancel(3);
 }
 
-void cElvisIndexGenerator::Action(void)
+void cElvisIndexGenerator::Action()
 {
   debug("cElvisIndexGenerator::Action()");
   bool IndexFileComplete = false;
