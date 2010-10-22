@@ -472,8 +472,11 @@ eOSState cElvisTimersMenu::ProcessKey(eKeys keyP)
             return Info();
        case kNone:
             cElvisTimers::GetInstance()->Update();
-            if (cElvisTimers::GetInstance()->StateChanged(stateM))
+            if (cElvisTimers::GetInstance()->StateChanged(stateM)) {
                Setup();
+               SetHelpKeys();
+               return osContinue;
+               }
             break;
        default:
             break;
@@ -686,8 +689,11 @@ eOSState cElvisSearchTimersMenu::ProcessKey(eKeys keyP)
             return osContinue;
        case kNone:
             cElvisSearchTimers::GetInstance()->Update();
-            if (cElvisSearchTimers::GetInstance()->StateChanged(stateM))
+            if (cElvisSearchTimers::GetInstance()->StateChanged(stateM)) {
                Setup();
+               SetHelpKeys();
+               return osContinue;
+               }
             break;
        default:
             break;
@@ -895,8 +901,11 @@ eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
        case kNone:
             if (channelM) {
                channelM->Update();
-               if (channelM->StateChanged(stateM))
+               if (channelM->StateChanged(stateM)) {
                   Setup();
+                  SetHelpKeys();
+                  return osContinue;
+                  }
                }
             break;
        default:
@@ -986,8 +995,11 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
             return osContinue;
        case kNone:
             cElvisChannels::GetInstance()->Update();
-            if (cElvisChannels::GetInstance()->StateChanged(stateM))
+            if (cElvisChannels::GetInstance()->StateChanged(stateM)) {
                Setup();
+               SetHelpKeys();
+               return osContinue;
+               }
             break;
        default:
             break;
@@ -1088,8 +1100,11 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
             return Info();
        case kNone:
             cElvisTopEvents::GetInstance()->Update();
-            if (cElvisTopEvents::GetInstance()->StateChanged(stateM))
+            if (cElvisTopEvents::GetInstance()->StateChanged(stateM)) {
                Setup();
+               SetHelpKeys();
+               return osContinue;
+               }
             break;
        default:
             break;
