@@ -66,7 +66,7 @@ bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP,
 {
   cMutexLock(mutexM);
   if (cElvisWidget::GetInstance()->AddSearchTimer(channelP, wildcardP, folderIdP, timerP ? timerP->Id() : -1)) {
-     ChangeState();
+     Start();
      return true;
      }
 
@@ -77,7 +77,9 @@ bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
 {
   cMutexLock(mutexM);
   if (timerP && cElvisWidget::GetInstance()->RemoveSearchTimer(timerP->Id())) {
+     Del(timerP);
      ChangeState();
+     //Start();
      return true;
      }
 

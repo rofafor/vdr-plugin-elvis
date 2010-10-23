@@ -79,7 +79,7 @@ bool cElvisTimers::Create(int idP, int folderIdP)
 {
   cMutexLock(mutexM);
   if (cElvisWidget::GetInstance()->AddTimer(idP, folderIdP)) {
-     ChangeState();
+     Start();
      return true;
      }
 
@@ -102,7 +102,9 @@ bool cElvisTimers::Delete(cElvisTimer *timerP)
 {
   cMutexLock(mutexM);
   if (timerP && cElvisWidget::GetInstance()->RemoveTimer(timerP->Id())) {
+     Del(timerP);
      ChangeState();
+     //Start();
      return true;
      }
 

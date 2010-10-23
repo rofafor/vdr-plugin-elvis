@@ -169,25 +169,6 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
         }
      return true;
      }
-  else if (strcmp(idP, "ElvisService-Update-v1.0") == 0) {
-     if (dataP) {
-        ElvisService_Update_v1_0 *data = (ElvisService_Update_v1_0*)dataP;
-        if (data->timers)
-           cElvisTimers::GetInstance()->Update(true);
-        if (data->searchTimers)
-           cElvisSearchTimers::GetInstance()->Update(true);
-        if (data->favourites)
-           cElvisTopEvents::GetInstance()->Update(true);
-        if (data->recordings)
-           cElvisRecordings::GetInstance()->Reset();
-        if (data->epg) {
-           cElvisChannels::GetInstance()->Update(true);
-           for (cElvisChannel *channel = cElvisChannels::GetInstance()->First(); channel; channel = cElvisChannels::GetInstance()->Next(channel))
-               channel->Update(true);
-           }
-        }
-     return true;
-     }
 
   return false;
 }
@@ -203,8 +184,6 @@ const char **cPluginElvis::SVDRPHelpPages()
     "    Add a new timer.",
     "DELT [eventid]\n"
     "    Delete an existing timer.",
-    "UPDT\n"
-    "    Update timers.",
     NULL
     };
   return HelpPages;
@@ -246,11 +225,6 @@ cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, in
         return cString("Timer action failed");
         }
      return cString("Timer deleted");
-     }
-  else if (strcasecmp(commandP, "UPDT") == 0) {
-     cElvisChannels::GetInstance()->Update(true);
-     cElvisTimers::GetInstance()->Update(true);
-     return cString("Timers updated");
      }
 
   return NULL;
