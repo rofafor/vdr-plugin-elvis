@@ -179,7 +179,7 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
         if (data->favourites)
            cElvisTopEvents::GetInstance()->Update(true);
         if (data->recordings)
-           cElvisRecordings::GetInstance()->Update(true);
+           cElvisRecordings::GetInstance()->Reset();
         if (data->epg) {
            cElvisChannels::GetInstance()->Update(true);
            for (cElvisChannel *channel = cElvisChannels::GetInstance()->First(); channel; channel = cElvisChannels::GetInstance()->Next(channel))

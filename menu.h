@@ -48,8 +48,9 @@ public:
 
 class cElvisRecordingsMenu : public cOsdMenu {
 private:
-  int folderIdM;
+  cElvisRecordingFolder *folderM;
   int levelM;
+  int stateM;
   void SetHelpKeys();
   void Setup();
   eOSState Delete();
@@ -57,7 +58,7 @@ private:
   eOSState Play(bool rewindP = false);
   eOSState Fetch();
 public:
-  cElvisRecordingsMenu(int folderIdP = -1, int levelP = 0);
+  cElvisRecordingsMenu(int folderIdP = -1, const char *folderNameP = NULL, int levelP = 0);
   virtual eOSState ProcessKey(eKeys keyP);
 };
 

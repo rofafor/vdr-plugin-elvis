@@ -102,11 +102,16 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
 
 // --- cElvisRecordingsMenu --------------------------------------------
 
-cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
+cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, const char *folderNameP, int levelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings")), 8, 6, 2),
-  folderIdM(folderIdP),
+  folderM(cElvisRecordings::GetInstance()->GetFolder(folderIdP)),
   levelM(levelP)
 {
+  if (folderM) {
+     folderM->StateChanged(stateM);
+     folderM->Update();
+     }
+
   Setup();
   SetHelpKeys();
 }
@@ -132,9 +137,10 @@ void cElvisRecordingsMenu::Setup()
 
   Clear();
 
-  cElvisRecordings::GetInstance()->Update(folderIdM);
-  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item))
-      Add(new cElvisRecordingItem(item));
+  if (folderM) {
+     for (cElvisRecording *item = folderM->cList<cElvisRecording>::First(); item; item = folderM->cList<cElvisRecording>::Next(item))
+         Add(new cElvisRecordingItem(item));
+     }
 
   SetCurrent(Get(current));
   Display();
@@ -149,8 +155,8 @@ eOSState cElvisRecordingsMenu::Delete()
   if (item) {
      if (item->IsFolder())
         Skins.Message(mtInfo, tr("Cannot delete folder!"));
-     else if (Interface->Confirm(tr("Delete folder?"))) {
-        if (!cElvisRecordings::GetInstance()->Delete(item->Recording()))
+     else if (Interface->Confirm(trVDR("Delete recording?"))) {
+        if (!folderM->DeleteRecording(item->Recording()))
            Skins.Message(mtError, tr("Cannot delete recording!"));
         if (!Count())
            return osBack;
@@ -179,7 +185,7 @@ eOSState cElvisRecordingsMenu::Play(bool rewindP)
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
      if (item->IsFolder())
-        return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
+        return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), item->Recording()->Name(), levelM + 1));
      else if (item->Recording()->Info()) {
         if (rewindP)
            cElvisResumeItems::GetInstance()->Store(item->Recording()->ProgramId(), 0);
@@ -221,6 +227,19 @@ eOSState cElvisRecordingsMenu::ProcessKey(eKeys keyP)
             return Fetch();
        case kInfo:
             return Info();
+       case k5:
+            if (folderM)
+               folderM->Update(true);
+            return osContinue;
+       case kNone:
+            if (folderM) {
+               folderM->Update();
+               if (folderM->StateChanged(stateM)) {
+                  Setup();
+                  SetHelpKeys();
+                  }
+               }
+            break;
        default:
             break;
        }
@@ -246,23 +265,18 @@ cElvisTimerCreateMenu::cElvisTimerCreateMenu(cElvisEvent *eventP)
 {
   int i = 0;
 
+  if (cElvisRecordings::GetInstance()->Count() == 0)
+     cElvisRecordings::GetInstance()->Reset();
   folderM = i;
-  numFoldersM = 1;
-  cElvisRecordings::GetInstance()->Update(-1);
-  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item)) {
-      if (item->IsFolder() && !isempty(item->Name()))
-         ++numFoldersM;
-      }
+  numFoldersM = cElvisRecordings::GetInstance()->Count();
   folderNamesM = new const char*[numFoldersM];
-  folderNamesM[i] = "(oletus)";
   folderIdsM = new int[numFoldersM];
-  folderIdsM[i] = -1;
-  for (cElvisRecording *item = cElvisRecordings::GetInstance()->First(); item; item = cElvisRecordings::GetInstance()->Next(item)) {
-      if (item->IsFolder() && !isempty(item->Name())) {
-         ++i;
-         folderNamesM[i] = item->Name();
-         folderIdsM[i]   = item->Id();
-         }
+  for (cElvisRecordingFolder *item = cElvisRecordings::GetInstance()->First(); item && (i < numFoldersM); item = cElvisRecordings::GetInstance()->Next(item)) {
+      folderNamesM[i] = item->Name();
+      folderIdsM[i] = item->Id();
+      if (item->Id() == -1)
+         folderM = i;
+      ++i;
       }
 
   Setup();
@@ -504,7 +518,8 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
 {
   int i = 0;
 
-  cElvisChannels::GetInstance()->Update();
+  if (cElvisChannels::GetInstance()->Count() == 0)
+     cElvisChannels::GetInstance()->Update(true);
   channelM = i;
   numChannelsM = cElvisChannels::GetInstance()->Count();
   channelNamesM = new const char*[numChannelsM];
@@ -515,26 +530,19 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
       ++i;
       }
 
-  cElvisRecordings::GetInstance()->Update(-1);
+  if (cElvisRecordings::GetInstance()->Count() == 0)
+     cElvisRecordings::GetInstance()->Reset();
   i = 0;
   folderM = i;
-  numFoldersM = 1;
-  for (cElvisRecording *recording = cElvisRecordings::GetInstance()->First(); recording; recording = cElvisRecordings::GetInstance()->Next(recording)) {
-      if (recording->IsFolder() && !isempty(recording->Name()))
-         ++numFoldersM;
-      }
+  numFoldersM = cElvisRecordings::GetInstance()->Count();
   folderNamesM = new const char*[numFoldersM];
-  folderNamesM[i] = "(oletus)";
   folderIdsM = new int[numFoldersM];
-  folderIdsM[i] = -1;
-  for (cElvisRecording *recording = cElvisRecordings::GetInstance()->First(); recording; recording = cElvisRecordings::GetInstance()->Next(recording)) {
-      if (recording->IsFolder() && !isempty(recording->Name())) {
-         ++i;
-         folderNamesM[i] = recording->Name();
-         folderIdsM[i] = recording->Id();
-         if (timerM && !strcmp(timerM->Folder(), recording->Name()))
-            folderM = i;
-         }
+  for (cElvisRecordingFolder *item = cElvisRecordings::GetInstance()->First(); item && (i < numFoldersM); item = cElvisRecordings::GetInstance()->Next(item)) {
+      folderNamesM[i] = item->Name();
+      folderIdsM[i] = item->Id();
+      if (timerM && !strcmp(timerM->Folder(), item->Name()))
+         folderM = i;
+      ++i;
       }
 
   memset(wildcardM, 0, sizeof(wildcardM));
@@ -1170,6 +1178,8 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
 
   switch (state) {
     case osUser1:
+         if (cElvisRecordings::GetInstance()->Count() == 0)
+            cElvisRecordings::GetInstance()->Reset();
          return AddSubMenu(new cElvisRecordingsMenu);
     case osUser2:
          return AddSubMenu(new cElvisTimersMenu);

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: elvis 0.0.5\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-10-20 19:58+0300\n"
+"POT-Creation-Date: 2010-10-23 03:24+0300\n"
 "PO-Revision-Date: 2010-10-10 10:10+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
@@ -89,9 +89,6 @@ msgstr "[...]"
 msgid "Cannot delete folder!"
 msgstr "Kansiota ei voida poistaa!"
 
-msgid "Delete folder?"
-msgstr "Poistetaanko kansio?"
-
 msgid "Cannot delete recording!"
 msgstr "Tallennetta ei voida poistaa!"
 
@@ -155,3 +152,6 @@ msgstr "Tallenteita haetaan: %d"
 
 msgid "Abort fetching?"
 msgstr "Keskeytetäänkö haku?"
+
+msgid "(default)"
+msgstr "(oletus)"

@@ -35,7 +35,7 @@ class cElvisWidgetTimerCallbackIf {
 public:
   cElvisWidgetTimerCallbackIf() {}
   virtual ~cElvisWidgetTimerCallbackIf() {}
-  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcard) = 0;
+  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP) = 0;
 };
 
 class cElvisWidgetSearchTimerCallbackIf {
