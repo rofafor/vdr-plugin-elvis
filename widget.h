@@ -28,14 +28,14 @@ class cElvisWidgetRecordingCallbackIf {
 public:
   cElvisWidgetRecordingCallbackIf() {}
   virtual ~cElvisWidgetRecordingCallbackIf() {}
-  virtual void AddRecording(int idP, int program_idP, int folder_idP, const char *nameP, const char *channelP, const char *starttimeP, const char *sizeP) = 0;
+  virtual void AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP) = 0;
 };
 
 class cElvisWidgetTimerCallbackIf {
 public:
   cElvisWidgetTimerCallbackIf() {}
   virtual ~cElvisWidgetTimerCallbackIf() {}
-  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP) = 0;
+  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP) = 0;
 };
 
 class cElvisWidgetSearchTimerCallbackIf {
@@ -56,14 +56,14 @@ class cElvisWidgetEventCallbackIf {
 public:
   cElvisWidgetEventCallbackIf() {}
   virtual ~cElvisWidgetEventCallbackIf() {}
-  virtual void AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP) = 0;
+  virtual void AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP) = 0;
 };
 
 class cElvisWidgetTopEventCallbackIf {
 public:
   cElvisWidgetTopEventCallbackIf() {}
   virtual ~cElvisWidgetTopEventCallbackIf() {}
-  virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP) = 0;
+  virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP) = 0;
 };
 
 // --- cElvisWidgetInfo ------------------------------------------------

@@ -54,3 +54,5 @@ Notes:
   the plugin! Otherwise the main menu entry isn't visible.
 
 - Password is currently stored unencrypted and shown in the setup menu.
+
+- Menu contents can be manually refreshed by pressing the '5' key.

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: elvis 0.0.5\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-10-23 03:24+0300\n"
+"POT-Creation-Date: 2010-10-10 10:10+0300\n"
 "PO-Revision-Date: 2010-10-10 10:10+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
@@ -106,9 +106,6 @@ msgstr "Ajastimen luonti epäonnistui!"
 
 msgid "min"
 msgstr "min"
-
-msgid "Button$Refresh"
-msgstr "Päivitä"
 
 msgid "Cannot delete search timer!"
 msgstr "Hakuajastinta ei voida poistaa!"

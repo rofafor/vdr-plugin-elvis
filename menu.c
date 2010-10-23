@@ -102,12 +102,14 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
 
 // --- cElvisRecordingsMenu --------------------------------------------
 
-cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, const char *folderNameP, int levelP)
+cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings")), 8, 6, 2),
   folderM(cElvisRecordings::GetInstance()->GetFolder(folderIdP)),
   levelM(levelP)
 {
   if (folderM) {
+     if (levelP)
+        SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), trVDR("Recordings"), folderM->Name()));
      folderM->StateChanged(stateM);
      folderM->Update();
      }
@@ -185,7 +187,7 @@ eOSState cElvisRecordingsMenu::Play(bool rewindP)
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
      if (item->IsFolder())
-        return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), item->Recording()->Name(), levelM + 1));
+        return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
      else if (item->Recording()->Info()) {
         if (rewindP)
            cElvisResumeItems::GetInstance()->Store(item->Recording()->ProgramId(), 0);
@@ -414,12 +416,12 @@ void cElvisTimersMenu::SetHelpKeys()
   cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
   if (item) {
      if (item->Wildcard())
-        SetHelp(tr("Button$Refresh"), NULL, NULL, trVDR("Button$Info"));
+        SetHelp(NULL, NULL, NULL, trVDR("Button$Info"));
      else
-        SetHelp(tr("Button$Refresh"), NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
+        SetHelp(NULL, NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
      }
   else
-     SetHelp(tr("Button$Refresh"), NULL, NULL, NULL);
+     SetHelp(NULL, NULL, NULL, NULL);
 }
 
 void cElvisTimersMenu::Setup()
@@ -475,7 +477,7 @@ eOSState cElvisTimersMenu::ProcessKey(eKeys keyP)
 
   if (state == osUnknown) {
      switch (keyP) {
-       case kRed:
+       case k5:
             cElvisTimers::GetInstance()->Update(true);
             return osContinue;
        case kYellow:
@@ -623,9 +625,9 @@ void cElvisSearchTimersMenu::SetHelpKeys()
 {
   cElvisSearchTimer *item = (cElvisSearchTimer *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Edit"), trVDR("Button$New"), trVDR("Button$Delete"), tr("Button$Refresh"));
+     SetHelp(trVDR("Button$Edit"), trVDR("Button$New"), trVDR("Button$Delete"), NULL);
   else
-     SetHelp(NULL, NULL, NULL, tr("Button$Refresh"));
+     SetHelp(NULL, NULL, NULL, NULL);
 }
 
 void cElvisSearchTimersMenu::Setup()
@@ -692,7 +694,7 @@ eOSState cElvisSearchTimersMenu::ProcessKey(eKeys keyP)
             return New();
        case kYellow:
             return Delete();
-       case kBlue:
+       case k5:
             cElvisSearchTimers::GetInstance()->Update(true);
             return osContinue;
        case kNone:
@@ -833,9 +835,9 @@ void cElvisChannelEventsMenu::SetHelpKeys()
 {
   cElvisEvent *item = (cElvisEvent *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), tr("Button$Refresh"), trVDR("Button$Info"));
+     SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, trVDR("Button$Info"));
   else
-     SetHelp(NULL, NULL, tr("Button$Refresh"), NULL);
+     SetHelp(NULL, NULL, NULL, NULL);
 }
 
 void cElvisChannelEventsMenu::Setup()
@@ -898,7 +900,7 @@ eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
             return Record(true);
        case kGreen:
             return Record(false);
-       case kYellow:
+       case k5:
             if (channelM)
                channelM->Update(true);
             return osContinue;
@@ -957,9 +959,9 @@ void cElvisEPGMenu::SetHelpKeys()
 {
   cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Open"), NULL, NULL, tr("Button$Refresh"));
+     SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
   else
-     SetHelp(NULL, NULL, NULL, tr("Button$Refresh"));
+     SetHelp(NULL, NULL, NULL, NULL);
 }
 
 void cElvisEPGMenu::Setup()
@@ -998,7 +1000,7 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
        case kRed:
        case kOk:
             return Select();
-       case kBlue:
+       case k5:
             cElvisChannels::GetInstance()->Update(true);
             return osContinue;
        case kNone:
@@ -1036,9 +1038,9 @@ void cElvisTopEventsMenu::SetHelpKeys()
 {
   cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
   if (item)
-     SetHelp(trVDR("Button$Record"), trVDR("Button$New"), tr("Button$Refresh"), trVDR("Button$Info"));
+     SetHelp(trVDR("Button$Record"), trVDR("Button$New"), NULL, trVDR("Button$Info"));
   else
-     SetHelp(NULL, NULL, tr("Button$Refresh"), NULL);
+     SetHelp(NULL, NULL, NULL, NULL);
 }
 
 void cElvisTopEventsMenu::Setup()
@@ -1099,7 +1101,7 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
             return Record(true);
        case kGreen:
             return Record(false);
-       case kYellow:
+       case k5:
             cElvisTopEvents::GetInstance()->Update(true);
             return osContinue;
        case kOk:

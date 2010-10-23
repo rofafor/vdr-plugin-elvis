@@ -66,9 +66,9 @@ cElvisChannel::~cElvisChannel()
   Cancel(3);
 }
 
-void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP)
+void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP)
 {
-  Add(new cElvisEvent(idP, nameP, simpleStarttimeP, simpleEndtimeP, starttimeP, endtimeP));
+  Add(new cElvisEvent(idP, nameP, simpleStartTimeP, simpleEndTimeP, startTimeP, endTimeP));
 }
 
 void cElvisChannel::Refresh(bool foregroundP)
@@ -290,10 +290,10 @@ cElvisTopEvents::~cElvisTopEvents()
   Cancel(3);
 }
 
-void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP)
+void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP)
 {
   cMutexLock(mutexM);
-  Add(new cElvisEvent(idP, nameP, channelP, starttimeP, endtimeP));
+  Add(new cElvisEvent(idP, nameP, channelP, startTimeP, endTimeP));
   ChangeState();
 }
 

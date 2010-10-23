@@ -69,7 +69,7 @@ protected:
 public:
   cElvisRecordingFolder(int folderIdP, const char *folderNameP);
   virtual ~cElvisRecordingFolder();
-  virtual void AddRecording(int idP, int program_idP, int folder_idP, const char *nameP, const char *channelP, const char *start_timeP, const char *sizeP);
+  virtual void AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP);
   bool DeleteRecording(cElvisRecording *recordingP);
   bool Update(bool waitP = false);
   void ChangeState(void) { ++stateM; }

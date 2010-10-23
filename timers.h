@@ -69,7 +69,7 @@ public:
   static cElvisTimers *GetInstance();
   static void Destroy();
   virtual ~cElvisTimers();
-  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP);
+  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);

@@ -68,10 +68,10 @@ cElvisTimers::~cElvisTimers()
   Cancel(3);
 }
 
-void cElvisTimers::AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *starttimeP, const char *wildcardP)
+void cElvisTimers::AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
 {
   cMutexLock(mutexM);
-  Add(new cElvisTimer(idP, programIdP, lengthP, nameP, channelP, starttimeP, wildcardP));
+  Add(new cElvisTimer(idP, programIdP, lengthP, nameP, channelP, startTimeP, wildcardP));
   ChangeState();
 }
 

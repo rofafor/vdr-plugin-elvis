@@ -58,7 +58,7 @@ private:
   eOSState Play(bool rewindP = false);
   eOSState Fetch();
 public:
-  cElvisRecordingsMenu(int folderIdP = -1, const char *folderNameP = NULL, int levelP = 0);
+  cElvisRecordingsMenu(int folderIdP = -1, int levelP = 0);
   virtual eOSState ProcessKey(eKeys keyP);
 };
 

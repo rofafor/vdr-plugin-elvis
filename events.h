@@ -32,7 +32,7 @@ private:
   cElvisEvent(const cElvisEvent&);
   cElvisEvent &operator=(const cElvisEvent &);
 public:
-  cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndtimeP, const char *startTimeP, const char *endTimeP);
+  cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP);
   cElvisEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP);
   virtual ~cElvisEvent();
   cElvisWidgetInfo *Info();
@@ -67,7 +67,7 @@ protected:
 public:
   cElvisChannel(const char *nameP);
   virtual ~cElvisChannel();
-  virtual void AddEvent(int idP, const char *nameP, const char *simpleStarttimeP, const char *simpleEndtimeP, const char *starttimeP, const char *endtimeP);
+  virtual void AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
@@ -128,7 +128,7 @@ public:
   static cElvisTopEvents *GetInstance();
   static void Destroy();
   virtual ~cElvisTopEvents();
-  virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *starttimeP, const char *endtimeP);
+  virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
