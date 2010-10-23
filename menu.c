@@ -744,9 +744,11 @@ void cElvisChannelEventInfoMenu::SetHelpKeys()
 
 void cElvisChannelEventInfoMenu::Display()
 {
-  cOsdMenu::Display();
-  DisplayMenu()->SetText(*textM, false);
-  cStatus::MsgOsdTextItem(*textM);
+  if (!HasSubMenu()) {
+     cOsdMenu::Display();
+     DisplayMenu()->SetText(*textM, false);
+     cStatus::MsgOsdTextItem(*textM);
+     }
 }
 
 eOSState cElvisChannelEventInfoMenu::Record(bool quickP)

@@ -39,7 +39,7 @@ VDR Plugin 'elvis' Revision History
 - Added Makefile depencency for objects.
 - Documented Antti Seppälä as co-author.
 
-2010-xx-xx: Version 0.0.5
+2010-10-24: Version 0.0.5
 
 - Updated widget API.
 - Added a return back to the recordings menu after exiting
