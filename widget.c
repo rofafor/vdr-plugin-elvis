@@ -791,7 +791,7 @@ bool cElvisWidget::Login()
      return false;
      }
 
-  if (handleM) {
+  if (!IsLogged() && handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true",
                       GetBase(), ElvisConfig.Username, ElvisConfig.Password));
      return Perform("Login", "TRUE");

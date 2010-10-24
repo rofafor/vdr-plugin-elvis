@@ -1139,7 +1139,7 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
 // --- cElvisMenu ------------------------------------------------------
 
 cElvisMenu::cElvisMenu()
-: cOsdMenu(tr("Elvis")),
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), ElvisConfig.Service ? tr("Saunavisio") : tr("Elisa Viihde"))),
   updateTimeoutM(0),
   fetchCountM(cElvisFetcher::GetInstance()->FetchCount())
 {
