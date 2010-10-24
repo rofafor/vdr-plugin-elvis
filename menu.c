@@ -84,19 +84,31 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
   descriptionM("")
 {
   if (recordingM) {
-     unsigned long temp = 0;
+     unsigned long offset = 0;
+     unsigned long size = 0;
+     bool resume = cElvisResumeItems::GetInstance()->HasResume(recordingM->ProgramId(), offset, size);
+     int watched = size ? (int)(100L * offset / size) : 0;
      if (recordingM->IsFolder())
         SetText(cString::sprintf("%s\t\t\t%s", tr("[DIR]"), recordingM->Name()));
      else
         SetText(cString::sprintf("%s\t%s\t%c\t%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                 cElvisResumeItems::GetInstance()->HasResume(recordingM->ProgramId(), temp) /*!recordingM->IsNew()*/ ? ' ' : '*', recordingM->Name()));
+                                 resume ? ' ' : '*', recordingM->Name()));
      if (recordingM->Info()) {
-        descriptionM = cString::sprintf("%s %s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                        *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(),
-                                        recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
+        if (resume)
+           descriptionM = cString::sprintf("%s %s - %s (%s / %d%%)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(), watched,
+                                           recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
+        else
+           descriptionM = cString::sprintf("%s %s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(),
+                                           recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
         }
-     else
-        descriptionM = cString::sprintf("%s\n%s\n\n%s", recordingM->StartTime(), recordingM->Channel(), recordingM->Name());
+     else {
+        if (resume)
+           descriptionM = cString::sprintf("%s (%d%%)\n%s\n\n%s", recordingM->StartTime(), watched, recordingM->Channel(), recordingM->Name());
+        else
+           descriptionM = cString::sprintf("%s\n%s\n\n%s", recordingM->StartTime(), recordingM->Channel(), recordingM->Name());
+        }
      }
 }
 
@@ -122,11 +134,12 @@ void cElvisRecordingsMenu::SetHelpKeys()
 {
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
-     unsigned long temp = 0;
+     unsigned long offset = 0;
+     unsigned long size = 0;
      if (item->IsFolder())
         SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
      else
-        SetHelp(trVDR("Button$Play"), (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), temp) && (temp > 0)) ?
+        SetHelp(trVDR("Button$Play"), (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), offset, size) && (offset > 0)) ?
                 trVDR("Button$Rewind") : NULL, trVDR("Button$Delete"), tr("Button$Fetch"));
      }
   else
@@ -190,7 +203,7 @@ eOSState cElvisRecordingsMenu::Play(bool rewindP)
         return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
      else if (item->Recording()->Info()) {
         if (rewindP)
-           cElvisResumeItems::GetInstance()->Store(item->Recording()->ProgramId(), 0);
+           cElvisResumeItems::GetInstance()->Rewind(item->Recording()->ProgramId());
         cControl::Launch(new cElvisReplayControl(item->Recording()->ProgramId(), item->Recording()->Info()->Url(), item->Recording()->Name(),
                                                  item->Description(), item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue()));
         return osEnd;

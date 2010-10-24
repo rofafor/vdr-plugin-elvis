@@ -357,10 +357,12 @@ cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP, unsigned long lengt
   dropFrameM(NULL)
 {
   unsigned long offset = 0;
+  unsigned long size = 0;
   debug("cElvisPlayer::cElvisPlayer()");
-  if (cElvisResumeItems::GetInstance()->HasResume(programIdM, offset) && (offset > 0)) {
+  if (cElvisResumeItems::GetInstance()->HasResume(programIdM, offset, size) && (offset > 0)) {
      readSizeM = offset;
-     debug("cElvisPlayer::cElvisPlayer(): resuming to %ld", readSizeM);
+     fileSizeM = size;
+     debug("cElvisPlayer::cElvisPlayer(): resuming to %ld/%ld", readSizeM, fileSizeM);
      if (readerM)
         readerM->JumpRequest(readSizeM);
      }
@@ -373,7 +375,7 @@ cElvisPlayer::~cElvisPlayer()
   DELETE_POINTER(readerM);
   DELETE_POINTER(readFrameM);
   DELETE_POINTER(ringBufferM);
-  cElvisResumeItems::GetInstance()->Store(programIdM, IsEOF() ? 0 : readSizeM);
+  cElvisResumeItems::GetInstance()->Store(programIdM, IsEOF() ? 0 : readSizeM, fileSizeM);
 }
 
 void cElvisPlayer::Activate(bool onP)

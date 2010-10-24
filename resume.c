@@ -17,11 +17,12 @@ cElvisResumeItem::cElvisResumeItem()
   debug("cElvisResumeItem:cElvisResumeItem()");
 }
 
-cElvisResumeItem::cElvisResumeItem(int programIdP, unsigned long byteOffsetP)
+cElvisResumeItem::cElvisResumeItem(int programIdP, unsigned long byteOffsetP, unsigned long fileSizeP)
 : programIdM(programIdP),
-  byteOffsetM(byteOffsetP)
+  byteOffsetM(byteOffsetP),
+  fileSizeM(fileSizeP)
 {
-  debug("cElvisResumeItem:cElvisResumeItem(): programid=%d, byteoffset=%ld", programIdM, byteOffsetM);
+  debug("cElvisResumeItem:cElvisResumeItem(): programid=%d, byteoffset=%ld filesize=%ld", programIdM, byteOffsetM, fileSizeM);
 }
 
 cElvisResumeItem::~cElvisResumeItem()
@@ -36,12 +37,19 @@ bool cElvisResumeItem::Parse(const char *strP)
   if (p) {
      *p = 0;
      char *key = compactspace((char *)strP);
-     char *value = compactspace(p + 1);
-     if (!isempty(key) && !isempty(value)) {
-        programIdM = strtoul(key, NULL, 10);
-        byteOffsetM = strtoul(value, NULL, 10);
-        debug("cElvisResumeItem:Parse(%s): programid=%d, byteoffset=%ld", strP, programIdM, byteOffsetM);
-        return true;
+     char *s = ++p;
+     p = (char*)strchr(s, ':');
+     if (p) {
+        *p = 0;
+        char *value1 = compactspace(s);
+        char *value2 = compactspace(p + 1);
+        if (!isempty(key) && !isempty(value1) && !isempty(value2)) {
+           programIdM = (int)strtoul(key, NULL, 10);
+           byteOffsetM = strtoul(value1, NULL, 10);
+           fileSizeM = strtoul(value2, NULL, 10);
+           debug("cElvisResumeItem:Parse(%s): programid=%d, byteoffset=%ld filesize=%ld", strP, programIdM, byteOffsetM, fileSizeM);
+           return true;
+           }
         }
      }
   return false;
@@ -49,8 +57,8 @@ bool cElvisResumeItem::Parse(const char *strP)
 
 bool cElvisResumeItem::Save(FILE *fdP)
 {
-  debug("cElvisResumeItem:Save(): programid=%d, byteoffset=%ld", programIdM, byteOffsetM);
-  return fprintf(fdP, "%d:%ld\n", programIdM, byteOffsetM) > 0;
+  debug("cElvisResumeItem:Save(): programid=%d, byteoffset=%ld filesize=%ld", programIdM, byteOffsetM, fileSizeM);
+  return fprintf(fdP, "%d:%ld:%ld\n", programIdM, byteOffsetM, fileSizeM) > 0;
 }
 
 // --- cElvisResumeItems -----------------------------------------------
@@ -106,10 +114,10 @@ bool cElvisResumeItems::Save()
   return false;
 }
 
-bool cElvisResumeItems::Store(int programIdP, unsigned long byteOffsetP)
+bool cElvisResumeItems::Store(int programIdP, unsigned long byteOffsetP, unsigned long fileSizeP)
 {
   cMutexLock(mutexM);
-  debug("cElvisResumeItems::Store(%d, %ld)", programIdP, byteOffsetP);
+  debug("cElvisResumeItems::Store(%d, %ld)", programIdP, byteOffsetP, fileSizeP);
   if (programIdP > 0) {
      cElvisResumeItem *existing = NULL;
      for (cElvisResumeItem *item = First(); item; item = Next(item)) {
@@ -120,7 +128,29 @@ bool cElvisResumeItems::Store(int programIdP, unsigned long byteOffsetP)
          }
      if (existing)
         Del(existing);
-     Add(new cElvisResumeItem(programIdP, byteOffsetP));
+     Add(new cElvisResumeItem(programIdP, byteOffsetP, fileSizeP));
+     }
+  return false;
+}
+
+bool cElvisResumeItems::Rewind(int programIdP)
+{
+  cMutexLock(mutexM);
+  debug("cElvisResumeItems::Rewind(%d)", programIdP);
+  if (programIdP > 0) {
+     cElvisResumeItem *existing = NULL;
+     unsigned long filesize = 0;
+     for (cElvisResumeItem *item = First(); item; item = Next(item)) {
+         if (item->ProgramId() == programIdP) {
+            existing = item;
+            break;
+            }
+         }
+     if (existing) {
+        filesize = existing->FileSize();
+        Del(existing);
+        }
+     Add(new cElvisResumeItem(programIdP, 0, filesize));
      }
   return false;
 }
@@ -134,15 +164,28 @@ void cElvisResumeItems::Reset()
   Save();
 }
 
-bool cElvisResumeItems::HasResume(int programIdP, unsigned long &byteOffsetP)
+bool cElvisResumeItems::HasResume(int programIdP, unsigned long &byteOffsetP, unsigned long &fileSizeP)
 {
   cMutexLock(mutexM);
   debug("cElvisResumeItems::HasResume(%d)", programIdP);
    for (cElvisResumeItem *item = First(); item; item = Next(item)) {
        if (item->ProgramId() == programIdP) {
           byteOffsetP = item->ByteOffset();
+          fileSizeP = item->FileSize();
           return true;
           }
        }
   return false;
+}
+
+cElvisResumeItem *cElvisResumeItems::GetResume(int programIdP)
+{
+  cMutexLock(mutexM);
+  debug("cElvisResumeItems::GetResume(%d)", programIdP);
+   for (cElvisResumeItem *item = First(); item; item = Next(item)) {
+       if (item->ProgramId() == programIdP) {
+          return item;
+          }
+       }
+  return NULL;
 }
