@@ -193,7 +193,7 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
       for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
           if (e->EventID() == eventIdP) {
              cChannel *c = Channels.GetByChannelID(e->ChannelID(), true);
-             debug("cElvisChannels::AddTimer(%d): found event '%s' on '%s'", e->EventID(), e->Title(), c->Name());
+             info("cElvisChannels::AddTimer(%d): found event '%s' on '%s'", e->EventID(), e->Title(), c->Name());
              event = e;
              break;
              }
@@ -208,7 +208,7 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
          cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
          if (!strcmp(c->Name(), c2->Name())) {
             channel = c;
-            debug("cElvisChannels::AddTimer(%d): found channel '%s'", eventIdP, c->Name());
+            info("cElvisChannels::AddTimer(%d): found channel '%s'", event->EventID(), c->Name());
             break;
             }
          }
@@ -216,7 +216,7 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
         channel->Update(true);
         for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
             if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
-               info("cElvisChannels::AddTimer(%d): creating %d", eventIdP, i->Id());
+               info("cElvisChannels::AddTimer(%d): creating %d", event->EventID(), i->Id());
                return cElvisTimers::GetInstance()->Create(i->Id());
                }
             }
@@ -236,7 +236,7 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
       for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
           if (e->EventID() == eventIdP) {
              cChannel *c = Channels.GetByChannelID(e->ChannelID(), true);
-             debug("cElvisChannels::DelTimer(%d): found event '%s' on '%s'", e->EventID(), e->Title(), c->Name());
+             info("cElvisChannels::DelTimer(%d): found event '%s' on '%s'", e->EventID(), e->Title(), c->Name());
              event = e;
              break;
              }
@@ -251,7 +251,7 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
          cChannel *c2 = Channels.GetByChannelID(event->ChannelID(), true);
          if (!strcmp(c->Name(), c2->Name())) {
             channel = c;
-            debug("cElvisChannels::DelTimer(): found channel '%s'", channel->Name());
+            info("cElvisChannels::DelTimer(%d): found channel '%s'", event->EventID(), channel->Name());
             break;
             }
          }
@@ -259,7 +259,7 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
         channel->Update(true);
         for (cElvisEvent *i = channel->cList<cElvisEvent>::First(); i; i = channel->cList<cElvisEvent>::Next(i)) {
             if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
-               info("cElvisChannels::DelTimer(%d): deleting %d", eventIdP, i->Id());
+               info("cElvisChannels::DelTimer(%d): deleting %d", event->EventID(), i->Id());
                return cElvisTimers::GetInstance()->Delete(i->Id());
                }
             }
