@@ -139,6 +139,7 @@ private:
   bool Login();
   bool Logout();
   bool IsLogged();
+  // constructor
   cElvisWidget();
   // to prevent copy constructor and assignment
   cElvisWidget(const cElvisWidget&);

@@ -114,7 +114,7 @@ cElvisWidget::~cElvisWidget()
   cMutexLock(mutexM);
 
   if (handleM) {
-     //Logout();
+     Logout();
 
      // cleanup curl stuff
      if (headerListM) {
@@ -784,14 +784,12 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
 
 bool cElvisWidget::Login()
 {
-  cMutexLock(mutexM);
-
   if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
      error("cElvisWidget::Login(): invalid credentials");
      return false;
      }
 
-  if (/*!IsLogged() &&*/ handleM) {
+  if (!IsLogged() && handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true",
                       GetBase(), ElvisConfig.Username, ElvisConfig.Password));
      return Perform("Login", "TRUE");
@@ -802,8 +800,6 @@ bool cElvisWidget::Login()
 
 bool cElvisWidget::Logout()
 {
-  cMutexLock(mutexM);
-
   if (IsLogged() && handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/logout.sl?ajax=true", GetBase()));
      return Perform("Logout");
@@ -814,8 +810,6 @@ bool cElvisWidget::Logout()
 
 bool cElvisWidget::IsLogged()
 {
-  cMutexLock(mutexM);
-
   if (handleM) {
      curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?islogged", GetBase()));
      return Perform("IsLogged", "TRUE");
