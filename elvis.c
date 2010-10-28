@@ -93,6 +93,7 @@ bool cPluginElvis::Initialize()
   // Initialize any background activities the plugin shall perform.
   ElvisConfig.Load(ConfigDirectory(PLUGIN_NAME_I18N));
   cElvisResumeItems::GetInstance()->Load(ConfigDirectory(PLUGIN_NAME_I18N));
+  cElvisWidget::GetInstance()->Load(ConfigDirectory(PLUGIN_NAME_I18N));
   return true;
 }
 

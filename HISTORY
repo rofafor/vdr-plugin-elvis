@@ -39,7 +39,7 @@ VDR Plugin 'elvis' Revision History
 - Added Makefile depencency for objects.
 - Documented Antti Seppälä as co-author.
 
-2010-10-25: Version 0.0.5
+2010-10-28: Version 0.0.5
 
 - Updated widget API.
 - Added a return back to the recordings menu after exiting
@@ -49,4 +49,5 @@ VDR Plugin 'elvis' Revision History
   SVDRP interfaces.
 - Fixed a possible crash in shutdown.
 - Added support for widget data caching.
-- Added resume support for recordings.
+- Added resume support for recordings via resume.conf.
+- Added session support via cookie.conf.

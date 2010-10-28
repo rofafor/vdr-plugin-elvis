@@ -44,6 +44,7 @@ cElvisWidgetInfo::~cElvisWidgetInfo()
 
 // --- cElvisWidget ----------------------------------------------------
 
+const char *cElvisWidget::baseCookieNameS = "cookie.conf";
 const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
 const char* cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
 const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
@@ -65,48 +66,10 @@ void cElvisWidget::Destroy()
 }
 
 cElvisWidget::cElvisWidget()
-:  dataM(NULL),
+:  dataM(""),
+   handleM(NULL),
    headerListM(NULL)
 {
-  // initialize the curl session
-  handleM = curl_easy_init();
-
-  if (handleM) {
-#ifdef DEBUG
-     // verbose output
-     curl_easy_setopt(handleM, CURLOPT_VERBOSE, 1L);
-#endif
-
-     // set callback
-     curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisWidget::WriteCallback);
-     curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
-
-     // no progress meter and no signaling
-     curl_easy_setopt(handleM, CURLOPT_NOPROGRESS, 1L);
-     curl_easy_setopt(handleM, CURLOPT_NOSIGNAL, 1L);
-
-     // set timeout
-     curl_easy_setopt(handleM, CURLOPT_CONNECTTIMEOUT, 5L);
-     curl_easy_setopt(handleM, CURLOPT_TIMEOUT, 10L);
-
-     // set user-agent
-     curl_easy_setopt(handleM, CURLOPT_USERAGENT, *cString::sprintf("vdr-%s/%s", PLUGIN_NAME_I18N, VERSION));
-
-     // follow location
-     curl_easy_setopt(handleM, CURLOPT_FOLLOWLOCATION, 1L);
-
-     // enable cookies
-     curl_easy_setopt(handleM, CURLOPT_COOKIEFILE, "");
-
-     // set additional headers to prevent caching
-     headerListM = curl_slist_append(headerListM, "Cache-Control: no-store, no-cache, must-revalidate");
-     headerListM = curl_slist_append(headerListM, "Cache-Control: post-check=0, pre-check=0");
-     headerListM = curl_slist_append(headerListM, "Pragma: no-cache");
-     headerListM = curl_slist_append(headerListM, "Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-     curl_easy_setopt(handleM, CURLOPT_HTTPHEADER, headerListM); 
-
-     Login();
-     }
 }
 
 cElvisWidget::~cElvisWidget()
@@ -114,7 +77,7 @@ cElvisWidget::~cElvisWidget()
   cMutexLock(mutexM);
 
   if (handleM) {
-     Logout();
+     //Logout();
 
      // cleanup curl stuff
      if (headerListM) {
@@ -161,55 +124,138 @@ cString cElvisWidget::Escape(const char *s)
   return res;
 }
 
-void cElvisWidget::ResetData()
-{
-  dataM = "";
-}
-
 void cElvisWidget::PutData(const char *dataP, unsigned int lenP)
 {
   dataM = cString::sprintf("%s%s", *dataM, dataP);
 }
 
-bool cElvisWidget::IsValidData()
+bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 {
-  return !isempty(*dataM);
-}
-
-bool cElvisWidget::Perform(const char *msgP, const char *testP)
-{
-  debug("Perform: %s", msgP ? msgP : "unknown");
+  debug("cElvisWidget::Perform(%s)", msgP ? msgP : "unknown");
 
   if (handleM) {
-     ResetData();
+     CURLcode err;
+     int http_code = 0;
 
-     CURLcode err = curl_easy_perform(handleM);
+     // reset data
+     dataM = "";
+
+     curl_easy_setopt(handleM, CURLOPT_URL, urlP);
+     err = curl_easy_perform(handleM);
      if (err != CURLE_OK) {
         error("cElvisWidget::Perform(%s): %s", msgP ? msgP : "unknown", curl_easy_strerror(err));
         return false;
         }
 
-     int http_code = 0;
      err = curl_easy_getinfo(handleM, CURLINFO_HTTP_CODE, &http_code);
      if (err != CURLE_OK) {
-        error("cElvisWidget::Perform(Getinfo): %s", curl_easy_strerror(err));
+        error("cElvisWidget::Perform(%s): getinfo (%s)", msgP ? msgP : "unknown", curl_easy_strerror(err));
         return false;
         }
+
      if (http_code != 200) {
         error("cElvisWidget::Perform(%s): invalid HTTP Code (%d)", msgP ? msgP : "unknown", http_code);
         return false;
         }
 
-     if (!IsValidData()) {
+     if (isempty(*dataM)) {
         debug("cElvisWidget::Perform(%s): empty data", msgP ? msgP : "unknown");
         return false;
         }
-
-     if (testP)
-        return (strstr(*dataM, testP) != NULL);
      }
 
   return true;
+}
+
+bool cElvisWidget::Login()
+{
+  if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
+     error("cElvisWidget::Login(): invalid credentials");
+     return false;
+     }
+
+  if (!IsLogged() && handleM) {
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
+
+     // start a new session
+     //curl_easy_setopt(handleM, CURLOPT_COOKIESESSION, 1L);
+
+     if (Perform(*url, "Login"))
+        return strstr(*dataM, "TRUE");
+     }
+
+  return false;
+}
+
+bool cElvisWidget::Logout()
+{
+  if (IsLogged() && handleM) {
+     cString url = cString::sprintf("%s/logout.sl?ajax=true", GetBase());
+
+     return Perform(*url, "Logout");
+     }
+
+  return false;
+}
+
+bool cElvisWidget::IsLogged()
+{
+  if (handleM) {
+     cString url = cString::sprintf("%s/login.sl?islogged", GetBase());
+
+     if (Perform(*url, "IsLogged"))
+        return strstr(*dataM, "TRUE");
+     }
+
+  return false;
+}
+
+bool cElvisWidget::Load(const char *directoryP)
+{
+  // initialize the curl session
+  if (!handleM)
+     handleM = curl_easy_init();
+
+  if (handleM) {
+#ifdef DEBUG
+     // verbose output
+     curl_easy_setopt(handleM, CURLOPT_VERBOSE, 1L);
+#endif
+     // set callback
+     curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisWidget::WriteCallback);
+     curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
+
+     // no progress meter and no signaling
+     curl_easy_setopt(handleM, CURLOPT_NOPROGRESS, 1L);
+     curl_easy_setopt(handleM, CURLOPT_NOSIGNAL, 1L);
+
+     // set timeout
+     curl_easy_setopt(handleM, CURLOPT_CONNECTTIMEOUT, 5L);
+     curl_easy_setopt(handleM, CURLOPT_TIMEOUT, 10L);
+
+     // set user-agent
+     curl_easy_setopt(handleM, CURLOPT_USERAGENT, *cString::sprintf("vdr-%s/%s", PLUGIN_NAME_I18N, VERSION));
+
+     // follow location
+     curl_easy_setopt(handleM, CURLOPT_FOLLOWLOCATION, 1L);
+
+     // enable cookies
+     //curl_easy_setopt(handleM, CURLOPT_COOKIEFILE, "");
+     curl_easy_setopt(handleM, CURLOPT_COOKIEJAR, directoryP ? *cString::sprintf("%s/%s", directoryP, baseCookieNameS) : "-");
+
+     // set additional headers to prevent caching
+     headerListM = curl_slist_append(headerListM, "Cache-Control: no-store, no-cache, must-revalidate");
+     headerListM = curl_slist_append(headerListM, "Cache-Control: post-check=0, pre-check=0");
+     headerListM = curl_slist_append(headerListM, "Pragma: no-cache");
+     headerListM = curl_slist_append(headerListM, "Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+     curl_easy_setopt(handleM, CURLOPT_HTTPHEADER, headerListM);
+
+     //Login();
+
+     return true;
+     }
+
+  return false;
 }
 
 bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP)
@@ -217,16 +263,14 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
   cMutexLock(mutexM);
 
   if (handleM) {
-     if (folderIdP < 0)
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()));
-     else
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP));
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()) :
+                                     cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetRecordings")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetRecordings")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetRecordings(): relogin...");
+               info("cElvisWidget::GetRecordings(): relogin...");
                Login();
                continue;
                }
@@ -301,13 +345,13 @@ bool cElvisWidget::RemoveRecording(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP));
+     cString url = cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("RemoveRecording")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "RemoveRecording")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::RemoveRecording(): relogin...");
+               info("cElvisWidget::RemoveRecording(): relogin...");
                Login();
                continue;
                }
@@ -327,13 +371,13 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/recordings.sl?ajax=true", GetBase()));
+     cString url = cString::sprintf("%s/recordings.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetTimers")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetTimers")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetTimers(): relogin...");
+               info("cElvisWidget::GetTimers(): relogin...");
                Login();
                continue;
                }
@@ -385,20 +429,18 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     if (folderIdP < 0)
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP));
-     else
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP));
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP) :
+                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("AddTimer", "TRUE")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "AddTimer")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::AddTimer(): relogin...");
+               info("cElvisWidget::AddTimer(): relogin...");
                Login();
                continue;
                }
-            else {
+            else if (strstr(*dataM, "TRUE")) {
                debug("added timer id: %d", idP);
                return true;
                }
@@ -414,13 +456,13 @@ bool cElvisWidget::RemoveTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP));
+     cString url = cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("RemoveTimer")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "RemoveTimer")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::RemoveTimer(): relogin...");
+               info("cElvisWidget::RemoveTimer(): relogin...");
                Login();
                continue;
                }
@@ -440,13 +482,13 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?ajax=true", GetBase()));
+     cString url = cString::sprintf("%s/wildcards.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetSearchTimers")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetSearchTimers")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetSearchTimers(): relogin...");
+               info("cElvisWidget::GetSearchTimers(): relogin...");
                Login();
                continue;
                }
@@ -494,22 +536,20 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
   cMutexLock(mutexM);
 
   if (handleM && channelP && wildcardP) {
-     if (wildcardIdP < 0)
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true",
-                         GetBase(), *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
-     else
-        curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true",
-                         GetBase(), wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)));
+     cString url = (wildcardIdP < 0) ? cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(), *Escape(channelP),
+                                                        (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)) :
+                                       cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(),
+                                                        wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("AddSearchTimer", "TRUE")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "AddSearchTimer")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::AddSearchTimer(): relogin...");
+               info("cElvisWidget::AddSearchTimer(): relogin...");
                Login();
                continue;
                }
-            else {
+            else if (strstr(*dataM, "TRUE")) {
                if (wildcardIdP < 0) {
                   debug("added search timer: %s (folder:%d channel:%s)", wildcardP, folderIdP, channelP);
                   }
@@ -530,13 +570,13 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP));
+     cString url = cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("RemoveSearchTimer")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "RemoveSearchTimer")) {
             if (strstr(*dataM, "evlogin")) {
-               error("relogin...");
+               info("cElvisWidget::RemoveSearchTimer(): relogin...");
                Login();
                continue;
                }
@@ -556,13 +596,13 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase()));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetChannels")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetChannels")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetChannels(): relogin...");
+               info("cElvisWidget::GetChannels(): relogin...");
                Login();
                continue;
                }
@@ -596,13 +636,13 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP)));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetEvents")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetEvents")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetEvents(): relogin...");
+               info("cElvisWidget::GetEvents(): relogin...");
                Login();
                continue;
                }
@@ -652,19 +692,18 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   return false;
 }
 
-
 bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
 {
   cMutexLock(mutexM);
 
   if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/channels.sl?ajax=true", GetBase()));
+     cString url = cString::sprintf("%s/channels.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetEvents")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetEvents")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetTopEvents(): relogin...");
+               info("cElvisWidget::GetTopEvents(): relogin...");
                Login();
                continue;
                }
@@ -711,13 +750,13 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP));
+     cString url = cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
-            cCondWait::SleepMs(1000);
-         if (Perform("GetEventInfo")) {
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetEventInfo")) {
             if (strstr(*dataM, "evlogin")) {
-               error("cElvisWidget::GetEventInfo(): relogin...");
+               info("cElvisWidget::GetEventInfo(): relogin...");
                Login();
                continue;
                }
@@ -780,40 +819,4 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
      }
 
   return NULL;
-}
-
-bool cElvisWidget::Login()
-{
-  if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
-     error("cElvisWidget::Login(): invalid credentials");
-     return false;
-     }
-
-  if (!IsLogged() && handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true",
-                      GetBase(), ElvisConfig.Username, ElvisConfig.Password));
-     return Perform("Login", "TRUE");
-     }
-
-  return false;
-}
-
-bool cElvisWidget::Logout()
-{
-  if (IsLogged() && handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/logout.sl?ajax=true", GetBase()));
-     return Perform("Logout");
-     }
-
-  return false;
-}
-
-bool cElvisWidget::IsLogged()
-{
-  if (handleM) {
-     curl_easy_setopt(handleM, CURLOPT_URL, *cString::sprintf("%s/login.sl?islogged", GetBase()));
-     return Perform("IsLogged", "TRUE");
-     }
-
-  return false;
 }

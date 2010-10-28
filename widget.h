@@ -119,8 +119,10 @@ public:
 class cElvisWidget {
 private:
   enum {
-    eLoginRetries = 2
+    eLoginRetries = 2,
+    eLoginTimeout = 1000 // in milliseconds
   };
+  static const char *baseCookieNameS;
   static const char *baseUrlViihdeS;
   static const char *baseUrlViihdeSslS;
   static const char *baseUrlVisioS;
@@ -133,9 +135,7 @@ private:
   struct curl_slist *headerListM;
   cString Unescape(const char *s);
   cString Escape(const char *s);
-  inline void ResetData();
-  inline bool IsValidData();
-  inline bool Perform(const char *msgP, const char *testP = NULL);
+  bool Perform(const char *urlP, const char *msgP);
   bool Login();
   bool Logout();
   bool IsLogged();
@@ -149,6 +149,7 @@ public:
   static void Destroy();
   virtual ~cElvisWidget();
   const char *GetBase() { return (ElvisConfig.Ssl == 0) ? ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS) : ((ElvisConfig.Service == 0) ? baseUrlViihdeSslS : baseUrlVisioSslS); }
+  bool Load(const char *directoryP);
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);
