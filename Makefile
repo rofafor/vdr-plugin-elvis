@@ -5,6 +5,9 @@
 # Debugging on/off
 #ELVIS_DEBUG = 1
 
+# Use static json-c library
+#ELVIS_LIBJSONC = 0.9
+
 # Strip debug symbols?  Set eg. to /bin/true if not
 STRIP = strip
 
@@ -33,7 +36,11 @@ TMPDIR = /tmp
 
 ### Libraries
 
-LIBS = $(shell curl-config --libs) $(shell pkg-config --libs json)
+LIBS = $(shell curl-config --libs)
+
+ifndef ELVIS_LIBJSONC
+LIBS += $(shell pkg-config --libs json)
+endif
 
 ### Make sure that necessary options are included:
 
@@ -69,6 +76,25 @@ OBJS = common.o config.o events.o fetch.o menu.o player.o recordings.o resume.o 
 ### The main target:
 
 all: libvdr-$(PLUGIN).so i18n
+
+### Static json-c library target:
+
+json-c-$(ELVIS_LIBJSONC).tar.gz:
+	@wget http://oss.metaparadigm.com/json-c/json-c-$(ELVIS_LIBJSONC).tar.gz
+
+json: json-c-$(ELVIS_LIBJSONC).tar.gz
+	@tar xzf json-c-$(ELVIS_LIBJSONC).tar.gz
+	@-rm -rf json
+	@mv json-c-$(ELVIS_LIBJSONC) json
+
+json/.libs/libjson.a: json
+	@cd json && ./configure --enable-static --disable-shared --with-pic
+	$(MAKE) -C json all
+
+ifdef ELVIS_LIBJSONC
+JSONLIB = json/.libs/libjson.a
+INCLUDES += -I.
+endif
 
 ### Implicit rules:
 
@@ -111,8 +137,8 @@ i18n: $(I18Nmsgs) $(I18Npot)
 
 ### Targets:
 
-libvdr-$(PLUGIN).so: $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared $(OBJS) $(LIBS) -o $@
+libvdr-$(PLUGIN).so: $(JSONLIB) $(OBJS)
+	$(CXX) $(CXXFLAGS) -shared $(OBJS) $(JSONLIB) $(LIBS) -o $@
 ifndef ELVIS_DEBUG
 	@$(STRIP) $@
 endif
@@ -127,4 +153,7 @@ dist: clean
 	@echo Distribution package created as $(PACKAGE).tgz
 
 clean:
+ifdef ELVIS_LIBJSONC
+	$(MAKE) -C json clean
+endif
 	@-rm -f $(OBJS) $(DEPFILE) *.so *.tgz core* *~ $(PODIR)/*.mo $(PODIR)/*.pot
