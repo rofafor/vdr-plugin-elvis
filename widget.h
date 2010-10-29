@@ -135,7 +135,8 @@ private:
   struct curl_slist *headerListM;
   cString Unescape(const char *s);
   cString Escape(const char *s);
-  bool Perform(const char *urlP, const char *msgP);
+  inline const char *GetBase();
+  inline const char *Perform(const char *urlP, const char *msgP);
   bool Login();
   bool Logout();
   bool IsLogged();
@@ -148,7 +149,6 @@ public:
   static cElvisWidget *GetInstance();
   static void Destroy();
   virtual ~cElvisWidget();
-  const char *GetBase() { return (ElvisConfig.Ssl == 0) ? ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS) : ((ElvisConfig.Service == 0) ? baseUrlViihdeSslS : baseUrlVisioSslS); }
   bool Load(const char *directoryP);
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
