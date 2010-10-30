@@ -5,7 +5,7 @@
 # Debugging on/off
 #ELVIS_DEBUG = 1
 
-# Use static json-c library
+# Use static json-c library version
 #ELVIS_LIBJSONC = 0.9
 
 # Strip debug symbols?  Set eg. to /bin/true if not
@@ -79,19 +79,25 @@ all: libvdr-$(PLUGIN).so i18n
 
 ### Static json-c library target:
 
-json-c-$(ELVIS_LIBJSONC).tar.gz:
-	@wget http://oss.metaparadigm.com/json-c/json-c-$(ELVIS_LIBJSONC).tar.gz
-
-json: json-c-$(ELVIS_LIBJSONC).tar.gz
-	@tar xzf json-c-$(ELVIS_LIBJSONC).tar.gz
-	@-rm -rf json
-	@mv json-c-$(ELVIS_LIBJSONC) json
+ifdef ELVIS_LIBJSONC
+json:
+	@if [ ! -d json ]; then \
+	    wget -q -O json-c-$(ELVIS_LIBJSONC).tar.gz http://oss.metaparadigm.com/json-c/json-c-$(ELVIS_LIBJSONC).tar.gz; \
+	    if [ $$? -eq 0 ]; then \
+	       tar xzf json-c-$(ELVIS_LIBJSONC).tar.gz; \
+	       rm -rf json json-c-$(ELVIS_LIBJSONC).tar.gz; \
+	       mv json-c-$(ELVIS_LIBJSONC) json; \
+	    else \
+	       rm -f json-c-$(ELVIS_LIBJSONC).tar.gz; \
+	       echo "Unable to download json-c-$(ELVIS_LIBJSONC).tar.gz"; \
+	       exit 1; \
+	    fi; \
+	fi
 
 json/.libs/libjson.a: json
 	@cd json && ./configure --enable-static --disable-shared --with-pic
 	$(MAKE) -C json all
 
-ifdef ELVIS_LIBJSONC
 JSONLIB = json/.libs/libjson.a
 INCLUDES += -I.
 endif
@@ -152,8 +158,14 @@ dist: clean
 	@-rm -rf $(TMPDIR)/$(ARCHIVE)
 	@echo Distribution package created as $(PACKAGE).tgz
 
+.PHONY: cleanall
+cleanall: clean
+	@-rm -rf json
+
 clean:
 ifdef ELVIS_LIBJSONC
-	$(MAKE) -C json clean
+	@if [ -f json/Makefile ]; then \
+	    $(MAKE) -C json clean; \
+	fi
 endif
 	@-rm -f $(OBJS) $(DEPFILE) *.so *.tgz core* *~ $(PODIR)/*.mo $(PODIR)/*.pot
