@@ -178,9 +178,5 @@ void cElvisRecordings::Reset()
   if (folder) {
      Add(folder);
      folder->Update(true);
-     for (cElvisRecording *item = folder->cList<cElvisRecording>::First(); item; item = folder->cList<cElvisRecording>::Next(item)) {
-         if (item->IsFolder())
-            Add(new cElvisRecordingFolder(item->Id(), item->Name()));
-         }
      }
 }
