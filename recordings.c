@@ -59,7 +59,10 @@ cElvisRecordingFolder::~cElvisRecordingFolder()
 void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP)
 {
   cMutexLock(mutexM);
-  Add(new cElvisRecording(idP, programIdP, folderIdP, nameP, channelP, startTimeP, sizeP));
+  cElvisRecording *rec = new cElvisRecording(idP, programIdP, folderIdP, nameP, channelP, startTimeP, sizeP);
+  Add(rec);
+  if (rec->IsFolder())
+     cElvisRecordings::GetInstance()->AddFolder(rec->Id(), rec->Name());
   ChangeState();
 }
 
