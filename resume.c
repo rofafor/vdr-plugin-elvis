@@ -117,7 +117,7 @@ bool cElvisResumeItems::Save()
 bool cElvisResumeItems::Store(int programIdP, unsigned long byteOffsetP, unsigned long fileSizeP)
 {
   cMutexLock(mutexM);
-  debug("cElvisResumeItems::Store(%d, %ld)", programIdP, byteOffsetP, fileSizeP);
+  debug("cElvisResumeItems::Store(%d, %ld, %ld)", programIdP, byteOffsetP, fileSizeP);
   if (programIdP > 0) {
      cElvisResumeItem *existing = NULL;
      for (cElvisResumeItem *item = First(); item; item = Next(item)) {

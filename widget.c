@@ -135,7 +135,7 @@ bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 
   if (handleM) {
      CURLcode err;
-     int http_code = 0;
+     long http_code = 0;
 
      // reset data
      dataM = "";
@@ -147,14 +147,14 @@ bool cElvisWidget::Perform(const char *urlP, const char *msgP)
         return false;
         }
 
-     err = curl_easy_getinfo(handleM, CURLINFO_HTTP_CODE, &http_code);
+     err = curl_easy_getinfo(handleM, CURLINFO_RESPONSE_CODE, &http_code);
      if (err != CURLE_OK) {
         error("cElvisWidget::Perform(%s): getinfo (%s)", msgP ? msgP : "unknown", curl_easy_strerror(err));
         return false;
         }
 
      if (http_code != 200) {
-        error("cElvisWidget::Perform(%s): invalid HTTP Code (%d)", msgP ? msgP : "unknown", http_code);
+        error("cElvisWidget::Perform(%s): invalid HTTP Code (%ld)", msgP ? msgP : "unknown", http_code);
         return false;
         }
 
