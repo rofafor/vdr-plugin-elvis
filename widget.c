@@ -45,10 +45,10 @@ cElvisWidgetInfo::~cElvisWidgetInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char *cElvisWidget::baseCookieNameS = "cookie.conf";
-const char *cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
-const char *cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
-const char *cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
-const char *cElvisWidget::baseUrlVisioSslS = "https://www.saunavisio.fi/tvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
+const char* cElvisWidget::baseUrlVisioSslS = "https://www.saunavisio.fi/tvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 
@@ -102,8 +102,8 @@ size_t cElvisWidget::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void
 
 cString cElvisWidget::Unescape(const char *s)
 {
-  cString res = strunescape(s);
-  if (0 && handleM) {
+  cString res; // = strunescape(s);
+  if (handleM) {
      char *p = curl_easy_unescape(handleM, s, 0, NULL);
      res = p;
      curl_free(p);
@@ -114,8 +114,8 @@ cString cElvisWidget::Unescape(const char *s)
 
 cString cElvisWidget::Escape(const char *s)
 {
-  cString res = strescape(s);
-  if (0 && handleM) {
+  cString res; // = strescape(s);
+  if (handleM) {
      char *p = curl_easy_escape(handleM, s, 0);
      res = p;
      curl_free(p);
@@ -129,29 +129,11 @@ void cElvisWidget::PutData(const char *dataP, unsigned int lenP)
   dataM = cString::sprintf("%s%s", *dataM, dataP);
 }
 
-const char *cElvisWidget::GetBase()
-{
-  if (ElvisConfig.Ssl) {
-     if (ElvisConfig.Service)
-        return baseUrlVisioSslS;
-     else
-        return baseUrlViihdeSslS;
-     }
-  else {
-     if (ElvisConfig.Service)
-        return baseUrlVisioS;
-     else
-        return baseUrlViihdeS;
-     }
-
-  return NULL;
-}
-
-const char *cElvisWidget::Perform(const char *urlP, const char *msgP)
+bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 {
   debug("cElvisWidget::Perform(%s)", msgP ? msgP : "unknown");
 
-  if (handleM && !isempty(urlP)) {
+  if (handleM) {
      CURLcode err;
      int http_code = 0;
 
@@ -162,24 +144,27 @@ const char *cElvisWidget::Perform(const char *urlP, const char *msgP)
      err = curl_easy_perform(handleM);
      if (err != CURLE_OK) {
         error("cElvisWidget::Perform(%s): %s", msgP ? msgP : "unknown", curl_easy_strerror(err));
-        return NULL;
+        return false;
         }
 
      err = curl_easy_getinfo(handleM, CURLINFO_HTTP_CODE, &http_code);
      if (err != CURLE_OK) {
         error("cElvisWidget::Perform(%s): getinfo (%s)", msgP ? msgP : "unknown", curl_easy_strerror(err));
-        return NULL;
+        return false;
         }
 
      if (http_code != 200) {
         error("cElvisWidget::Perform(%s): invalid HTTP Code (%d)", msgP ? msgP : "unknown", http_code);
-        return NULL;
+        return false;
         }
 
-     return *dataM;
+     if (isempty(*dataM)) {
+        debug("cElvisWidget::Perform(%s): empty data", msgP ? msgP : "unknown");
+        return false;
+        }
      }
 
-  return NULL;
+  return true;
 }
 
 bool cElvisWidget::Login()
@@ -190,16 +175,13 @@ bool cElvisWidget::Login()
      }
 
   if (!IsLogged() && handleM) {
-     char url[255];
-     const char *data;
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
 
      // start a new session
      //curl_easy_setopt(handleM, CURLOPT_COOKIESESSION, 1L);
 
-     snprintf(url, sizeof(url), "%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
-     data = Perform(url, "Login");
-     if (!isempty(data))
-        return strstr(data, "TRUE");
+     if (Perform(*url, "Login"))
+        return strstr(*dataM, "TRUE");
      }
 
   return false;
@@ -208,10 +190,9 @@ bool cElvisWidget::Login()
 bool cElvisWidget::Logout()
 {
   if (IsLogged() && handleM) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/logout.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/logout.sl?ajax=true", GetBase());
 
-     return Perform(url, "Logout");
+     return Perform(*url, "Logout");
      }
 
   return false;
@@ -220,13 +201,10 @@ bool cElvisWidget::Logout()
 bool cElvisWidget::IsLogged()
 {
   if (handleM) {
-     char url[255];
-     const char *data;
+     cString url = cString::sprintf("%s/login.sl?islogged", GetBase());
 
-     snprintf(url, sizeof(url), "%s/login.sl?islogged", GetBase());
-     data = Perform(url, "IsLogged");
-     if (!isempty(data))
-        return strstr(data, "TRUE");
+     if (Perform(*url, "IsLogged"))
+        return strstr(*dataM, "TRUE");
      }
 
   return false;
@@ -285,25 +263,20 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
   cMutexLock(mutexM);
 
   if (handleM) {
-     char url[255];
-     if (folderIdP < 0)
-        snprintf(url, sizeof(url), "%s/ready.sl?ajax=true&clear=true", GetBase());
-     else
-        snprintf(url, sizeof(url), "%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP);
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()) :
+                                     cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetRecordings");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetRecordings")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetRecordings(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "ready_data")) {
@@ -372,15 +345,12 @@ bool cElvisWidget::RemoveRecording(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "RemoveRecording");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "RemoveRecording")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::RemoveRecording(): relogin...");
                Login();
                continue;
@@ -401,22 +371,19 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/recordings.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/recordings.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetTimers");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetTimers")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetTimers(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "recordings")) {
@@ -462,23 +429,18 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     char url[255];
-     if (folderIdP < 0)
-        snprintf(url, sizeof(url), "%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP);
-     else
-        snprintf(url, sizeof(url), "%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP);
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP) :
+                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "AddTimer");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "AddTimer")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::AddTimer(): relogin...");
                Login();
                continue;
                }
-            else if (strstr(data, "TRUE")) {
+            else if (strstr(*dataM, "TRUE")) {
                debug("added timer id: %d", idP);
                return true;
                }
@@ -494,15 +456,12 @@ bool cElvisWidget::RemoveTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/program.sl?remover=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "RemoveTimer");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "RemoveTimer")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::RemoveTimer(): relogin...");
                Login();
                continue;
@@ -523,22 +482,19 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/wildcards.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/wildcards.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetSearchTimers");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetSearchTimers")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetSearchTimers(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "wildcardrecordings")) {
@@ -580,25 +536,20 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
   cMutexLock(mutexM);
 
   if (handleM && channelP && wildcardP) {
-     char url[255];
-     if (wildcardIdP < 0)
-        snprintf(url, sizeof(url), "%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(), *Escape(channelP),
-                 (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP));
-     else
-        snprintf(url, sizeof(url), "%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(),
-                 wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP));
+     cString url = (wildcardIdP < 0) ? cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(), *Escape(channelP),
+                                                        (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)) :
+                                       cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(),
+                                                        wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "AddSearchTimer");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "AddSearchTimer")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::AddSearchTimer(): relogin...");
                Login();
                continue;
                }
-            else if (strstr(data, "TRUE")) {
+            else if (strstr(*dataM, "TRUE")) {
                if (wildcardIdP < 0) {
                   debug("added search timer: %s (folder:%d channel:%s)", wildcardP, folderIdP, channelP);
                   }
@@ -619,18 +570,12 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     char url[255];
-
-     snprintf(url, sizeof(url), "%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP);
-
+     cString url = cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
-
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-
-         if (Perform(url, "RemoveSearchTimer")) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "RemoveSearchTimer")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::RemoveSearchTimer(): relogin...");
                Login();
                continue;
@@ -651,22 +596,19 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/ajaxprograminfo.sl?channels", GetBase());
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetChannels");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetChannels")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetChannels(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "channels")) {
@@ -678,7 +620,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                            }
                        }
                     }
-                  json_object_put(json);
+				  json_object_put(json);
                   }
                return true;
                }
@@ -694,22 +636,19 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetEvents");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetEvents")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetEvents(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "channelname")) {
@@ -758,22 +697,19 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/channels.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/channels.sl?ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetEvents");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetEvents")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetTopEvents(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "programs")) {
@@ -814,22 +750,19 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
-     char url[255];
-     snprintf(url, sizeof(url), "%s/program.sl?programid=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
-         const char *data;
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
-         data = Perform(url, "GetEventInfo");
-         if (!isempty(data)) {
-            if (strstr(data, "evlogin")) {
+         if (Perform(*url, "GetEventInfo")) {
+            if (strstr(*dataM, "evlogin")) {
                info("cElvisWidget::GetEventInfo(): relogin...");
                Login();
                continue;
                }
             else {
                json_object_iter it;
-               json_object *json = json_tokener_parse(data);
+               json_object *json = json_tokener_parse(*dataM);
                if (!is_error(json)) {
                   bool has_started = false, has_ended = false, recorded = false, ready = false, is_wildcard = false;
                   int id = 0, length = 0, programviewid = 0, recordingid = 0;
