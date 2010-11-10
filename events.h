@@ -52,7 +52,6 @@ private:
  enum {
     eUpdateInterval = 7200 // 120min
   };
-  cMutex mutexM;
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
@@ -82,7 +81,6 @@ private:
   enum {
     eUpdateInterval = 7200 // 120min
   };
-  cMutex mutexM;
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
@@ -113,7 +111,6 @@ private:
   enum {
     eUpdateInterval = 900 // 15min
   };
-  cMutex mutexM;
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);

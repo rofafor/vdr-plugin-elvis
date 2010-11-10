@@ -21,6 +21,8 @@ private:
   int idM;
   int programIdM;
   int folderIdM;
+  int countM;
+  int lengthM;
   cString nameM;
   cString channelM;
   cString startTimeM;
@@ -33,12 +35,15 @@ private:
   cElvisRecording(const cElvisRecording&);
   cElvisRecording &operator=(const cElvisRecording &);
 public:
-  cElvisRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP);
+  cElvisRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
+  cElvisRecording(int idP, int countP, const char *nameP, const char *sizeP);
   virtual ~cElvisRecording();
   cElvisWidgetInfo *Info();
   int Id() { return idM; }
   int ProgramId() { return programIdM; }
   int FolderId() { return folderIdM; }
+  int Count() { return countM; }
+  int LengthInMinutes() { return lengthM; }
   const char *Name() { return *nameM; }
   const char *Channel() { return *channelM; }
   const char *StartTime() { return *startTimeM; }
@@ -53,7 +58,6 @@ private:
   enum {
     eUpdateInterval = 3600 // 60min
   };
-  cMutex mutexM;
   int stateM;
   time_t lastUpdateM;
   int folderIdM;
@@ -69,7 +73,8 @@ protected:
 public:
   cElvisRecordingFolder(int folderIdP, const char *folderNameP);
   virtual ~cElvisRecordingFolder();
-  virtual void AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP);
+  virtual void AddFolder(int idP, int countP, const char *nameP, const char *sizeP);
+  virtual void AddRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
   bool DeleteRecording(cElvisRecording *recordingP);
   bool Update(bool waitP = false);
   void ChangeState(void) { ++stateM; }

@@ -43,7 +43,6 @@ void cElvisSearchTimers::Destroy()
 
 cElvisSearchTimers::cElvisSearchTimers()
 : cThread("cElvisSearchTimers"),
-  mutexM(),
   stateM(0),
   lastUpdateM(0)
 {
@@ -51,20 +50,20 @@ cElvisSearchTimers::cElvisSearchTimers()
 
 cElvisSearchTimers::~cElvisSearchTimers()
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   Cancel(3);
 }
 
 void cElvisSearchTimers::AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   Add(new cElvisSearchTimer(idP, folderP, addedP, channelP, wildcardP));
   ChangeState();
 }
 
 bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   if (cElvisWidget::GetInstance()->AddSearchTimer(channelP, wildcardP, folderIdP, timerP ? timerP->Id() : -1)) {
      Start();
      return true;
@@ -75,7 +74,7 @@ bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP,
 
 bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   if (timerP && cElvisWidget::GetInstance()->RemoveSearchTimer(timerP->Id())) {
      Del(timerP);
      ChangeState();
@@ -89,10 +88,10 @@ bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
 void cElvisSearchTimers::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  mutexM.Lock();
+  Lock();
   Clear();
   ChangeState();
-  mutexM.Unlock();
+  Unlock();
   cElvisWidget::GetInstance()->GetSearchTimers(*this);
 }
 
@@ -110,7 +109,7 @@ bool cElvisSearchTimers::Update(bool waitP)
 
 bool cElvisSearchTimers::StateChanged(int &stateP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   bool result = (stateP != stateM);
 
   stateP = stateM;

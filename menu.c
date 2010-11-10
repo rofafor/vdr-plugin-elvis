@@ -89,25 +89,27 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
      bool resume = cElvisResumeItems::GetInstance()->HasResume(recordingM->ProgramId(), offset, size);
      int watched = size ? (int)(100L * offset / size) : 0;
      if (recordingM->IsFolder())
-        SetText(cString::sprintf("%s\t\t\t%s", tr("[DIR]"), recordingM->Name()));
+        SetText(cString::sprintf("%s\t%d\t\t%s", tr("[DIR]"), recordingM->Count(), recordingM->Name()));
      else
         SetText(cString::sprintf("%s\t%s\t%c\t%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                 resume ? ' ' : '*', recordingM->Name()));
+                                 resume ? '*' : ' ', recordingM->Name()));
      if (recordingM->Info()) {
         if (resume)
-           descriptionM = cString::sprintf("%s %s - %s (%s / %d%%)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(), watched,
+           descriptionM = cString::sprintf("%s %s - %s (%s; %d; %d%%)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(), recordingM->Count(), watched,
                                            recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
         else
-           descriptionM = cString::sprintf("%s %s - %s (%s)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(),
+           descriptionM = cString::sprintf("%s %s - %s (%s; %d)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
+                                           *TimeString(recordingM->StartTimeValue() + (recordingM->Info()->LengthValue() * 60)), recordingM->Info()->Length(), recordingM->Count(),
                                            recordingM->Channel(), recordingM->Name(), recordingM->Info()->ShortText(), recordingM->Info()->Description());
         }
      else {
         if (resume)
-           descriptionM = cString::sprintf("%s (%d%%)\n%s\n\n%s", recordingM->StartTime(), watched, recordingM->Channel(), recordingM->Name());
+           descriptionM = cString::sprintf("%s %s (%d; %d%%)\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()), recordingM->Count(),
+                                           watched, recordingM->Channel(), recordingM->Name());
         else
-           descriptionM = cString::sprintf("%s\n%s\n\n%s", recordingM->StartTime(), recordingM->Channel(), recordingM->Name());
+           descriptionM = cString::sprintf("%s %s (%d)\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()), recordingM->Count(),
+                                           recordingM->Channel(), recordingM->Name());
         }
      }
 }
@@ -153,6 +155,7 @@ void cElvisRecordingsMenu::Setup()
   Clear();
 
   if (folderM) {
+     cThreadLock lock(folderM);
      for (cElvisRecording *item = folderM->cList<cElvisRecording>::First(); item; item = folderM->cList<cElvisRecording>::Next(item))
          Add(new cElvisRecordingItem(item));
      }
@@ -443,8 +446,12 @@ void cElvisTimersMenu::Setup()
 
   Clear();
 
-  for (cElvisTimer *item = cElvisTimers::GetInstance()->First(); item; item = cElvisTimers::GetInstance()->Next(item))
-      Add(new cElvisTimerItem(item));
+  if (true)
+  {
+     cThreadLock lock(cElvisTimers::GetInstance());
+     for (cElvisTimer *item = cElvisTimers::GetInstance()->First(); item; item = cElvisTimers::GetInstance()->Next(item))
+         Add(new cElvisTimerItem(item));
+  }
 
   SetCurrent(Get(current));
   Display();
@@ -649,8 +656,11 @@ void cElvisSearchTimersMenu::Setup()
 
   Clear();
 
-  for (cElvisSearchTimer *item = cElvisSearchTimers::GetInstance()->First(); item; item = cElvisSearchTimers::GetInstance()->Next(item))
-      Add(new cElvisSearchTimerItem(item));
+  if (true) {
+     cThreadLock lock(cElvisSearchTimers::GetInstance());
+     for (cElvisSearchTimer *item = cElvisSearchTimers::GetInstance()->First(); item; item = cElvisSearchTimers::GetInstance()->Next(item))
+         Add(new cElvisSearchTimerItem(item));
+     }
 
   SetCurrent(Get(current));
   Display();
@@ -862,6 +872,7 @@ void cElvisChannelEventsMenu::Setup()
   Clear();
 
   if (channelM) {
+     cThreadLock lock(channelM);
      for (cElvisEvent *item = channelM->cList<cElvisEvent>::First(); item; item = channelM->cList<cElvisEvent>::Next(item))
          Add(new cElvisChannelEventItem(item));
      }
@@ -985,10 +996,13 @@ void cElvisEPGMenu::Setup()
 
   Clear();
 
-  for (cElvisChannel *item = cElvisChannels::GetInstance()->First(); item; item = cElvisChannels::GetInstance()->Next(item)) {
-      if (item->Name())
-         Add(new cElvisChannelItem(item));
-      }
+  if (true) {
+     cThreadLock lock(cElvisChannels::GetInstance());
+     for (cElvisChannel *item = cElvisChannels::GetInstance()->First(); item; item = cElvisChannels::GetInstance()->Next(item)) {
+         if (item->Name())
+            Add(new cElvisChannelItem(item));
+         }
+     }
 
   SetCurrent(Get(current));
   Display();
@@ -1064,8 +1078,11 @@ void cElvisTopEventsMenu::Setup()
 
   Clear();
 
-  for (cElvisEvent *item = cElvisTopEvents::GetInstance()->First(); item; item = cElvisTopEvents::GetInstance()->Next(item))
-      Add(new cElvisChannelEventItem(item));
+  if (true) {
+     cThreadLock lock(cElvisTopEvents::GetInstance());
+     for (cElvisEvent *item = cElvisTopEvents::GetInstance()->First(); item; item = cElvisTopEvents::GetInstance()->Next(item))
+         Add(new cElvisChannelEventItem(item));
+     }
 
   SetCurrent(Get(current));
   Display();

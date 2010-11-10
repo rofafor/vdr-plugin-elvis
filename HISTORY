@@ -52,3 +52,8 @@ VDR Plugin 'elvis' Revision History
 - Added resume support for recordings via resume.conf.
 - Added session support via cookie.conf.
 - Added build support with a static json-c library.
+
+2010-xx-xx: Version 0.0.6
+
+- Updated widget API.
+- Fixed locking issues.

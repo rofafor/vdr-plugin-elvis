@@ -289,7 +289,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                     json_object_iter it3;
                                     json_object *json3 = json_object_array_get_idx(it2.val, j);
                                     cString name = "", size = "";
-                                    int id = 0;
+                                    int id = 0, count = 0;
                                     json_object_object_foreachC(json3, it3) {
                                       if (!strcmp(it3.key, "id"))
                                          id = json_object_get_int(it3.val);
@@ -297,17 +297,19 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                          name = Unescape(json_object_get_string(it3.val));
                                       else if (!strcmp(it3.key, "size"))
                                          size = Unescape(json_object_get_string(it3.val));
+                                      else if (!strcmp(it3.key, "recordings_count"))
+                                         count = json_object_get_int(it3.val);
                                       }
-                                    debug("id: %d name: '%s' size: '%s'", id, *name, *size);
-                                    callbackP.AddRecording(id, -1, -1, *name, NULL, NULL, *size);
+                                    debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                    callbackP.AddFolder(id, count, *name, *size);
                                     }
                                 }
                              else if (!strcmp(it2.key, "recordings")) {
                                 for (int j = 0; j < json_object_array_length(it2.val); ++j) {
                                     json_object_iter it3;
                                     json_object *json3 = json_object_array_get_idx(it2.val, j);
-                                    cString name = "", channel = "", start_time = "";
-                                    int id = 0, program_id = 0, folder_id = 0;
+                                    cString name = "", channel = "", start_time = "", timestamp = "";
+                                    int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
                                     json_object_object_foreachC(json3, it3) {
                                       if (!strcmp(it3.key, "id"))
                                          id = json_object_get_int(it3.val);
@@ -321,9 +323,15 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                          channel = Unescape(json_object_get_string(it3.val));
                                       else if (!strcmp(it3.key, "start_time"))
                                          start_time = Unescape(json_object_get_string(it3.val));
+                                      else if (!strcmp(it3.key, "timestamp"))
+                                         timestamp = Unescape(json_object_get_string(it3.val));
+                                      else if (!strcmp(it3.key, "viewcount"))
+                                         count = json_object_get_int(it3.val);
+                                      else if (!strcmp(it3.key, "length"))
+                                         length = json_object_get_int(it3.val);
                                       }
-                                    debug("id: %d program_id: %d folder_id: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, *name, *channel, *start_time);
-                                    callbackP.AddRecording(id, program_id, folder_id, *name, *channel, *start_time, NULL);
+                                    debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                    callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
                                     }
                                 }
                              }

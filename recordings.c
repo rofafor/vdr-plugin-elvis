@@ -11,16 +11,33 @@
 
 // --- cElvisRecording -------------------------------------------------
 
-cElvisRecording::cElvisRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP)
+cElvisRecording::cElvisRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP)
 : idM(idP),
   programIdM(programIdP),
   folderIdM(folderIdP),
+  countM(countP),
+  lengthM(lengthP),
   nameM(nameP),
   channelM(channelP),
   startTimeM(startTimeP),
-  sizeM(sizeP),
+  sizeM(NULL),
   infoM(NULL),
   startTimeValueM(strtotime(startTimeP))
+{
+}
+
+cElvisRecording::cElvisRecording(int idP, int countP, const char *nameP, const char *sizeP)
+: idM(idP),
+  programIdM(-1),
+  folderIdM(-1),
+  countM(countP),
+  lengthM(-1),
+  nameM(nameP),
+  channelM(NULL),
+  startTimeM(NULL),
+  sizeM(sizeP),
+  infoM(NULL),
+  startTimeValueM(0)
 {
 }
 
@@ -41,7 +58,6 @@ cElvisWidgetInfo *cElvisRecording::Info()
 
 cElvisRecordingFolder::cElvisRecordingFolder(int folderIdP, const char *folderNameP)
 : cThread(*cString::sprintf("cElvisRecordingFolder(%d)", folderIdP)),
-  mutexM(),
   stateM(0),
   lastUpdateM(0),
   folderIdM(folderIdP),
@@ -51,24 +67,31 @@ cElvisRecordingFolder::cElvisRecordingFolder(int folderIdP, const char *folderNa
 
 cElvisRecordingFolder::~cElvisRecordingFolder()
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
 
   Cancel(3);
 }
 
-void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP)
+void cElvisRecordingFolder::AddFolder(int idP, int countP, const char *nameP, const char *sizeP)
 {
-  cMutexLock(mutexM);
-  cElvisRecording *rec = new cElvisRecording(idP, programIdP, folderIdP, nameP, channelP, startTimeP, sizeP);
+  cThreadLock(this);
+  cElvisRecording *rec = new cElvisRecording(idP, countP, nameP, sizeP);
   Add(rec);
-  if (rec->IsFolder())
-     cElvisRecordings::GetInstance()->AddFolder(rec->Id(), rec->Name());
+  cElvisRecordings::GetInstance()->AddFolder(rec->Id(), rec->Name());
+  ChangeState();
+}
+
+void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP)
+{
+  cThreadLock(this);
+  cElvisRecording *rec = new cElvisRecording(idP, programIdP, folderIdP, countP, lengthP, nameP, channelP, startTimeP);
+  Add(rec);
   ChangeState();
 }
 
 bool cElvisRecordingFolder::DeleteRecording(cElvisRecording *recordingP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   if (recordingP && cElvisWidget::GetInstance()->RemoveRecording(recordingP->Id())) {
      Del(recordingP);
      return true;
@@ -80,10 +103,10 @@ bool cElvisRecordingFolder::DeleteRecording(cElvisRecording *recordingP)
 void cElvisRecordingFolder::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  mutexM.Lock();
+  Lock();
   Clear();
   ChangeState();
-  mutexM.Unlock();
+  Unlock();
   cElvisWidget::GetInstance()->GetRecordings(*this, folderIdM);
 }
 
@@ -101,7 +124,7 @@ bool cElvisRecordingFolder::Update(bool waitP)
 
 bool cElvisRecordingFolder::StateChanged(int &stateP)
 {
-  cMutexLock(mutexM);
+  cThreadLock(this);
   bool result = (stateP != stateM);
 
   stateP = stateM;

@@ -28,7 +28,8 @@ class cElvisWidgetRecordingCallbackIf {
 public:
   cElvisWidgetRecordingCallbackIf() {}
   virtual ~cElvisWidgetRecordingCallbackIf() {}
-  virtual void AddRecording(int idP, int programIdP, int folderIdP, const char *nameP, const char *channelP, const char *startTimeP, const char *sizeP) = 0;
+  virtual void AddFolder(int idP, int countP, const char *nameP, const char *sizeP) = 0;
+  virtual void AddRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP) = 0;
 };
 
 class cElvisWidgetTimerCallbackIf {
