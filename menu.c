@@ -117,7 +117,7 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
 // --- cElvisRecordingsMenu --------------------------------------------
 
 cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings")), 8, 6, 2),
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings")), 9, 7, 2),
   folderM(cElvisRecordings::GetInstance()->GetFolder(folderIdP)),
   levelM(levelP)
 {
@@ -419,7 +419,7 @@ cElvisTimerItem::cElvisTimerItem(cElvisTimer *timerP)
 // --- cElvisTimersMenu ------------------------------------------------
 
 cElvisTimersMenu::cElvisTimersMenu()
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 8, 6, 6, 2)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 10, 7, 7, 2)
 {
   cElvisTimers::GetInstance()->StateChanged(stateM);
   cElvisTimers::GetInstance()->Update();
@@ -845,7 +845,7 @@ cElvisChannelEventItem::cElvisChannelEventItem(cElvisEvent *eventP)
 // --- cElvisChannelEventsMenu ------------------------------------------------
 
 cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 6, 6),
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 7, 7),
   channelM(channelP)
 {
   if (channelM) {
@@ -1055,7 +1055,7 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
 // --- cElvisTopEventsMenu ---------------------------------------------
 
 cElvisTopEventsMenu::cElvisTopEventsMenu()
-: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 6, 6)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 7, 7)
 {
   cElvisTopEvents::GetInstance()->StateChanged(stateM);
   cElvisTopEvents::GetInstance()->Update();
