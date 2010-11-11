@@ -92,7 +92,7 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
         SetText(cString::sprintf("%s\t%d\t\t%s", tr("[DIR]"), recordingM->Count(), recordingM->Name()));
      else
         SetText(cString::sprintf("%s\t%s\t%c\t%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
-                                 resume ? '*' : ' ', recordingM->Name()));
+                                 resume ? ' ' : '*', recordingM->Name()));
      if (recordingM->Info()) {
         if (resume)
            descriptionM = cString::sprintf("%s %s - %s (%s; %d; %d%%)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
