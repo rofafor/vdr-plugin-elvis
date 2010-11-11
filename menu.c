@@ -1213,7 +1213,7 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
   switch (state) {
     case osUser1:
          if (cElvisRecordings::GetInstance()->Count() == 0)
-            cElvisRecordings::GetInstance()->Reset();
+            cElvisRecordings::GetInstance()->Reset(false);
          return AddSubMenu(new cElvisRecordingsMenu);
     case osUser2:
          return AddSubMenu(new cElvisTimersMenu);

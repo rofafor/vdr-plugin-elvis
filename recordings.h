@@ -100,7 +100,7 @@ public:
   virtual ~cElvisRecordings();
   cElvisRecordingFolder *AddFolder(int folderIdP, const char *folderNameP);
   cElvisRecordingFolder *GetFolder(int folderIdP);
-  void Reset();
+  void Reset(bool foregroundP = true);
 };
 
 #endif // __ELVIS_RECORDINGS_H

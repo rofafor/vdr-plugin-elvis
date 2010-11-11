@@ -28,7 +28,7 @@ cElvisReader::cElvisReader(const char *urlP)
   multiM(NULL),
   headerListM(NULL),
   mutexM(),
-  ringBufferM(new cRingBufferLinear(MEGABYTE(1), 7 * TS_SIZE))
+  ringBufferM(new cRingBufferLinear(MEGABYTE(2), 7 * TS_SIZE))
 {
   debug("cElvisReader::cElvisReader()");
   if (ringBufferM)
@@ -351,7 +351,7 @@ cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP, unsigned long lengt
   readerM(new cElvisReader(urlP)),
   readSizeM(0),
   fileSizeM(0),
-  ringBufferM(new cRingBufferFrame(MEGABYTE(1))),
+  ringBufferM(new cRingBufferFrame(MEGABYTE(2))),
   readFrameM(NULL),
   playFrameM(NULL),
   dropFrameM(NULL)

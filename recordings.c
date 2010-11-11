@@ -193,13 +193,13 @@ cElvisRecordingFolder *cElvisRecordings::GetFolder(int folderIdP)
   return folder;
 }
 
-void cElvisRecordings::Reset()
+void cElvisRecordings::Reset(bool foregroundP)
 {
   cMutexLock(mutexM);
   Clear();
   cElvisRecordingFolder *folder = new cElvisRecordingFolder(-1, tr("(default)"));
   if (folder) {
      Add(folder);
-     folder->Update(true);
+     folder->Update(foregroundP);
      }
 }

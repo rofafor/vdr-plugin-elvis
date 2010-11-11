@@ -56,4 +56,6 @@ VDR Plugin 'elvis' Revision History
 2010-xx-xx: Version 0.0.6
 
 - Updated widget API.
-- Fixed locking issues.
+- Fixed some locking issues.
+- Increased the player buffer sizes.
+- Speeded up the initial recordings menu.
