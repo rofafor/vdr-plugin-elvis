@@ -124,7 +124,9 @@ cString cElvisWidget::Escape(const char *s)
 
 void cElvisWidget::PutData(const char *dataP, unsigned int lenP)
 {
-  dataM = cString::sprintf("%s%s", *dataM, dataP);
+  cString data(dataP);
+  data.Truncate(lenP);
+  dataM = cString::sprintf("%s%s", *dataM, *data);
 }
 
 bool cElvisWidget::Perform(const char *urlP, const char *msgP)
@@ -660,7 +662,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?24h=%s&ajax=true", GetBase(), *Escape(channelP));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel=%s&ajax=true", GetBase(), *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
