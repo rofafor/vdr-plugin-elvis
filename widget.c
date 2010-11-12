@@ -604,7 +604,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channels", GetBase());
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channels&ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -644,7 +644,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?24h=%s", GetBase(), *Escape(channelP));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel=%s&ajax=true", GetBase(), *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
