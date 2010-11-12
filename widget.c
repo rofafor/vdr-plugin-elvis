@@ -718,6 +718,71 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   return false;
 }
 
+bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM) {
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?ajax=true", GetBase());
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetEPG")) {
+            if (strstr(*dataM, "evlogin")) {
+               info("cElvisWidget::GetEPG(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+               json_object_iter it;
+               json_object *json = json_tokener_parse(*dataM);
+               if (!is_error(json)) {
+                  json_object_object_foreachC(json, it) {
+                    if (!strcmp(it.key, "channels")) {
+                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
+                           json_object_iter it2;
+                           json_object *json2 = json_object_array_get_idx(it.val, i);
+                           json_object_object_foreachC(json2, it2) {
+                             cString channel = Unescape(it2.key);
+                             for (int j = 0; j < json_object_array_length(it2.val); ++j) {
+                                 json_object_iter it3;
+                                 json_object *json3 = json_object_array_get_idx(it2.val, j);
+                                 int id = 0;
+                                 cString name = "", simple_start_time = "", simple_end_time = "", start_time = "", end_time = "", short_text = "";
+                                 json_object_object_foreachC(json3, it3) {
+                                   if (!strcmp(it3.key, "id"))
+                                      id = json_object_get_int(it3.val);
+                                   else if (!strcmp(it3.key, "name"))
+                                      name = Unescape(json_object_get_string(it3.val));
+                                   else if (!strcmp(it3.key, "simple_start_time"))
+                                      simple_start_time = Unescape(json_object_get_string(it3.val));
+                                   else if (!strcmp(it3.key, "simple_end_time"))
+                                      simple_end_time = Unescape(json_object_get_string(it3.val));
+                                   else if (!strcmp(it3.key, "start_time"))
+                                      start_time = Unescape(json_object_get_string(it3.val));
+                                   else if (!strcmp(it3.key, "end_time"))
+                                      end_time = Unescape(json_object_get_string(it3.val));
+                                   else if (!strcmp(it3.key, "short_text"))
+                                      short_text = Unescape(json_object_get_string(it3.val));
+                                   }
+                                 debug("channel: '%s' id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s' short_text: '%s'", *channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
+                                 callbackP.AddEvent(*channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
+                                 }
+                             }
+                           }
+                       }
+                    }
+                  json_object_put(json);
+                  }
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
 bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
 {
   cMutexLock(mutexM);

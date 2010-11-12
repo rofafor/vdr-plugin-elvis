@@ -60,6 +60,13 @@ public:
   virtual void AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP) = 0;
 };
 
+class cElvisWidgetEPGCallbackIf {
+public:
+  cElvisWidgetEPGCallbackIf() {}
+  virtual ~cElvisWidgetEPGCallbackIf() {}
+  virtual void AddEvent(const char *channelP, int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP) = 0;
+};
+
 class cElvisWidgetTopEventCallbackIf {
 public:
   cElvisWidgetTopEventCallbackIf() {}
@@ -163,6 +170,7 @@ public:
   bool RemoveSearchTimer(int idP);
   bool GetChannels(cElvisWidgetChannelCallbackIf &callbackP);
   bool GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char *channelP);
+  bool GetEPG(cElvisWidgetEPGCallbackIf &callbackP);
   bool GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP);
   cElvisWidgetInfo *GetEventInfo(int idP);
 };
