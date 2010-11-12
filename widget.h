@@ -50,7 +50,7 @@ class cElvisWidgetChannelCallbackIf {
 public:
   cElvisWidgetChannelCallbackIf() {}
   virtual ~cElvisWidgetChannelCallbackIf() {}
-  virtual void AddChannel(const char *nameP) = 0;
+  virtual void AddChannel(const char *nameP, const char *logoP) = 0;
 };
 
 class cElvisWidgetEventCallbackIf {
@@ -150,6 +150,7 @@ public:
   static cElvisWidget *GetInstance();
   static void Destroy();
   virtual ~cElvisWidget();
+  bool Invalidate();
   bool Load(const char *directoryP);
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);

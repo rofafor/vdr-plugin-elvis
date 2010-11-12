@@ -56,6 +56,7 @@ private:
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
   cString nameM;
+  cString logoM;
   // to prevent default constructor
   cElvisChannel();
   // to prevent copy and assignment constructors
@@ -64,13 +65,14 @@ private:
 protected:
   void Action();
 public:
-  cElvisChannel(const char *nameP);
+  cElvisChannel(const char *nameP, const char *logoP);
   virtual ~cElvisChannel();
   virtual void AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);
   const char *Name() { return *nameM; }
+  const char *Logo() { return *logoM; }
 };
 
 // --- cElvisChannels --------------------------------------------------
@@ -95,7 +97,7 @@ public:
   static cElvisChannels *GetInstance();
   static void Destroy();
   virtual ~cElvisChannels();
-  virtual void AddChannel(const char *nameP);
+  virtual void AddChannel(const char *nameP, const char *logoP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);

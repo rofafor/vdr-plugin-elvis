@@ -276,7 +276,10 @@ eOSState cPluginElvisSetup::ProcessKey(eKeys keyP)
   if (state == osUnknown) {
      switch (keyP) {
        case kRed:
+            Skins.Message(mtInfo, tr("Reseting..."));
             cElvisResumeItems::GetInstance()->Reset();
+            cElvisWidget::GetInstance()->Invalidate();
+            Skins.Message(mtInfo, NULL);
             state = osContinue;
             break;
        case kInfo:

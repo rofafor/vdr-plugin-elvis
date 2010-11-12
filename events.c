@@ -51,11 +51,12 @@ cElvisWidgetInfo *cElvisEvent::Info()
 
 // --- cElvisChannel ---------------------------------------------------
 
-cElvisChannel::cElvisChannel(const char *nameP)
+cElvisChannel::cElvisChannel(const char *nameP, const char *logoP)
 : cThread(*cString::sprintf("cElvisChannel(%s)", nameP ? nameP : "")),
   stateM(0),
   lastUpdateM(0),
-  nameM(nameP)
+  nameM(nameP),
+  logoM(logoP)
 {
 }
 
@@ -137,10 +138,10 @@ cElvisChannels::~cElvisChannels()
   Cancel(3);
 }
 
-void cElvisChannels::AddChannel(const char *nameP)
+void cElvisChannels::AddChannel(const char *nameP, const char *logoP)
 {
   cThreadLock(this);
-  Add(new cElvisChannel(nameP));
+  Add(new cElvisChannel(nameP, logoP));
   ChangeState();
 }
 

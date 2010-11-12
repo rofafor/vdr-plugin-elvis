@@ -77,8 +77,6 @@ cElvisWidget::~cElvisWidget()
   cMutexLock(mutexM);
 
   if (handleM) {
-     //Logout();
-
      // cleanup curl stuff
      if (headerListM) {
         curl_slist_free_all(headerListM);
@@ -175,10 +173,7 @@ bool cElvisWidget::Login()
      }
 
   if (!IsLogged() && handleM) {
-     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
-
-     // start a new session
-     //curl_easy_setopt(handleM, CURLOPT_COOKIESESSION, 1L);
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
 
      if (Perform(*url, "Login"))
         return strstr(*dataM, "TRUE");
@@ -205,6 +200,21 @@ bool cElvisWidget::IsLogged()
 
      if (Perform(*url, "IsLogged"))
         return strstr(*dataM, "TRUE");
+     }
+
+  return false;
+}
+
+bool cElvisWidget::Invalidate()
+{
+  if (handleM) {
+     // erase all cookies
+     curl_easy_setopt(handleM, CURLOPT_COOKIELIST, "ALL");
+
+     // start a new session
+     curl_easy_setopt(handleM, CURLOPT_COOKIESESSION, 1L);
+
+     return true;
      }
 
   return false;
@@ -240,7 +250,6 @@ bool cElvisWidget::Load(const char *directoryP)
      curl_easy_setopt(handleM, CURLOPT_FOLLOWLOCATION, 1L);
 
      // enable cookies
-     //curl_easy_setopt(handleM, CURLOPT_COOKIEFILE, "");
      curl_easy_setopt(handleM, CURLOPT_COOKIEJAR, directoryP ? *cString::sprintf("%s/%s", directoryP, baseCookieNameS) : "-");
 
      // set additional headers to prevent caching
@@ -604,7 +613,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channels&ajax=true", GetBase());
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channellist&ajax=true", GetBase());
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -621,14 +630,21 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "channels")) {
                        for (int i = 0; i < json_object_array_length(it.val); ++i) {
+                           json_object_iter it2;
                            json_object *json2 = json_object_array_get_idx(it.val, i);
-                           cString channel = Unescape(json_object_get_string(json2));
-                           debug("channel: '%s'", *channel);
-                           callbackP.AddChannel(*channel);
+                           cString name = "", logo = "";
+                           json_object_object_foreachC(json2, it2) {
+                             if (!strcmp(it2.key, "name"))
+                                name = Unescape(json_object_get_string(it2.val));
+                             else if (!strcmp(it2.key, "logo"))
+                                logo = Unescape(json_object_get_string(it2.val));
+                             }
+                           debug("channel: '%s' Logo: '%s'", *name, *logo);
+                           callbackP.AddChannel(*name, *logo);
                            }
                        }
                     }
-				  json_object_put(json);
+                  json_object_put(json);
                   }
                return true;
                }
@@ -644,7 +660,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel=%s&ajax=true", GetBase(), *Escape(channelP));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?24h=%s&ajax=true", GetBase(), *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);

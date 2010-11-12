@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.0.5\n"
+"Project-Id-Version: elvis 0.0.6\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-10-10 10:10+0300\n"
-"PO-Revision-Date: 2010-10-10 10:10+0300\n"
+"POT-Creation-Date: 2010-11-11 11:11+0200\n"
+"PO-Revision-Date: 2010-11-11 11:11+0200\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
 "Language: \n"
@@ -60,6 +60,9 @@ msgstr "Salasana"
 
 msgid "Define your password for the service."
 msgstr "Määrittele salasanasi palveluun."
+
+msgid "Reseting..."
+msgstr "Nollataan..."
 
 msgid "Help"
 msgstr "Opaste"

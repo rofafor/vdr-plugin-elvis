@@ -59,3 +59,4 @@ VDR Plugin 'elvis' Revision History
 - Fixed some locking issues.
 - Increased the player buffer sizes.
 - Speeded up the initial recordings menu.
+- Added cookie deletion via reset button.
