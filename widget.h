@@ -148,6 +148,7 @@ private:
   bool Login();
   bool Logout();
   bool IsLogged();
+  bool IsLoginRequired(const char *stringP);
   // constructor
   cElvisWidget();
   // to prevent copy constructor and assignment

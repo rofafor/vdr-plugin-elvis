@@ -222,6 +222,20 @@ bool cElvisWidget::Invalidate()
   return false;
 }
 
+bool cElvisWidget::IsLoginRequired(const char *stringP)
+{
+  if (ElvisConfig.Service == 0) {
+     if (strstr(stringP, "evlogin"))
+        return true;
+     }
+  else {
+     if (strstr(stringP, "svlogin"))
+        return true;
+     }
+
+  return false;
+}
+
 bool cElvisWidget::Load(const char *directoryP)
 {
   // initialize the curl session
@@ -280,7 +294,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetRecordings")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetRecordings(): relogin...");
                Login();
                continue;
@@ -369,7 +383,7 @@ bool cElvisWidget::RemoveRecording(int idP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveRecording")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::RemoveRecording(): relogin...");
                Login();
                continue;
@@ -395,7 +409,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetTimers")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetTimers(): relogin...");
                Login();
                continue;
@@ -454,7 +468,7 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "AddTimer")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::AddTimer(): relogin...");
                Login();
                continue;
@@ -480,7 +494,7 @@ bool cElvisWidget::RemoveTimer(int idP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveTimer")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::RemoveTimer(): relogin...");
                Login();
                continue;
@@ -506,7 +520,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetSearchTimers")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetSearchTimers(): relogin...");
                Login();
                continue;
@@ -563,7 +577,7 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "AddSearchTimer")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::AddSearchTimer(): relogin...");
                Login();
                continue;
@@ -594,7 +608,7 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveSearchTimer")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::RemoveSearchTimer(): relogin...");
                Login();
                continue;
@@ -620,7 +634,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetChannels")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetChannels(): relogin...");
                Login();
                continue;
@@ -667,7 +681,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEvents")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetEvents(): relogin...");
                Login();
                continue;
@@ -728,7 +742,7 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEPG")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetEPG(): relogin...");
                Login();
                continue;
@@ -793,7 +807,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEvents")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetTopEvents(): relogin...");
                Login();
                continue;
@@ -846,7 +860,7 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEventInfo")) {
-            if (strstr(*dataM, "evlogin")) {
+            if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::GetEventInfo(): relogin...");
                Login();
                continue;

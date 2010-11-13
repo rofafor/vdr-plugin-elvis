@@ -42,8 +42,6 @@ private:
   // to prevent copy constructor and assignment
   cElvisResumeItems(const cElvisResumeItems&);
   cElvisResumeItems& operator=(const cElvisResumeItems&);
-protected:
-  void Action();
 public:
   static cElvisResumeItems *GetInstance();
   static void Destroy();

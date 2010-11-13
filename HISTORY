@@ -60,3 +60,5 @@ VDR Plugin 'elvis' Revision History
 - Increased the player buffer sizes.
 - Speeded up the initial recordings menu.
 - Added cookie deletion via reset button.
+- Fixed CURL data corruption.
+- Fixed Saunavisio relogin.
