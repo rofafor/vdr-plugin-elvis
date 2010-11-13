@@ -629,7 +629,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channellist&ajax=true", GetBase());
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel%s&ajax=true", GetBase(), (ElvisConfig.Service == 0) ? "list" : "s");
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -646,17 +646,24 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                   json_object_object_foreachC(json, it) {
                     if (!strcmp(it.key, "channels")) {
                        for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
                            json_object *json2 = json_object_array_get_idx(it.val, i);
-                           cString name = "", logo = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "name"))
-                                name = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "logo"))
-                                logo = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("channel: '%s' Logo: '%s'", *name, *logo);
-                           callbackP.AddChannel(*name, *logo);
+                           if (ElvisConfig.Service == 0) {
+                              json_object_iter it2;
+                              cString name = "", logo = "";
+                              json_object_object_foreachC(json2, it2) {
+                                if (!strcmp(it2.key, "name"))
+                                   name = Unescape(json_object_get_string(it2.val));
+                                else if (!strcmp(it2.key, "logo"))
+                                   logo = Unescape(json_object_get_string(it2.val));
+                                }
+                              debug("channel: '%s' Logo: '%s'", *name, *logo);
+                              callbackP.AddChannel(*name, *logo);
+                              }
+                           else {
+                              cString name = json_object_get_string(json2);
+                              debug("channel: '%s'", *name);
+                              callbackP.AddChannel(*name, "");
+                              }
                            }
                        }
                     }
