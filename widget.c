@@ -365,6 +365,11 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                     }
                   json_object_put(json);
                   }
+               else {
+                  info("cElvisWidget::GetRecordings(): json error - relogin...");
+                  Login();
+                  continue;
+                  }
                return true;
                }
             }
