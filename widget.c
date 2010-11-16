@@ -10,6 +10,8 @@
 #include "common.h"
 #include "widget.h"
 
+#undef USE_COOKIE_JAR
+
 // --- cElvisWidgetInfo ------------------------------------------------
 
 cElvisWidgetInfo::cElvisWidgetInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
@@ -175,7 +177,11 @@ bool cElvisWidget::Login()
      }
 
   if (!IsLogged() && handleM) {
+#ifdef USE_COOKIE_JAR
      cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
+#else
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
+#endif
 
      if (Perform(*url, "Login"))
         return strstr(*dataM, "TRUE");
@@ -210,8 +216,10 @@ bool cElvisWidget::IsLogged()
 bool cElvisWidget::Invalidate()
 {
   if (handleM) {
+#ifdef USE_COOKIE_JAR
      // erase all cookies
      curl_easy_setopt(handleM, CURLOPT_COOKIELIST, "ALL");
+#endif
 
      // start a new session
      curl_easy_setopt(handleM, CURLOPT_COOKIESESSION, 1L);
@@ -266,7 +274,11 @@ bool cElvisWidget::Load(const char *directoryP)
      curl_easy_setopt(handleM, CURLOPT_FOLLOWLOCATION, 1L);
 
      // enable cookies
+#ifdef USE_COOKIE_JAR
      curl_easy_setopt(handleM, CURLOPT_COOKIEJAR, directoryP ? *cString::sprintf("%s/%s", directoryP, baseCookieNameS) : "-");
+#else
+     curl_easy_setopt(handleM, CURLOPT_COOKIEFILE, "");
+#endif
 
      // set additional headers to prevent caching
      headerListM = curl_slist_append(headerListM, "Cache-Control: no-store, no-cache, must-revalidate");
@@ -364,11 +376,6 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                        }
                     }
                   json_object_put(json);
-                  }
-               else {
-                  info("cElvisWidget::GetRecordings(): json error - relogin...");
-                  Login();
-                  continue;
                   }
                return true;
                }
