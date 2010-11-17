@@ -61,3 +61,7 @@ VDR Plugin 'elvis' Revision History
 - Speeded up the initial recordings menu.
 - Fixed CURL data corruption.
 - Fixed Saunavisio relogin.
+
+201x-xx-xx: Version 0.1.0
+
+- 
