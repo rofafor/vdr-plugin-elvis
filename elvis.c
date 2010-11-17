@@ -298,6 +298,7 @@ void cPluginElvisSetup::Store()
 {
   ElvisConfig = dataM;
   ElvisConfig.Save();
+  cElvisWidget::GetInstance()->Invalidate();
 }
 
 VDRPLUGINCREATOR(cPluginElvis); // Don't touch this!
