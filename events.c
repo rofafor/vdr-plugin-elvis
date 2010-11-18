@@ -174,7 +174,8 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
          break;
       }
   if (event && channel) {
-     Update(!Count());
+     if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+        Update(true);
      Lock();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {
@@ -213,7 +214,8 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
          break;
       }
   if (event && channel) {
-     Update(!Count());
+     if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
+        Update(true);
      Lock();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {

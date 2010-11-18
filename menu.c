@@ -929,7 +929,7 @@ eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
        case kGreen:
             return Record(false);
        case k5:
-            break;
+            return osBack;
        case kBlue:
        case kOk:
        case kInfo:
