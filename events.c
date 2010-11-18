@@ -10,7 +10,7 @@
 #include "timers.h"
 #include "events.h"
 
-cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP)
+cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
 : idM(idP),
   nameM(nameP),
   channelM(NULL),
@@ -18,8 +18,11 @@ cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTime
   simpleEndTimeM(simpleEndTimeP),
   startTimeM(startTimeP),
   endTimeM(endTimeP),
+  descriptionM(descriptionP),
   infoM(NULL),
-  startTimeValueM(strtotime(startTimeP))
+  startTimeValueM(strtotime(startTimeP)),
+  endTimeValueM(strtotime(endTimeM)),
+  lengthM((endTimeValueM - startTimeValueM) / 60)
 {
 }
 
@@ -51,61 +54,18 @@ cElvisWidgetInfo *cElvisEvent::Info()
 
 // --- cElvisChannel ---------------------------------------------------
 
-cElvisChannel::cElvisChannel(const char *nameP, const char *logoP)
-: cThread(*cString::sprintf("cElvisChannel(%s)", nameP ? nameP : "")),
-  stateM(0),
-  lastUpdateM(0),
-  nameM(nameP),
-  logoM(logoP)
+cElvisChannel::cElvisChannel(const char *nameP)
+: nameM(nameP)
 {
 }
 
 cElvisChannel::~cElvisChannel()
 {
-  cThreadLock(this);
-  Cancel(3);
 }
 
-void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP)
+void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
 {
-  Add(new cElvisEvent(idP, nameP, simpleStartTimeP, simpleEndTimeP, startTimeP, endTimeP));
-}
-
-void cElvisChannel::Refresh(bool foregroundP)
-{
-  lastUpdateM = time(NULL);
-  Lock();
-  Clear();
-  ChangeState();
-  Unlock();
-  cElvisWidget::GetInstance()->GetEvents(*this, *nameM);
-}
-
-bool cElvisChannel::Update(bool waitP)
-{
-  if (waitP) {
-     Refresh(true);
-     return (Count() > 0);
-     }
-  else if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
-     Start();
-
-  return false;
-}
-
-bool cElvisChannel::StateChanged(int &stateP)
-{
-  cThreadLock(this);
-  bool result = (stateP != stateM);
-
-  stateP = stateM;
-
-  return result;
-}
-
-void cElvisChannel::Action()
-{
-  Refresh();
+  Add(new cElvisEvent(idP, nameP, simpleStartTimeP, simpleEndTimeP, startTimeP, endTimeP, descriptionP));
 }
 
 // --- cElvisChannels --------------------------------------------------
@@ -138,10 +98,22 @@ cElvisChannels::~cElvisChannels()
   Cancel(3);
 }
 
-void cElvisChannels::AddChannel(const char *nameP, const char *logoP)
+void cElvisChannels::AddEvent(const char *channelP, int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
 {
+  cElvisChannel *channel = NULL;
   cThreadLock(this);
-  Add(new cElvisChannel(nameP, logoP));
+  for (cElvisChannel *c = First(); c; c = Next(c)) {
+      if (!strcmp(c->Name(), channelP)) {
+         channel = c;
+         break;
+         }
+      }
+  if (!channel) {
+     channel = new cElvisChannel(channelP); 
+     Add(channel);
+     }
+  if (channel)
+     channel->AddEvent(idP, nameP, simpleStartTimeP, simpleEndTimeP, startTimeP, endTimeP, descriptionP);
   ChangeState();
 }
 
@@ -152,7 +124,7 @@ void cElvisChannels::Refresh(bool foregroundP)
   Clear();
   ChangeState();
   Unlock();
-  cElvisWidget::GetInstance()->GetChannels(*this);
+  cElvisWidget::GetInstance()->GetEPG(*this);
 }
 
 bool cElvisChannels::Update(bool waitP)
@@ -202,27 +174,20 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
          break;
       }
   if (event && channel) {
-     cElvisChannel *echannel = NULL;
-     Update(true);
+     Update(!Count());
      Lock();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {
-            echannel = c;
-            info("cElvisChannels::AddTimer(%d): found channel '%s'", event->EventID(), c->Name());
+            for (cElvisEvent *i = c->cList<cElvisEvent>::First(); i; i = c->cList<cElvisEvent>::Next(i)) {
+                if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
+                   info("cElvisChannels::AddTimer(%d): creating %d", event->EventID(), i->Id());
+                   return cElvisTimers::GetInstance()->Create(i->Id());
+                   }
+                }
             break;
             }
          }
      Unlock();
-     if (echannel) {
-        echannel->Update(true);
-        cThreadLock lock(echannel);
-        for (cElvisEvent *i = echannel->cList<cElvisEvent>::First(); i; i = echannel->cList<cElvisEvent>::Next(i)) {
-            if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
-               info("cElvisChannels::AddTimer(%d): creating %d", event->EventID(), i->Id());
-               return cElvisTimers::GetInstance()->Create(i->Id());
-               }
-            }
-        }
      }
 
   return false;
@@ -248,27 +213,20 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
          break;
       }
   if (event && channel) {
-     cElvisChannel *echannel = NULL;
-     Update(true);
+     Update(!Count());
      Lock();
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {
-            echannel = c;
-            info("cElvisChannels::DelTimer(%d): found channel '%s'", event->EventID(), c->Name());
+            for (cElvisEvent *i = c->cList<cElvisEvent>::First(); i; i = c->cList<cElvisEvent>::Next(i)) {
+                if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
+                   info("cElvisChannels::DelTimer(%d): deleting %d", event->EventID(), i->Id());
+                   return cElvisTimers::GetInstance()->Delete(i->Id());
+                   }
+                }
             break;
             }
          }
      Unlock();
-     if (echannel) {
-        echannel->Update(true);
-        cThreadLock lock(echannel);
-        for (cElvisEvent *i = echannel->cList<cElvisEvent>::First(); i; i = echannel->cList<cElvisEvent>::Next(i)) {
-            if (!strcmp(event->Title(), i->Name()) && (abs((int)(event->StartTime() - i->StartTimeValue())) < 60)) {
-               info("cElvisChannels::DelTimer(%d): deleting %d", event->EventID(), i->Id());
-               return cElvisTimers::GetInstance()->Delete(i->Id());
-               }
-            }
-        }
      }
 
   return false;

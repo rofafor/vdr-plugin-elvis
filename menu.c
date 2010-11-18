@@ -752,10 +752,16 @@ cElvisChannelEventInfoMenu::cElvisChannelEventInfoMenu(cElvisEvent *eventP, cons
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG"))),
   eventM(eventP)
 {
-  if (eventM && eventM->Info())
-     textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s\n\n%s", *DateString(eventM->Info()->StartTimeValue()), *TimeString(eventP->Info()->StartTimeValue()),
-                              *TimeString(eventM->Info()->EndTimeValue()), eventM->Info()->LengthValue(), tr("min"),
-                              channelP ? channelP : "", eventM->Name(), eventM->Info()->ShortText(), eventM->Info()->Description());
+  if (eventM) {
+     if (!isempty(eventM->Description()))
+        textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s", *DateString(eventM->StartTimeValue()), *TimeString(eventP->StartTimeValue()),
+                                 *TimeString(eventM->EndTimeValue()), eventM->LengthValue(), tr("min"),
+                                 channelP ? channelP : "", eventM->Name(), eventM->Description());
+     else if (eventM->Info())
+        textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s\n\n%s", *DateString(eventM->Info()->StartTimeValue()), *TimeString(eventP->Info()->StartTimeValue()),
+                                 *TimeString(eventM->Info()->EndTimeValue()), eventM->Info()->LengthValue(), tr("min"),
+                                 channelP ? channelP : "", eventM->Name(), eventM->Info()->ShortText(), eventM->Info()->Description());
+     }                                 
   SetHelpKeys();
 }
 
@@ -848,10 +854,6 @@ cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 7, 7),
   channelM(channelP)
 {
-  if (channelM) {
-     channelM->StateChanged(stateM);
-     channelM->Update();
-     }
   Setup();
   SetHelpKeys();
 }
@@ -872,7 +874,7 @@ void cElvisChannelEventsMenu::Setup()
   Clear();
 
   if (channelM) {
-     cThreadLock lock(channelM);
+     cThreadLock lock(cElvisChannels::GetInstance());
      for (cElvisEvent *item = channelM->cList<cElvisEvent>::First(); item; item = channelM->cList<cElvisEvent>::Next(item))
          Add(new cElvisChannelEventItem(item));
      }
@@ -927,22 +929,12 @@ eOSState cElvisChannelEventsMenu::ProcessKey(eKeys keyP)
        case kGreen:
             return Record(false);
        case k5:
-            if (channelM)
-               channelM->Update(true);
-            return osContinue;
+            break;
        case kBlue:
        case kOk:
        case kInfo:
             return Info();
        case kNone:
-            if (channelM) {
-               channelM->Update();
-               if (channelM->StateChanged(stateM)) {
-                  Setup();
-                  SetHelpKeys();
-                  return osContinue;
-                  }
-               }
             break;
        default:
             break;
