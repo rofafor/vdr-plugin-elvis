@@ -142,7 +142,7 @@ void cElvisRecordingsMenu::SetHelpKeys()
         SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
      else
         SetHelp(trVDR("Button$Play"), (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), offset, size) && (offset > 0)) ?
-                trVDR("Button$Rewind") : NULL, trVDR("Button$Delete"), tr("Button$Fetch"));
+                trVDR("Button$Rewind") : NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
      }
   else
      SetHelp(NULL, NULL, NULL, NULL);
@@ -242,7 +242,6 @@ eOSState cElvisRecordingsMenu::ProcessKey(eKeys keyP)
        case kYellow:
             return Delete();
        case kBlue:
-            return Fetch();
        case kInfo:
             return Info();
        case k5:
@@ -761,7 +760,7 @@ cElvisChannelEventInfoMenu::cElvisChannelEventInfoMenu(cElvisEvent *eventP, cons
         textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s\n\n%s", *DateString(eventM->Info()->StartTimeValue()), *TimeString(eventP->Info()->StartTimeValue()),
                                  *TimeString(eventM->Info()->EndTimeValue()), eventM->Info()->LengthValue(), tr("min"),
                                  channelP ? channelP : "", eventM->Name(), eventM->Info()->ShortText(), eventM->Info()->Description());
-     }                                 
+     }
   SetHelpKeys();
 }
 
@@ -1204,8 +1203,6 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
 
   switch (state) {
     case osUser1:
-         if (cElvisRecordings::GetInstance()->Count() == 0)
-            cElvisRecordings::GetInstance()->Reset(false);
          return AddSubMenu(new cElvisRecordingsMenu);
     case osUser2:
          return AddSubMenu(new cElvisTimersMenu);

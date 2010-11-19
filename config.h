@@ -25,6 +25,9 @@ public:
   int HideMenu;
   int Service;
   int Ssl;
+  int ReplaceSchedule;
+  int ReplaceTimers;
+  int ReplaceRecordings;
   char Username[eMaxCredentials];
   char Password[eMaxCredentials];
   int __EndData__;

@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.0.6\n"
+"Project-Id-Version: elvis 0.1.0\n"
 "Report-Msgid-Bugs-To: <see README>\n"
 "POT-Creation-Date: 2010-11-11 11:11+0200\n"
 "PO-Revision-Date: 2010-11-11 11:11+0200\n"
@@ -60,6 +60,24 @@ msgstr "Salasana"
 
 msgid "Define your password for the service."
 msgstr "Määrittele salasanasi palveluun."
+
+msgid "Replace 'Schedule' in main menu"
+msgstr "Korvaa päävalikon 'Ohjelmisto'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Schedule' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Ohjelmisto'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
+
+msgid "Replace 'Timers' in main menu"
+msgstr "Korvaa päävalikon 'Ajastimet'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Timers' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Ajastimet'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
+
+msgid "Replace 'Recordings' menu entry"
+msgstr "Korvaa päävalikon 'Tallenteet'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Recordings' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Tallennukset'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
 
 msgid "Reseting..."
 msgstr "Nollataan..."

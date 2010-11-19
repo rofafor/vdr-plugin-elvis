@@ -15,7 +15,10 @@ const char *cElvisConfig::confBaseNameS = PLUGIN_NAME_I18N ".conf";
 cElvisConfig::cElvisConfig()
 : HideMenu(0),
   Service(0),
-  Ssl(0)
+  Ssl(0),
+  ReplaceSchedule(0),
+  ReplaceTimers(0),
+  ReplaceRecordings(0)
 {
   memset(Username, 0, sizeof(Username));
   memset(Password, 0, sizeof(Password));

@@ -190,6 +190,11 @@ cElvisRecordingFolder *cElvisRecordings::GetFolder(int folderIdP)
          return i;
       }
 
+  if (folderIdP < 0) {
+     folder = new cElvisRecordingFolder(-1, tr("(default)"));
+     Add(folder);
+     }
+
   return folder;
 }
 

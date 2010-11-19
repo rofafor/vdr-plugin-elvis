@@ -170,6 +170,32 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
         }
      return true;
      }
+#if defined(MAINMENUHOOKSVERSNUM)
+  else if (ElvisConfig.ReplaceSchedule && (strcmp(idP, "MainMenuHooksPatch-v1.0::osSchedule") == 0)) {
+     if (dataP) {
+        cOsdMenu **menu = (cOsdMenu**)dataP;
+        if (menu)
+           *menu = new cElvisEPGMenu();
+        }
+     return true;
+     }
+  else if (ElvisConfig.ReplaceTimers && (strcmp(idP, "MainMenuHooksPatch-v1.0::osTimers") == 0)) {
+     if (dataP) {
+        cOsdMenu **menu = (cOsdMenu**)dataP;
+        if (menu)
+           *menu = new cElvisTimersMenu();
+        }
+     return true;
+     }
+  else if (ElvisConfig.ReplaceRecordings && (strcmp(idP, "MainMenuHooksPatch-v1.0::osRecordings") == 0)) {
+     if (dataP) {
+        cOsdMenu **menu = (cOsdMenu**)dataP;
+        if (menu)
+           *menu = new cElvisRecordingsMenu();
+        }
+     return true;
+     }
+#endif
 
   return false;
 }
@@ -264,6 +290,17 @@ void cPluginElvisSetup::Setup()
 
   Add(new cMenuEditHiddenStrItem(tr("Password"), dataM.Password, sizeof(dataM.Password)));
   helpM.Append(tr("Define your password for the service."));
+
+#if defined(MAINMENUHOOKSVERSNUM)
+  Add(new cMenuEditBoolItem(tr("Replace 'Schedule' in main menu"), &dataM.ReplaceSchedule));
+  helpM.Append(tr("Define whether this plugin replaces the original 'Schedule' entry in the main menu. MainMenuHook patch is required."));
+
+  Add(new cMenuEditBoolItem(tr("Replace 'Timers' in main menu"), &dataM.ReplaceTimers));
+  helpM.Append(tr("Define whether this plugin replaces the original 'Timers' entry in the main menu. MainMenuHook patch is required."));
+
+  Add(new cMenuEditBoolItem(tr("Replace 'Recordings' menu entry"), &dataM.ReplaceRecordings));
+  helpM.Append(tr("Define whether this plugin replaces the original 'Recordings' entry in the main menu. MainMenuHook patch is required."));
+#endif
 
   SetCurrent(Get(current));
   Display();
