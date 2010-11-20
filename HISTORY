@@ -64,7 +64,6 @@ VDR Plugin 'elvis' Revision History
 
 2010-11-21: Version 0.1.0
 
-- Simplified EPG data fetching.
 - Changed blue button functionality in recording menus.
 - Added support for MainMenuHooks patch.
-- Speeded up recording menus.
+- Speeded up EPG, recording, timer, and search timer menus.

@@ -82,7 +82,7 @@ void cElvisRecordingFolder::AddFolder(int idP, int countP, const char *nameP, co
   if (rec)
      rec->Tag(true);
   else {
-     cElvisRecording *rec = new cElvisRecording(idP, countP, nameP, sizeP);
+     rec = new cElvisRecording(idP, countP, nameP, sizeP);
      Add(rec);
      cElvisRecordings::GetInstance()->AddFolder(rec->Id(), rec->Name());
      ChangeState();
@@ -96,8 +96,7 @@ void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP,
   if (rec)
      rec->Tag(true);
   else {
-     cElvisRecording *rec = new cElvisRecording(idP, programIdP, folderIdP, countP, lengthP, nameP, channelP, startTimeP);
-     Add(rec);
+     Add(new cElvisRecording(idP, programIdP, folderIdP, countP, lengthP, nameP, channelP, startTimeP));
      ChangeState();
      }
 }

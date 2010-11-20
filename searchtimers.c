@@ -12,7 +12,8 @@
 // --- cElvisSearchTimer -----------------------------------------------
 
 cElvisSearchTimer::cElvisSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP)
-: idM(idP),
+: taggedM(true),
+  idM(idP),
   folderM(folderP),
   addedM(addedP),
   channelM(channelP),
@@ -57,8 +58,13 @@ cElvisSearchTimers::~cElvisSearchTimers()
 void cElvisSearchTimers::AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP)
 {
   cThreadLock(this);
-  Add(new cElvisSearchTimer(idP, folderP, addedP, channelP, wildcardP));
-  ChangeState();
+  cElvisSearchTimer *timer = GetSearchTimer(idP);
+  if (timer)
+     timer->Tag(true);
+  else {
+     Add(new cElvisSearchTimer(idP, folderP, addedP, channelP, wildcardP));
+     ChangeState();
+     }
 }
 
 bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP)
@@ -85,14 +91,37 @@ bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
   return false;
 }
 
+cElvisSearchTimer *cElvisSearchTimers::GetSearchTimer(int idP)
+{
+  for (cElvisSearchTimer *i = First(); i; i = Next(i)) {
+      if (i->Id() == idP)
+         return i;
+      }
+
+  return NULL;
+}
+
 void cElvisSearchTimers::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
   Lock();
-  Clear();
-  ChangeState();
+  if (foregroundP) {
+     Clear();
+     ChangeState();
+     }
+  else {
+     for (cElvisSearchTimer *i = First(); i; i = Next(i))
+         i->Tag(false);
+     }
   Unlock();
   cElvisWidget::GetInstance()->GetSearchTimers(*this);
+  Lock();
+  for (cElvisSearchTimer *i = First(); i; i = Next(i)) {
+      if (!i->IsTagged())
+         Del(i);
+      }
+  ChangeState();
+  Unlock();
 }
 
 bool cElvisSearchTimers::Update(bool waitP)

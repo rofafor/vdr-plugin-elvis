@@ -18,6 +18,7 @@
 class cElvisSearchTimer : public cListObject {
   friend class cElvisSearchTimers;
 private:
+  bool taggedM;
   int idM;
   cString folderM;
   cString addedM;
@@ -31,6 +32,8 @@ private:
 public:
   cElvisSearchTimer(int idP, const char *folderP, const char *added, const char *channelP, const char *wildcardP);
   virtual ~cElvisSearchTimer();
+  void Tag(bool onOffP) { taggedM = onOffP; } 
+  bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   const char *Folder() { return *folderM; }
   const char *Added() { return *addedM; }
@@ -49,6 +52,7 @@ private:
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
+  cElvisSearchTimer *GetSearchTimer(int idP);
   // constructor
   cElvisSearchTimers();
   // to prevent copy constructor and assignment

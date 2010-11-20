@@ -18,8 +18,8 @@
 class cElvisTimer : public cListObject {
   friend class cElvisTimers;
 private:
+  bool taggedM;
   int idM;
-  int programIdM;
   int lengthM;
   cString nameM;
   cString channelM;
@@ -33,11 +33,12 @@ private:
   cElvisTimer(const cElvisTimer&);
   cElvisTimer &operator=(const cElvisTimer &);
 public:
-  cElvisTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
+  cElvisTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
   virtual ~cElvisTimer();
   cElvisWidgetInfo *Info();
+  void Tag(bool onOffP) { taggedM = onOffP; } 
+  bool IsTagged() { return taggedM; }
   int Id() { return idM; }
-  int ProgramId() { return programIdM; }
   int Length() { return lengthM; }
   const char *Name() { return *nameM; }
   const char *Channel() { return *channelM; }
@@ -57,6 +58,7 @@ private:
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
+  cElvisTimer *GetTimer(int idP);
   // constructor
   cElvisTimers();
   // to prevent copy constructor and assignment
@@ -68,7 +70,7 @@ public:
   static cElvisTimers *GetInstance();
   static void Destroy();
   virtual ~cElvisTimers();
-  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
+  virtual void AddTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
   bool Update(bool waitP = false);
   void ChangeState() { ++stateM; }
   bool StateChanged(int &stateP);

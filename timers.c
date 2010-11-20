@@ -11,9 +11,9 @@
 
 // --- cElvisTimer -----------------------------------------------------
 
-cElvisTimer::cElvisTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
-: idM(idP),
-  programIdM(programIdP),
+cElvisTimer::cElvisTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
+: taggedM(true),
+  idM(idP),
   lengthM(lengthP),
   nameM(nameP),
   channelM(channelP),
@@ -32,7 +32,7 @@ cElvisTimer::~cElvisTimer()
 cElvisWidgetInfo *cElvisTimer::Info()
 {
   if (!infoM)
-     infoM = cElvisWidget::GetInstance()->GetEventInfo(programIdM);
+     infoM = cElvisWidget::GetInstance()->GetEventInfo(idM);
 
   return infoM;
 }
@@ -67,11 +67,16 @@ cElvisTimers::~cElvisTimers()
   Cancel(3);
 }
 
-void cElvisTimers::AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
+void cElvisTimers::AddTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
 {
   cThreadLock(this);
-  Add(new cElvisTimer(idP, programIdP, lengthP, nameP, channelP, startTimeP, wildcardP));
-  ChangeState();
+  cElvisTimer *timer = GetTimer(idP);
+  if (timer)
+     timer->Tag(true);
+  else {
+     Add(new cElvisTimer(idP, lengthP, nameP, channelP, startTimeP, wildcardP));
+     ChangeState();
+     }
 }
 
 bool cElvisTimers::Create(int idP, int folderIdP)
@@ -90,7 +95,7 @@ bool cElvisTimers::Delete(int idP)
   cThreadLock(this);
   Update();
   for (cElvisTimer *timer = First(); timer; timer = Next(timer)) {
-      if (timer->ProgramId() == idP)
+      if (timer->Id() == idP)
          return Delete(timer);
       }
 
@@ -103,21 +108,43 @@ bool cElvisTimers::Delete(cElvisTimer *timerP)
   if (timerP && cElvisWidget::GetInstance()->RemoveTimer(timerP->Id())) {
      Del(timerP);
      ChangeState();
-     //Start();
      return true;
      }
 
   return false;
 }
 
+cElvisTimer *cElvisTimers::GetTimer(int idP)
+{
+  for (cElvisTimer *i = First(); i; i = Next(i)) {
+      if (i->Id() == idP)
+         return i;
+      }
+
+  return NULL;
+}
+
 void cElvisTimers::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
   Lock();
-  Clear();
-  ChangeState();
+  if (foregroundP) {
+     Clear();
+     ChangeState();
+     }
+  else {
+     for (cElvisTimer *i = First(); i; i = Next(i))
+         i->Tag(false);
+     }
   Unlock();
   cElvisWidget::GetInstance()->GetTimers(*this);
+  Lock();
+  for (cElvisTimer *i = First(); i; i = Next(i)) {
+      if (!i->IsTagged())
+         Del(i);
+      }
+  ChangeState();
+  Unlock();
 }
 
 bool cElvisTimers::Update(bool waitP)

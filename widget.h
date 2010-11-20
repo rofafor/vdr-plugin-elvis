@@ -36,7 +36,7 @@ class cElvisWidgetTimerCallbackIf {
 public:
   cElvisWidgetTimerCallbackIf() {}
   virtual ~cElvisWidgetTimerCallbackIf() {}
-  virtual void AddTimer(int idP, int programIdP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP) = 0;
+  virtual void AddTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP) = 0;
 };
 
 class cElvisWidgetSearchTimerCallbackIf {
@@ -164,7 +164,7 @@ public:
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);
   bool GetTimers(cElvisWidgetTimerCallbackIf &callbackP);
-  bool AddTimer(int idP, int folderIdP = -1);
+  bool AddTimer(int programIdP, int folderIdP = -1);
   bool RemoveTimer(int idP);
   bool GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP);
   bool AddSearchTimer(const char *channelP, const char *wildcardP, int folderIdP = -1, int wildcardIdP = -1);

@@ -453,8 +453,8 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                              else if (!strcmp(it2.key, "wild_card"))
                                 wild_card = Unescape(json_object_get_string(it2.val));
                              }
-                           debug("id: %d program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", id, program_id, length, *name, *channel, *start_time, *wild_card);
-                           callbackP.AddTimer(id, program_id, length, *name, *channel, *start_time, *wild_card);
+                           debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", id, program_id, length, *name, *channel, *start_time, *wild_card);
+                           callbackP.AddTimer(program_id, length, *name, *channel, *start_time, *wild_card);
                            }
                        }
                     }
@@ -469,13 +469,13 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
   return false;
 }
 
-bool cElvisWidget::AddTimer(int idP, int folderIdP)
+bool cElvisWidget::AddTimer(int programIdP, int folderIdP)
 {
   cMutexLock(mutexM);
 
-  if (handleM && (idP > 0)) {
-     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), idP, idP) :
-                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), idP, idP, folderIdP);
+  if (handleM && (programIdP > 0)) {
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), programIdP, programIdP) :
+                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), programIdP, programIdP, folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -486,7 +486,7 @@ bool cElvisWidget::AddTimer(int idP, int folderIdP)
                continue;
                }
             else if (strstr(*dataM, "TRUE")) {
-               debug("added timer id: %d", idP);
+               debug("added timer id: %d", programIdP);
                return true;
                }
             }
