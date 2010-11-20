@@ -62,8 +62,9 @@ VDR Plugin 'elvis' Revision History
 - Fixed CURL data corruption.
 - Fixed Saunavisio relogin.
 
-201x-xx-xx: Version 0.1.0
+2010-11-21: Version 0.1.0
 
 - Simplified EPG data fetching.
-- Changed blue button functionality in recordings menus.
+- Changed blue button functionality in recording menus.
 - Added support for MainMenuHooks patch.
+- Speeded up recording menus.

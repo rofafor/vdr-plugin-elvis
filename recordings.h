@@ -18,6 +18,7 @@
 class cElvisRecording : public cListObject {
   friend class cElvisRecordingFolder;
 private:
+  bool taggedM;
   int idM;
   int programIdM;
   int folderIdM;
@@ -39,6 +40,8 @@ public:
   cElvisRecording(int idP, int countP, const char *nameP, const char *sizeP);
   virtual ~cElvisRecording();
   cElvisWidgetInfo *Info();
+  void Tag(bool onOffP) { taggedM = onOffP; } 
+  bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   int ProgramId() { return programIdM; }
   int FolderId() { return folderIdM; }
@@ -58,10 +61,12 @@ private:
   enum {
     eUpdateInterval = 3600 // 60min
   };
+  bool taggedM;
   int stateM;
   time_t lastUpdateM;
   int folderIdM;
   cString folderNameM;
+  cElvisRecording *GetRecording(int idP);
   void Refresh(bool foregroundP = false);
   // to prevent default constructor
   cElvisRecordingFolder();
@@ -76,6 +81,8 @@ public:
   virtual void AddFolder(int idP, int countP, const char *nameP, const char *sizeP);
   virtual void AddRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
   bool DeleteRecording(cElvisRecording *recordingP);
+  void Tag(bool onOffP) { taggedM = onOffP; }
+  bool IsTagged() { return taggedM; }
   bool Update(bool waitP = false);
   void ChangeState(void) { ++stateM; }
   bool StateChanged(int &stateP);
@@ -99,6 +106,7 @@ public:
   static void Destroy();
   virtual ~cElvisRecordings();
   cElvisRecordingFolder *AddFolder(int folderIdP, const char *folderNameP);
+  bool DeleteFolder(int folderIdP);
   cElvisRecordingFolder *GetFolder(int folderIdP);
   void Reset(bool foregroundP = true);
 };

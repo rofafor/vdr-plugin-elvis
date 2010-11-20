@@ -41,7 +41,7 @@ public:
   cElvisRecordingItem(cElvisRecording *recordingP);
   cElvisRecording *Recording() { return recordingM; }
   bool IsFolder() { return (recordingM && recordingM->IsFolder()); }
-  const char *Description() { return *descriptionM; }
+  const char *Description();
 };
 
 // --- cElvisRecordingsMenu --------------------------------------------

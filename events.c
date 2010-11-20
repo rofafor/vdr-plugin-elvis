@@ -22,7 +22,7 @@ cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTime
   infoM(NULL),
   startTimeValueM(strtotime(startTimeP)),
   endTimeValueM(strtotime(endTimeM)),
-  lengthM((endTimeValueM - startTimeValueM) / 60)
+  lengthM(int(endTimeValueM - startTimeValueM) / 60)
 {
 }
 

@@ -87,12 +87,21 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
      unsigned long offset = 0;
      unsigned long size = 0;
      bool resume = cElvisResumeItems::GetInstance()->HasResume(recordingM->ProgramId(), offset, size);
-     int watched = size ? (int)(100L * offset / size) : 0;
      if (recordingM->IsFolder())
         SetText(cString::sprintf("%s\t%d\t\t%s", tr("[DIR]"), recordingM->Count(), recordingM->Name()));
      else
         SetText(cString::sprintf("%s\t%s\t%c\t%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
                                  resume ? ' ' : '*', recordingM->Name()));
+     }
+}
+
+const char *cElvisRecordingItem::Description()
+{
+  if (isempty(descriptionM) && recordingM) {
+     unsigned long offset = 0;
+     unsigned long size = 0;
+     bool resume = cElvisResumeItems::GetInstance()->HasResume(recordingM->ProgramId(), offset, size);
+     int watched = size ? (int)(100L * offset / size) : 0;
      if (recordingM->Info()) {
         if (resume)
            descriptionM = cString::sprintf("%s %s - %s (%s; %d; %d%%)\n%s\n\n%s\n\n%s\n\n%s", *ShortDateString(recordingM->StartTimeValue()), *TimeString(recordingM->StartTimeValue()),
@@ -112,6 +121,8 @@ cElvisRecordingItem::cElvisRecordingItem(cElvisRecording *recordingP)
                                            recordingM->Channel(), recordingM->Name());
         }
      }
+
+  return *descriptionM;
 }
 
 // --- cElvisRecordingsMenu --------------------------------------------
