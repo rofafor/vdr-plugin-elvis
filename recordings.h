@@ -59,7 +59,7 @@ public:
 class cElvisRecordingFolder : public cThread, public cListObject, public cList<cElvisRecording>, public cElvisWidgetRecordingCallbackIf {
 private:
   enum {
-    eUpdateInterval = 3600 // 60min
+    eUpdateInterval = 1200 // 20min
   };
   bool taggedM;
   int stateM;
