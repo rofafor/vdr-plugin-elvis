@@ -25,7 +25,7 @@ private:
   cString startTimeM;
   cString endTimeM;
   cString descriptionM;
-  cElvisWidgetInfo *infoM;
+  cElvisWidgetEventInfo *infoM;
   time_t startTimeValueM;
   time_t endTimeValueM;
   int lengthM;
@@ -38,7 +38,7 @@ public:
   cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP);
   cElvisEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP);
   virtual ~cElvisEvent();
-  cElvisWidgetInfo *Info();
+  cElvisWidgetEventInfo *Info();
   int Id() { return idM; }
   const char *Name() { return *nameM; }
   const char *Channel() { return *channelM; }

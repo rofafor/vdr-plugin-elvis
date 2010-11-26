@@ -28,7 +28,7 @@ private:
   cString channelM;
   cString startTimeM;
   cString sizeM;
-  cElvisWidgetInfo *infoM;
+  cElvisWidgetEventInfo *infoM;
   time_t startTimeValueM;
   // to prevent default constructor
   cElvisRecording();
@@ -39,7 +39,7 @@ public:
   cElvisRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
   cElvisRecording(int idP, int countP, const char *nameP, const char *sizeP);
   virtual ~cElvisRecording();
-  cElvisWidgetInfo *Info();
+  cElvisWidgetEventInfo *Info();
   void Tag(bool onOffP) { taggedM = onOffP; } 
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }

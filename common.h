@@ -33,6 +33,7 @@
 extern const char VERSION[];
 extern cString    strunescape(const char *s);
 extern cString    strescape(const char *s);
+extern cString    strstrip(const char *s, const char *r);
 extern cString    WeekDateString(time_t t);
 extern cString    ShortDateString(time_t t);
 extern time_t     strtotime(const char *s);

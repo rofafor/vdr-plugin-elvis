@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.1.0\n"
+"Project-Id-Version: elvis 0.1.1\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2010-11-11 11:11+0200\n"
+"POT-Creation-Date: 2010-11-26 12:28+0200\n"
 "PO-Revision-Date: 2010-11-11 11:11+0200\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish\n"
@@ -159,6 +159,18 @@ msgid "Delete search timer?"
 msgstr "Poistetaanko hakuajastin?"
 
 msgid "Top events"
+msgstr "Suosituimmat"
+
+msgid "VOD"
+msgstr "Tilausvideot"
+
+msgid "Button$Preview"
+msgstr "Esikatsele"
+
+msgid "Button$Newest"
+msgstr "Uusimmat"
+
+msgid "Button$Popular"
 msgstr "Suosituimmat"
 
 msgid "Abort fetch"

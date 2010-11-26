@@ -48,7 +48,7 @@ cElvisRecording::~cElvisRecording()
   DELETE_POINTER(infoM);
 }
 
-cElvisWidgetInfo *cElvisRecording::Info()
+cElvisWidgetEventInfo *cElvisRecording::Info()
 {
   if (!infoM)
      infoM = cElvisWidget::GetInstance()->GetEventInfo(programIdM);

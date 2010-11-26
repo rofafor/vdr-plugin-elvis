@@ -25,7 +25,7 @@ private:
   cString channelM;
   cString startTimeM;
   cString wildcardM;
-  cElvisWidgetInfo *infoM;
+  cElvisWidgetEventInfo *infoM;
   time_t startTimeValueM;
   // to prevent default constructor
   cElvisTimer();
@@ -35,7 +35,7 @@ private:
 public:
   cElvisTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
   virtual ~cElvisTimer();
-  cElvisWidgetInfo *Info();
+  cElvisWidgetEventInfo *Info();
   void Tag(bool onOffP) { taggedM = onOffP; } 
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }

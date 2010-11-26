@@ -44,7 +44,7 @@ cElvisEvent::~cElvisEvent()
   DELETE_POINTER(infoM);
 }
 
-cElvisWidgetInfo *cElvisEvent::Info()
+cElvisWidgetEventInfo *cElvisEvent::Info()
 {
   if (!infoM)
      infoM = cElvisWidget::GetInstance()->GetEventInfo(idM);

@@ -12,9 +12,9 @@
 
 #undef USE_COOKIE_JAR
 
-// --- cElvisWidgetInfo ------------------------------------------------
+// --- cElvisWidgetEventInfo ------------------------------------------------
 
-cElvisWidgetInfo::cElvisWidgetInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
+cElvisWidgetEventInfo::cElvisWidgetEventInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
                                      const char *thumbnailP, const char *startTimeP, const char *endTimeP, const char *urlP, int programViewIdP, int recordingIdP,
                                      bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP)
 : idM(idP),
@@ -40,7 +40,31 @@ cElvisWidgetInfo::cElvisWidgetInfo(int idP, const char *nameP, const char *chann
 {
 }
 
-cElvisWidgetInfo::~cElvisWidgetInfo()
+cElvisWidgetEventInfo::~cElvisWidgetEventInfo()
+{
+}
+
+// --- cElvisWidgetVODInfo --------------------------------------------------
+
+cElvisWidgetVODInfo::cElvisWidgetVODInfo(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *originalTitleP, const char *currencyP,
+                                         const char *shortDescriptionP, const char *infoP, const char *info2P, const char *trailerUrlP, const char *categoriesP)
+: idM(idP),
+  lengthM(lengthP),
+  ageLimitM(ageLimitP),
+  yearM(yearP),
+  priceM(priceP),
+  titleM(titleP),
+  originalTitleM(originalTitleP),
+  currencyM(currencyP),
+  shortDescriptionM(shortDescriptionP),
+  infoM(infoP),
+  info2M(info2P),
+  trailerUrlM(trailerUrlP),
+  categoriesM(categoriesP)
+{
+}
+
+cElvisWidgetVODInfo::~cElvisWidgetVODInfo()
 {
 }
 
@@ -870,7 +894,69 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
   return false;
 }
 
-cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
+bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *categoryP, unsigned int countP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM) {
+     cString url = cString::sprintf("%s/vod.sl?data=true&category=%s&count=%d&ajax=true", GetBase(), *Escape(categoryP), countP);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetVOD")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::GetVOD(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+               json_object_iter it;
+               json_object *json = json_tokener_parse(*dataM);
+               if (!is_error(json)) {
+                  json_object_object_foreachC(json, it) {
+                    if (!strcmp(it.key, "vods")) {
+                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
+                           json_object_iter it2;
+                           json_object *json2 = json_object_array_get_idx(it.val, i);
+                           int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
+                           cString title = "", currency = "", cover = "", trailer = "";
+                           json_object_object_foreachC(json2, it2) {
+                             if (!strcmp(it2.key, "id"))
+                                id = json_object_get_int(it2.val);
+                             else if (!strcmp(it2.key, "length"))
+                                length = json_object_get_int(it2.val);
+                             else if (!strcmp(it2.key, "agelimit"))
+                                agelimit = json_object_get_int(it2.val);
+                             else if (!strcmp(it2.key, "year"))
+                                year = json_object_get_int(it2.val);
+                             else if (!strcmp(it2.key, "price"))
+                                price = json_object_get_int(it2.val);
+                             else if (!strcmp(it2.key, "title"))
+                                title = Unescape(json_object_get_string(it2.val));
+                             else if (!strcmp(it2.key, "currency"))
+                                currency = Unescape(json_object_get_string(it2.val));
+                             else if (!strcmp(it2.key, "cover"))
+                                cover = Unescape(json_object_get_string(it2.val));
+                             else if (!strcmp(it2.key, "trailer_url"))
+                                trailer = Unescape(json_object_get_string(it2.val));
+                             }
+                           debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                           callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                           }
+                       }
+                    }
+                  json_object_put(json);
+                  }
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
+cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
@@ -934,8 +1020,78 @@ cElvisWidgetInfo *cElvisWidget::GetEventInfo(int idP)
                         id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid, recordingid, has_started,
                         has_ended, recorded, ready, is_wildcard);
                   json_object_put(json);
-                  return new cElvisWidgetInfo(id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid,
+                  return new cElvisWidgetEventInfo(id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid,
                                                recordingid, has_started, has_ended, recorded, ready, is_wildcard);
+                  }
+               }
+            }
+         }
+     }
+
+  return NULL;
+}
+
+cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
+{
+  cMutexLock(mutexM);
+  if (handleM && (idP > 0)) {
+     cString url = cString::sprintf("%s/vod.sl?data=true&vod=%d&ajax=true", GetBase(), idP);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetVODInfo")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::GetVODInfo(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+               json_object_iter it;
+               json_object *json = json_tokener_parse(*dataM);
+               if (!is_error(json)) {
+                  int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
+                  cString title = "", original_title = "", currency = "", short_desc = "", info = "", info2 = "", trailer_url = "", categories = "";
+                  json_object_object_foreachC(json, it) {
+                    if (!strcmp(it.key, "id"))
+                       id = json_object_get_int(it.val);
+                    else if (!strcmp(it.key, "length"))
+                       length = json_object_get_int(it.val);
+                    else if (!strcmp(it.key, "agelimit"))
+                       agelimit = json_object_get_int(it.val);
+                    else if (!strcmp(it.key, "year"))
+                       year = json_object_get_int(it.val);
+                    else if (!strcmp(it.key, "price"))
+                       price = json_object_get_int(it.val);
+                    else if (!strcmp(it.key, "title"))
+                       title = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "original_title"))
+                       original_title = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "currency"))
+                       currency = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "short_desc"))
+                       short_desc = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "info"))
+                       info = Unescape(strstrip(json_object_get_string(it.val), "\r"));
+                    else if (!strcmp(it.key, "info2"))
+                       info2 = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "trailer_url"))
+                       trailer_url = Unescape(json_object_get_string(it.val));
+                    else if (!strcmp(it.key, "categories")) {
+                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
+                           json_object_iter it2;
+                           json_object *json2 = json_object_array_get_idx(it.val, i);
+                           json_object_object_foreachC(json2, it2) {
+                             if (!strcmp(it2.key, "cat"))
+                                categories = cString::sprintf("%s%s%s", *categories, isempty(*categories) ? "" : ", ", *Unescape(json_object_get_string(it2.val)));
+                             }
+                           }
+                       }
+                    }
+                  debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' original_title: '%s' currency: '%s' short_desc: '%s' info: '%s' info2: '%s' "
+                        "trailer_url: '%s' categories: '%s'", id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2,
+                        *trailer_url, *categories);
+                  json_object_put(json);
+                  return new cElvisWidgetVODInfo(id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2, *trailer_url, *categories);
                   }
                }
             }

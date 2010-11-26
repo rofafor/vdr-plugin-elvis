@@ -15,6 +15,7 @@
 #include "timers.h"
 #include "searchtimers.h"
 #include "events.h"
+#include "vod.h"
 
 // --- cElvisRecordingInfoMenu -----------------------------------------
 
@@ -231,6 +232,46 @@ private:
   eOSState Info();
 public:
   cElvisTopEventsMenu();
+  virtual eOSState ProcessKey(eKeys keyP);
+};
+
+// --- cElvisVODInfoMenu -----------------------------------------------
+
+class cElvisVODInfoMenu : public cOsdMenu {
+private:
+  cString descriptionM;
+  cString trailerM;
+  eOSState Preview();
+public:
+  cElvisVODInfoMenu(const char *titleP, const char *descriptionP, const char *trailerP);
+  virtual void Display();
+  virtual eOSState ProcessKey(eKeys keyP);
+};
+
+// --- cElvisVODItem ---------------------------------------------------
+
+class cElvisVODItem : public cOsdItem {
+private:
+  cElvisVOD *vodM;
+  cString descriptionM;
+public:
+  cElvisVODItem(cElvisVOD *vodM);
+  cElvisVOD *Vod() { return vodM; }
+  const char *Description();
+};
+
+// --- cElvisVODMenu ---------------------------------------------------
+
+class cElvisVODMenu : public cOsdMenu {
+private:
+  bool popularModeM;
+  cElvisVODCategory *categoryM;
+  int stateM;
+  void SetHelpKeys();
+  void Setup();
+  eOSState Info();
+public:
+  cElvisVODMenu();
   virtual eOSState ProcessKey(eKeys keyP);
 };
 

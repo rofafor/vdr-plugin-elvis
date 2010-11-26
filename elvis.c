@@ -20,7 +20,7 @@
 #error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.1.0";
+       const char VERSION[]       = "0.1.1";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 
@@ -111,6 +111,7 @@ void cPluginElvis::Stop()
   cElvisTimers::Destroy();
   cElvisSearchTimers::Destroy();
   cElvisTopEvents::Destroy();
+  cElvisVODCategories::Destroy();
   cElvisChannels::Destroy();
   cElvisWidget::Destroy();
   cElvisFetcher::Destroy();

@@ -29,7 +29,7 @@ cElvisTimer::~cElvisTimer()
   DELETE_POINTER(infoM);
 }
 
-cElvisWidgetInfo *cElvisTimer::Info()
+cElvisWidgetEventInfo *cElvisTimer::Info()
 {
   if (!infoM)
      infoM = cElvisWidget::GetInstance()->GetEventInfo(idM);

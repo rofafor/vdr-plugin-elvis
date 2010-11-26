@@ -67,3 +67,7 @@ VDR Plugin 'elvis' Revision History
 - Changed blue button functionality in recording menus.
 - Added support for MainMenuHooks patch.
 - Speeded up EPG, recording, timer, and search timer menus.
+
+2010-xx-xx: Version 0.1.1
+
+- Added initial support for VODs.

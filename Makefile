@@ -71,7 +71,7 @@ endif
 
 ### The object files (add further files here):
 
-OBJS = common.o config.o events.o fetch.o menu.o player.o recordings.o resume.o searchtimers.o timers.o elvis.o widget.o
+OBJS = common.o config.o events.o fetch.o menu.o player.o recordings.o resume.o searchtimers.o timers.o elvis.o vod.o widget.o
 
 ### The main target:
 

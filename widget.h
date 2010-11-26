@@ -74,9 +74,16 @@ public:
   virtual void AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP) = 0;
 };
 
-// --- cElvisWidgetInfo ------------------------------------------------
+class cElvisWidgetVODCallbackIf {
+public:
+  cElvisWidgetVODCallbackIf() {}
+  virtual ~cElvisWidgetVODCallbackIf() {}
+  virtual void AddVOD(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *currencyP, const char *coverP, const char *trailerP) = 0;
+};
 
-class cElvisWidgetInfo {
+// --- cElvisWidgetEventInfo ------------------------------------------------
+
+class cElvisWidgetEventInfo {
 private:
   int idM;
   int lengthM;
@@ -99,15 +106,15 @@ private:
   time_t startTimeValueM;
   time_t endTimeValueM;
   // to prevent default constructor
-  cElvisWidgetInfo();
+  cElvisWidgetEventInfo();
   // to prevent copy constructor and assignment
-  cElvisWidgetInfo(const cElvisWidgetInfo&);
-  cElvisWidgetInfo& operator=(const cElvisWidgetInfo&);
+  cElvisWidgetEventInfo(const cElvisWidgetEventInfo&);
+  cElvisWidgetEventInfo& operator=(const cElvisWidgetEventInfo&);
 public:
-  cElvisWidgetInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
+  cElvisWidgetEventInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
                     const char *thumbnailP, const char *startTimeP, const char *endTimeP, const char *urlP, int programViewIdP, int recordingIdP,
                     bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP);
-  virtual ~cElvisWidgetInfo();
+  virtual ~cElvisWidgetEventInfo();
   int Id() { return idM; }
   int LengthValue() { return lengthM; }
   const char *Name() { return *nameM; }
@@ -120,6 +127,47 @@ public:
   const char *Length() { return *fLengthM; }
   time_t StartTimeValue() { return startTimeValueM; }
   time_t EndTimeValue() { return endTimeValueM; }
+};
+
+// --- cElvisWidgetVODInfo --------------------------------------------------
+
+class cElvisWidgetVODInfo {
+private:
+  int idM;
+  int lengthM;
+  int ageLimitM;
+  int yearM;
+  int priceM;
+  cString titleM;
+  cString originalTitleM;
+  cString currencyM;
+  cString shortDescriptionM;
+  cString infoM;
+  cString info2M;
+  cString trailerUrlM;
+  cString categoriesM;
+  // to prevent default constructor
+  cElvisWidgetVODInfo();
+  // to prevent copy constructor and assignment
+  cElvisWidgetVODInfo(const cElvisWidgetVODInfo&);
+  cElvisWidgetVODInfo& operator=(const cElvisWidgetVODInfo&);
+public:
+  cElvisWidgetVODInfo(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *originalTitleP, const char *currencyP,
+                      const char *shortDescriptionP, const char *infoP, const char *info2P, const char *trailerUrlP, const char *categoriesP);
+  virtual ~cElvisWidgetVODInfo();
+  int Id() { return idM; }
+  int Length() { return lengthM; }
+  int AgeLimit() { return ageLimitM; }
+  int Year() { return yearM; }
+  int Price() { return priceM; }
+  const char *Title() { return *titleM; }
+  const char *OriginalTitle() { return *originalTitleM; }
+  const char *Currency() { return *currencyM; }
+  const char *ShortDescription() { return *shortDescriptionM; }
+  const char *Info() { return *infoM; }
+  const char *Info2() { return *info2M; }
+  const char *TrailerUrl() { return *trailerUrlM; }
+  const char *Categories() { return *categoriesM; }  
 };
 
 // --- cElvisWidget ----------------------------------------------------
@@ -173,7 +221,9 @@ public:
   bool GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char *channelP);
   bool GetEPG(cElvisWidgetEPGCallbackIf &callbackP);
   bool GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP);
-  cElvisWidgetInfo *GetEventInfo(int idP);
+  bool GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *categoryP, unsigned int countP = 25);
+  cElvisWidgetEventInfo *GetEventInfo(int idP);
+  cElvisWidgetVODInfo *GetVODInfo(int idP);
 };
 
 #endif // __ELVIS_WIDGET_H

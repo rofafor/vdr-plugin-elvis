@@ -68,6 +68,26 @@ cString strescape(const char *s)
   return res;
 }
 
+cString strstrip(const char *s, const char *r)
+{
+  cString res("");
+
+  if (s) {
+     char *sd = strdup(s);
+     while (char *p = strstr(sd, r)) {
+       int of = p - sd;
+       int l  = strlen(sd);
+       int lr = strlen(r);
+       char *sof = sd + of;
+       memmove(sof, sof + lr, l - of - lr + 1);
+       }
+     res = sd;
+     free(sd);
+     }
+
+  return res;
+}
+
 cString WeekDateString(time_t t)
 {
   char buf[32];

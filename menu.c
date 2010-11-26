@@ -8,6 +8,7 @@
 #include <vdr/remote.h>
 #include <vdr/menuitems.h>
 #include <vdr/interface.h>
+#include <vdr/plugin.h>
 
 #include "common.h"
 #include "fetch.h"
@@ -1168,6 +1169,199 @@ eOSState cElvisTopEventsMenu::ProcessKey(eKeys keyP)
   return state;
 }
 
+// --- cElvisVODInfoMenu -----------------------------------------------
+
+cElvisVODInfoMenu::cElvisVODInfoMenu(const char *titleP, const char *descriptionP, const char *trailerP)
+: cOsdMenu(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), titleP ? titleP : "")),
+  descriptionM(descriptionP),
+  trailerM(trailerP)
+{
+  SetHelp(!isempty(*trailerM) ? tr("Button$Preview") : NULL, NULL, NULL, NULL);
+}
+
+void cElvisVODInfoMenu::Display()
+{
+  cOsdMenu::Display();
+  DisplayMenu()->SetText(*descriptionM, false);
+  cStatus::MsgOsdTextItem(*descriptionM);
+}
+
+eOSState cElvisVODInfoMenu::Preview()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  if (!isempty(*trailerM))
+     cPluginManager::CallFirstService("MediaPlayer-1.0", (void *)*trailerM);
+
+  return osContinue;
+}
+
+eOSState cElvisVODInfoMenu::ProcessKey(eKeys keyP)
+{
+  if (!HasSubMenu()) {
+     switch (keyP) {
+       case kUp|k_Repeat:
+       case kUp:
+       case kDown|k_Repeat:
+       case kDown:
+       case kLeft|k_Repeat:
+       case kLeft:
+       case kRight|k_Repeat:
+       case kRight:
+            DisplayMenu()->Scroll(NORMALKEY(keyP) == kUp || NORMALKEY(keyP) == kLeft, NORMALKEY(keyP) == kLeft || NORMALKEY(keyP) == kRight);
+            cStatus::MsgOsdTextItem(NULL, NORMALKEY(keyP) == kUp);
+            return osContinue;
+       case kInfo:
+            return osBack;
+       default:
+            break;
+       }
+     }
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kPlay:
+       case kRed:
+            return Preview();
+       case kOk:
+            return osBack;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisVODItem --------------------------------------------------------
+
+cElvisVODItem::cElvisVODItem(cElvisVOD *vodP)
+: vodM(vodP),
+  descriptionM("")
+{
+  if (vodM)
+     SetText(cString::sprintf("%s", vodM->Title()));
+}
+
+const char *cElvisVODItem::Description()
+{
+  if (isempty(descriptionM) && vodM) {
+     if (vodM->Info())
+           descriptionM = cString::sprintf("%s\n\n%d %s\n%s\n%d %s\n%s\n\n%s", vodM->Info()->Title(), vodM->Info()->Year(), vodM->Info()->OriginalTitle(),
+                                          vodM->Info()->Categories(), vodM->Info()->Length(), tr("min"), (vodM->Info()->AgeLimit() > 0) ?
+                                          *cString::sprintf("K-%d", vodM->Info()->AgeLimit()) : "S", vodM->Info()->Info());
+     else
+           descriptionM = cString::sprintf("%s\n%d\n%s", vodM->Title(), vodM->Year(), (vodM->AgeLimit() > 0) ? *cString::sprintf("K-%d", vodM->AgeLimit()) : "S");
+     }
+
+  return *descriptionM;
+}
+
+// --- cElvisVODMenu ---------------------------------------------------
+
+cElvisVODMenu::cElvisVODMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("VOD"))),
+  popularModeM(false),
+  categoryM(cElvisVODCategories::GetInstance()->GetCategory(popularModeM ? "popular" : "newest"))
+{
+  if (categoryM) {
+     categoryM->StateChanged(stateM);
+     categoryM->Update();
+     }
+  Setup();
+  SetHelpKeys();
+}
+
+void cElvisVODMenu::SetHelpKeys()
+{
+  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  if (item)
+     SetHelp(popularModeM ? tr("Button$Newest") : tr("Button$Popular"), NULL, NULL, trVDR("Button$Info"));
+  else
+     SetHelp(NULL, NULL, NULL, NULL);
+}
+
+void cElvisVODMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  if (categoryM) {
+     cThreadLock lock(categoryM);
+     SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), popularModeM ? tr("Button$Popular") : tr("Button$Newest")));
+     for (cElvisVOD *item = categoryM->cList<cElvisVOD>::First(); item; item = categoryM->cList<cElvisVOD>::Next(item))
+         Add(new cElvisVODItem(item));
+     }
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+eOSState cElvisVODMenu::Info()
+{
+  if (HasSubMenu() || Count() == 0)
+     return osContinue;
+
+  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  if (item && item->Vod())
+     return AddSubMenu(new cElvisVODInfoMenu(item->Vod()->Title(), item->Description(), item->Vod()->Trailer()));
+
+  return osContinue;
+}
+
+eOSState cElvisVODMenu::ProcessKey(eKeys keyP)
+{
+  bool HadSubMenu = HasSubMenu();
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRed:
+            popularModeM = !popularModeM;
+            categoryM = cElvisVODCategories::GetInstance()->GetCategory(popularModeM ? "popular" : "newest");
+            Setup();
+            SetHelpKeys();
+            return osContinue;
+       case k5:
+            if (categoryM)
+               categoryM->Update(true);
+            return osContinue;
+       case kOk:
+       case kBlue:
+       case kInfo:
+            return Info();
+       case kNone:
+            if (categoryM) {
+               categoryM->Update();
+               if (categoryM->StateChanged(stateM)) {
+                  Setup();
+                  SetHelpKeys();
+                  return osContinue;
+                  }
+               }
+            break;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (HadSubMenu && !HasSubMenu()) {
+     Setup();
+     if (!Count())
+        return osBack;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
 // --- cElvisMenu ------------------------------------------------------
 
 cElvisMenu::cElvisMenu()
@@ -1195,6 +1389,7 @@ void cElvisMenu::Setup()
   Add(new cOsdItem(hk(tr("Search timers")), osUser3));
   Add(new cOsdItem(hk(trVDR("EPG")),        osUser4));
   Add(new cOsdItem(hk(tr("Top events")),    osUser5));
+  Add(new cOsdItem(hk(tr("VOD")),           osUser6));
   if (fetchCountM > 0) {
      Add(new cOsdItem(*cString::sprintf(tr("Now fetching recordings: %d"), fetchCountM), osUnknown, false));
      for (unsigned int i = 0; i < fetchCountM; ++i) {
@@ -1223,6 +1418,8 @@ eOSState cElvisMenu::ProcessKey(eKeys keyP)
          return AddSubMenu(new cElvisEPGMenu);
     case osUser5:
          return AddSubMenu(new cElvisTopEventsMenu);
+    case osUser6:
+         return AddSubMenu(new cElvisVODMenu);
     case osUnknown:
          switch (keyP) {
            case kYellow:
