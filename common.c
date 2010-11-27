@@ -75,9 +75,9 @@ cString strstrip(const char *s, const char *r)
   if (s) {
      char *sd = strdup(s);
      while (char *p = strstr(sd, r)) {
-       int of = p - sd;
-       int l  = strlen(sd);
-       int lr = strlen(r);
+       int of = (int)(p - sd);
+       int l  = (int)strlen(sd);
+       int lr = (int)strlen(r);
        char *sof = sd + of;
        memmove(sof, sof + lr, l - of - lr + 1);
        }

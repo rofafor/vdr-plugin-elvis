@@ -1176,7 +1176,7 @@ cElvisVODInfoMenu::cElvisVODInfoMenu(const char *titleP, const char *description
   descriptionM(descriptionP),
   trailerM(trailerP)
 {
-  SetHelp(!isempty(*trailerM) ? tr("Button$Preview") : NULL, NULL, NULL, NULL);
+  SetHelp(0 && !isempty(*trailerM) ? tr("Button$Preview") : NULL, NULL, NULL, NULL);
 }
 
 void cElvisVODInfoMenu::Display()
@@ -1191,7 +1191,7 @@ eOSState cElvisVODInfoMenu::Preview()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  if (!isempty(*trailerM))
+  if (0 && !isempty(*trailerM))
      cPluginManager::CallFirstService("MediaPlayer-1.0", (void *)*trailerM);
 
   return osContinue;
