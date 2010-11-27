@@ -11,7 +11,8 @@
 #include "events.h"
 
 cElvisEvent::cElvisEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
-: idM(idP),
+: taggedM(true),
+  idM(idP),
   nameM(nameP),
   channelM(NULL),
   simpleStartTimeM(simpleStartTimeP),
@@ -66,6 +67,16 @@ cElvisChannel::~cElvisChannel()
 void cElvisChannel::AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
 {
   Add(new cElvisEvent(idP, nameP, simpleStartTimeP, simpleEndTimeP, startTimeP, endTimeP, descriptionP));
+}
+
+cElvisEvent *cElvisChannel::GetEvent(int idP)
+{
+  for (cElvisEvent *i = cList<cElvisEvent>::First(); i; i = cList<cElvisEvent>::Next(i)) {
+      if (i->Id() == idP)
+         return i;
+      }
+
+  return NULL;
 }
 
 // --- cElvisChannels --------------------------------------------------
@@ -267,18 +278,46 @@ cElvisTopEvents::~cElvisTopEvents()
 void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP)
 {
   cThreadLock(this);
-  Add(new cElvisEvent(idP, nameP, channelP, startTimeP, endTimeP));
-  ChangeState();
+  //cElvisEvent *event = GetEvent(idP);
+  //if (event)
+  //   event->Tag(true);
+  //else {
+     Add(new cElvisEvent(idP, nameP, channelP, startTimeP, endTimeP));
+     ChangeState();
+  //   }
+}
+
+cElvisEvent *cElvisTopEvents::GetEvent(int idP)
+{
+  for (cElvisEvent *i = First(); i; i = Next(i)) {
+      if (i->Id() == idP)
+         return i;
+      }
+
+  return NULL;
 }
 
 void cElvisTopEvents::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
   Lock();
-  Clear();
-  ChangeState();
+  //if (foregroundP) {
+     Clear();
+     ChangeState();
+  //   }
+  //else {
+  //   for (cElvisEvent *i = First(); i; i = Next(i))
+  //       i->Tag(false);
+  //   }
   Unlock();
   cElvisWidget::GetInstance()->GetTopEvents(*this);
+  //Lock();
+  //for (cElvisEvent *i = First(); i; i = Next(i)) {
+  //    if (!i->IsTagged())
+  //       Del(i);
+  //    }
+  //ChangeState();
+  //Unlock();
 }
 
 bool cElvisTopEvents::Update(bool waitP)

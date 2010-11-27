@@ -17,6 +17,7 @@
 class cElvisEvent : public cListObject {
   friend class cElvisChannel;
 private:
+  bool taggedM;
   int idM;
   cString nameM;
   cString channelM;
@@ -39,6 +40,8 @@ public:
   cElvisEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP);
   virtual ~cElvisEvent();
   cElvisWidgetEventInfo *Info();
+  void Tag(bool onOffP) { taggedM = onOffP; } 
+  bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   const char *Name() { return *nameM; }
   const char *Channel() { return *channelM; }
@@ -64,6 +67,7 @@ public:
   cElvisChannel(const char *nameP);
   virtual ~cElvisChannel();
   void AddEvent(int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP);
+  cElvisEvent *GetEvent(int idP);
   const char *Name() { return *nameM; }
 };
 
@@ -108,6 +112,7 @@ private:
   int stateM;
   time_t lastUpdateM;
   void Refresh(bool foregroundP = false);
+  cElvisEvent *GetEvent(int idP);
   // constructor
   cElvisTopEvents();
   // to prevent copy constructor and assignment
