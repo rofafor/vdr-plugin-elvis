@@ -27,6 +27,7 @@ VERSION = $(shell grep 'const char VERSION\[\] *=' $(PLUGIN).c | awk '{ print $$
 
 CXX      ?= g++
 CXXFLAGS ?= -fPIC -g -O2 -Wall -Wextra -Wswitch-default -Wfloat-equal -Wundef -Wpointer-arith -Wconversion -Wcast-align -Wredundant-decls -Wno-unused-parameter -Woverloaded-virtual -Wno-parentheses
+LDFLAGS  ?= -Wl,--as-needed
 
 ### The directory environment:
 
@@ -144,7 +145,7 @@ i18n: $(I18Nmsgs) $(I18Npot)
 ### Targets:
 
 libvdr-$(PLUGIN).so: $(JSONLIB) $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared $(OBJS) $(JSONLIB) $(LIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared $(OBJS) $(JSONLIB) $(LIBS) -o $@
 ifndef ELVIS_DEBUG
 	@$(STRIP) $@
 endif

@@ -71,3 +71,5 @@ VDR Plugin 'elvis' Revision History
 2010-xx-xx: Version 0.1.1
 
 - Added initial support for VODs.
+- Added support for LDFLAGS.
+- Updated widget API.
