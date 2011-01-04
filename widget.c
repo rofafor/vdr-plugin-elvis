@@ -71,8 +71,8 @@ cElvisWidgetVODInfo::~cElvisWidgetVODInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char *cElvisWidget::baseCookieNameS = "cookie.conf";
-const char* cElvisWidget::baseUrlViihdeS = "http://api.elisaviihde.fi/etvrecorder";
-const char* cElvisWidget::baseUrlViihdeSslS = "https://api.elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
 const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
 const char* cElvisWidget::baseUrlVisioSslS = "https://www.saunavisio.fi/tvrecorder";
 
@@ -257,7 +257,7 @@ bool cElvisWidget::Invalidate()
 bool cElvisWidget::IsLoginRequired(const char *stringP)
 {
   if (ElvisConfig.Service == 0) {
-     if (strstr(stringP, "</html>"))
+     if (strstr(stringP, "evlogin"))
         return true;
      }
   else {

@@ -68,8 +68,7 @@ VDR Plugin 'elvis' Revision History
 - Added support for MainMenuHooks patch.
 - Speeded up EPG, recording, timer, and search timer menus.
 
-2010-12-26: Version 0.1.1
+2011-01-04: Version 0.1.1
 
 - Added initial support for VODs.
 - Added support for LDFLAGS.
-- Updated widget API.
