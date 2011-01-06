@@ -706,14 +706,6 @@ void cElvisPlayer::Action()
                 if (!p) {
                    p = playFrameM->Data();
                    pc = playFrameM->Count();
-                   }
-                }
-
-             playFrameM = ringBufferM->Get();
-             if (playFrameM) {
-                if (!p) {
-                   p = playFrameM->Data();
-                   pc = playFrameM->Count();
                    if (p && firstPacket) {
                       PlayTs(NULL, 0);
                       firstPacket = false;
