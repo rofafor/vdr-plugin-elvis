@@ -77,3 +77,4 @@ VDR Plugin 'elvis' Revision History
 
 - Fixed a player bug.
 - Limit download speed.
+- Modified locking threads.

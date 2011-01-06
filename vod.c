@@ -48,13 +48,13 @@ cElvisVODCategory::cElvisVODCategory(const char *categoryP)
 
 cElvisVODCategory::~cElvisVODCategory()
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Cancel(3);
 }
 
 void cElvisVODCategory::AddVOD(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *currencyP, const char *coverP, const char *trailerP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   cElvisVOD *vod = GetVOD(idP);
 
   if (vod)
@@ -112,7 +112,7 @@ bool cElvisVODCategory::Update(bool waitP)
 
 bool cElvisVODCategory::StateChanged(int &stateP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   bool result = (stateP != stateM);
 
   stateP = stateM;

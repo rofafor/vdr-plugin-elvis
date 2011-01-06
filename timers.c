@@ -63,13 +63,13 @@ cElvisTimers::cElvisTimers()
 
 cElvisTimers::~cElvisTimers()
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Cancel(3);
 }
 
 void cElvisTimers::AddTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   cElvisTimer *timer = GetTimer(idP);
   if (timer)
      timer->Tag(true);
@@ -81,7 +81,7 @@ void cElvisTimers::AddTimer(int idP, int lengthP, const char *nameP, const char 
 
 bool cElvisTimers::Create(int idP, int folderIdP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   if (cElvisWidget::GetInstance()->AddTimer(idP, folderIdP)) {
      Start();
      return true;
@@ -92,7 +92,7 @@ bool cElvisTimers::Create(int idP, int folderIdP)
 
 bool cElvisTimers::Delete(int idP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Update();
   for (cElvisTimer *timer = First(); timer; timer = Next(timer)) {
       if (timer->Id() == idP)
@@ -104,7 +104,7 @@ bool cElvisTimers::Delete(int idP)
 
 bool cElvisTimers::Delete(cElvisTimer *timerP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   if (timerP && cElvisWidget::GetInstance()->RemoveTimer(timerP->Id())) {
      Del(timerP);
      ChangeState();
@@ -161,7 +161,7 @@ bool cElvisTimers::Update(bool waitP)
 
 bool cElvisTimers::StateChanged(int &stateP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   bool result = (stateP != stateM);
 
   stateP = stateM;

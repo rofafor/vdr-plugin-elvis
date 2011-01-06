@@ -51,13 +51,13 @@ cElvisSearchTimers::cElvisSearchTimers()
 
 cElvisSearchTimers::~cElvisSearchTimers()
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Cancel(3);
 }
 
 void cElvisSearchTimers::AddSearchTimer(int idP, const char *folderP, const char *addedP, const char *channelP, const char *wildcardP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   cElvisSearchTimer *timer = GetSearchTimer(idP);
   if (timer)
      timer->Tag(true);
@@ -69,7 +69,7 @@ void cElvisSearchTimers::AddSearchTimer(int idP, const char *folderP, const char
 
 bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP, const char *wildcardP, int folderIdP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   if (cElvisWidget::GetInstance()->AddSearchTimer(channelP, wildcardP, folderIdP, timerP ? timerP->Id() : -1)) {
      Start();
      return true;
@@ -80,7 +80,7 @@ bool cElvisSearchTimers::Create(cElvisSearchTimer *timerP, const char *channelP,
 
 bool cElvisSearchTimers::Delete(cElvisSearchTimer *timerP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   if (timerP && cElvisWidget::GetInstance()->RemoveSearchTimer(timerP->Id())) {
      Del(timerP);
      ChangeState();
@@ -138,7 +138,7 @@ bool cElvisSearchTimers::Update(bool waitP)
 
 bool cElvisSearchTimers::StateChanged(int &stateP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   bool result = (stateP != stateM);
 
   stateP = stateM;

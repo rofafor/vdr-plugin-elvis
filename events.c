@@ -105,14 +105,14 @@ cElvisChannels::cElvisChannels()
 
 cElvisChannels::~cElvisChannels()
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Cancel(3);
 }
 
 void cElvisChannels::AddEvent(const char *channelP, int idP, const char *nameP, const char *simpleStartTimeP, const char *simpleEndTimeP, const char *startTimeP, const char *endTimeP, const char *descriptionP)
 {
   cElvisChannel *channel = NULL;
-  cThreadLock(this);
+  LOCK_THREAD;
   for (cElvisChannel *c = First(); c; c = Next(c)) {
       if (!strcmp(c->Name(), channelP)) {
          channel = c;
@@ -152,7 +152,7 @@ bool cElvisChannels::Update(bool waitP)
 
 bool cElvisChannels::StateChanged(int &stateP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   bool result = (stateP != stateM);
 
   stateP = stateM;
@@ -271,13 +271,13 @@ cElvisTopEvents::cElvisTopEvents()
 
 cElvisTopEvents::~cElvisTopEvents()
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   Cancel(3);
 }
 
 void cElvisTopEvents::AddEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   //cElvisEvent *event = GetEvent(idP);
   //if (event)
   //   event->Tag(true);
@@ -334,7 +334,7 @@ bool cElvisTopEvents::Update(bool waitP)
 
 bool cElvisTopEvents::StateChanged(int &stateP)
 {
-  cThreadLock(this);
+  LOCK_THREAD;
   bool result = (stateP != stateM);
 
   stateP = stateM;
