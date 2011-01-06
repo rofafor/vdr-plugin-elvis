@@ -20,7 +20,8 @@
 class cElvisReader : public cThread {
 private:
   enum {
-    eTimeoutMs = 10
+    eTimeoutMs             = 10, // in milliseconds
+    eMaxDownloadSpeedMBits = 12  // in megabits per second
   };
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   static size_t HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);

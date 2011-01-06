@@ -210,6 +210,9 @@ bool cElvisReader::Connect()
      // set user-agent
      curl_easy_setopt(handleM, CURLOPT_USERAGENT, *cString::sprintf("vdr-%s/%s", PLUGIN_NAME_I18N, VERSION));
 
+     // limit download speed (bytes/s)
+     curl_easy_setopt(handleM, CURLOPT_MAX_RECV_SPEED_LARGE, eMaxDownloadSpeedMBits * 131072L);
+
      // follow location
      curl_easy_setopt(handleM, CURLOPT_FOLLOWLOCATION, 1L);
 
