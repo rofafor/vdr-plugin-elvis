@@ -48,9 +48,9 @@ cElvisRecording::~cElvisRecording()
   DELETE_POINTER(infoM);
 }
 
-cElvisWidgetEventInfo *cElvisRecording::Info()
+cElvisWidgetEventInfo *cElvisRecording::Info(bool forceP)
 {
-  if (!infoM)
+  if (!infoM || forceP)
      infoM = cElvisWidget::GetInstance()->GetEventInfo(programIdM);
 
  return infoM;
@@ -93,8 +93,11 @@ void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP,
 {
   LOCK_THREAD;
   cElvisRecording *rec = GetRecording(idP);
-  if (rec)
+  if (rec) {
      rec->Tag(true);
+     // info must reloaded!
+     rec->Info(true);
+     }
   else {
      Add(new cElvisRecording(idP, programIdP, folderIdP, countP, lengthP, nameP, channelP, startTimeP));
      ChangeState();

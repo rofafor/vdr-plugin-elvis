@@ -30,6 +30,8 @@
         }                         \
   } while (0)
 
+#define LOCK_THREAD_INSTANCE(x) cThreadLock ThreadLock(x)
+
 extern const char VERSION[];
 extern cString    strunescape(const char *s);
 extern cString    strescape(const char *s);

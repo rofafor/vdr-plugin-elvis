@@ -167,7 +167,7 @@ void cElvisRecordingsMenu::Setup()
   Clear();
 
   if (folderM) {
-     cThreadLock lock(folderM);
+     LOCK_THREAD_INSTANCE(folderM);
      for (cElvisRecording *item = folderM->cList<cElvisRecording>::First(); item; item = folderM->cList<cElvisRecording>::Next(item))
          Add(new cElvisRecordingItem(item));
      }
@@ -459,7 +459,7 @@ void cElvisTimersMenu::Setup()
 
   if (true)
   {
-     cThreadLock lock(cElvisTimers::GetInstance());
+     LOCK_THREAD_INSTANCE(cElvisTimers::GetInstance());
      for (cElvisTimer *item = cElvisTimers::GetInstance()->First(); item; item = cElvisTimers::GetInstance()->Next(item))
          Add(new cElvisTimerItem(item));
   }
@@ -668,7 +668,7 @@ void cElvisSearchTimersMenu::Setup()
   Clear();
 
   if (true) {
-     cThreadLock lock(cElvisSearchTimers::GetInstance());
+     LOCK_THREAD_INSTANCE(cElvisSearchTimers::GetInstance());
      for (cElvisSearchTimer *item = cElvisSearchTimers::GetInstance()->First(); item; item = cElvisSearchTimers::GetInstance()->Next(item))
          Add(new cElvisSearchTimerItem(item));
      }
@@ -885,7 +885,7 @@ void cElvisChannelEventsMenu::Setup()
   Clear();
 
   if (channelM) {
-     cThreadLock lock(cElvisChannels::GetInstance());
+     LOCK_THREAD_INSTANCE(cElvisChannels::GetInstance());
      for (cElvisEvent *item = channelM->cList<cElvisEvent>::First(); item; item = channelM->cList<cElvisEvent>::Next(item))
          Add(new cElvisChannelEventItem(item));
      }
@@ -1000,7 +1000,7 @@ void cElvisEPGMenu::Setup()
   Clear();
 
   if (true) {
-     cThreadLock lock(cElvisChannels::GetInstance());
+     LOCK_THREAD_INSTANCE(cElvisChannels::GetInstance());
      for (cElvisChannel *item = cElvisChannels::GetInstance()->First(); item; item = cElvisChannels::GetInstance()->Next(item)) {
          if (item->Name())
             Add(new cElvisChannelItem(item));
@@ -1082,7 +1082,7 @@ void cElvisTopEventsMenu::Setup()
   Clear();
 
   if (true) {
-     cThreadLock lock(cElvisTopEvents::GetInstance());
+     LOCK_THREAD_INSTANCE(cElvisTopEvents::GetInstance());
      for (cElvisEvent *item = cElvisTopEvents::GetInstance()->First(); item; item = cElvisTopEvents::GetInstance()->Next(item))
          Add(new cElvisChannelEventItem(item));
      }
@@ -1291,7 +1291,7 @@ void cElvisVODMenu::Setup()
   Clear();
 
   if (categoryM) {
-     cThreadLock lock(categoryM);
+     LOCK_THREAD_INSTANCE(categoryM);
      SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), popularModeM ? tr("Button$Popular") : tr("Button$Newest")));
      for (cElvisVOD *item = categoryM->cList<cElvisVOD>::First(); item; item = categoryM->cList<cElvisVOD>::Next(item))
          Add(new cElvisVODItem(item));

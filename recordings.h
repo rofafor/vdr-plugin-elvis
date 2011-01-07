@@ -39,7 +39,7 @@ public:
   cElvisRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
   cElvisRecording(int idP, int countP, const char *nameP, const char *sizeP);
   virtual ~cElvisRecording();
-  cElvisWidgetEventInfo *Info();
+  cElvisWidgetEventInfo *Info(bool forceP = false);
   void Tag(bool onOffP) { taggedM = onOffP; } 
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
