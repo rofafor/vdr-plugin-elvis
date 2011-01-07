@@ -45,15 +45,20 @@ cElvisRecording::cElvisRecording(int idP, int countP, const char *nameP, const c
 
 cElvisRecording::~cElvisRecording()
 {
-  DELETE_POINTER(infoM);
+  DeleteInfo();
 }
 
-cElvisWidgetEventInfo *cElvisRecording::Info(bool forceP)
+cElvisWidgetEventInfo *cElvisRecording::Info()
 {
-  if (!infoM || forceP)
+  if (!infoM)
      infoM = cElvisWidget::GetInstance()->GetEventInfo(programIdM);
 
  return infoM;
+}
+
+void cElvisRecording::DeleteInfo()
+{
+  DELETE_POINTER(infoM);
 }
 
 // --- cElvisRecordingFolder -------------------------------------------
@@ -95,8 +100,7 @@ void cElvisRecordingFolder::AddRecording(int idP, int programIdP, int folderIdP,
   cElvisRecording *rec = GetRecording(idP);
   if (rec) {
      rec->Tag(true);
-     // info must reloaded!
-     rec->Info(true);
+     rec->DeleteInfo();
      }
   else {
      Add(new cElvisRecording(idP, programIdP, folderIdP, countP, lengthP, nameP, channelP, startTimeP));
