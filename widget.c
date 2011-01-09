@@ -477,7 +477,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                              else if (!strcmp(it2.key, "wild_card"))
                                 wild_card = Unescape(json_object_get_string(it2.val));
                              }
-                           debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", id, program_id, length, *name, *channel, *start_time, *wild_card);
+                           debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", program_id, length, *name, *channel, *start_time, *wild_card);
                            callbackP.AddTimer(program_id, length, *name, *channel, *start_time, *wild_card);
                            }
                        }
