@@ -27,7 +27,6 @@ cElvisReader::cElvisReader(const char *urlP)
   handleM(NULL),
   multiM(NULL),
   headerListM(NULL),
-  mutexM(),
   ringBufferM(new cRingBufferLinear(MEGABYTE(2), 7 * TS_SIZE))
 {
   debug("cElvisReader::cElvisReader()");
@@ -71,7 +70,7 @@ size_t cElvisReader::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, voi
 
 void cElvisReader::SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::SetRange(): start=%ld stop=%ld filesize=%ld", startP, stopP, sizeP);
   rangeStartM = startP;
   rangeSizeM = sizeP;
@@ -79,7 +78,7 @@ void cElvisReader::SetRange(unsigned long startP, unsigned long stopP, unsigned 
 
 bool cElvisReader::PutData(uchar *dataP, int lenP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisReader::PutData(%d)", lenP);
   if (pausedM)
      return false;
@@ -100,7 +99,7 @@ bool cElvisReader::PutData(uchar *dataP, int lenP)
 
 void cElvisReader::DelData(int lenP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisReader::DelData()");
   if (ringBufferM && (lenP >= 0))
      ringBufferM->Del(lenP);
@@ -108,7 +107,7 @@ void cElvisReader::DelData(int lenP)
 
 void cElvisReader::ClearData()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisReader::ClearData()");
   if (ringBufferM)
      ringBufferM->Clear();
@@ -116,7 +115,7 @@ void cElvisReader::ClearData()
 
 uchar *cElvisReader::GetData(int *lenP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisReader::GetData()");
   uchar *p = NULL;
   *lenP = 0;
@@ -148,14 +147,14 @@ uchar *cElvisReader::GetData(int *lenP)
 
 void cElvisReader::JumpRequest(unsigned long startbyteP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::JumpRequest(%ld)", startbyteP);
   rangePendingM = startbyteP;
 }
 
 void cElvisReader::Jump(unsigned long startbyteP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::Jump(%ld)", startbyteP);
   rangePendingM = 0;
   rangeStartM = startbyteP;
@@ -168,7 +167,7 @@ void cElvisReader::Jump(unsigned long startbyteP)
 
 void cElvisReader::Pause(bool onoffP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::Pause(%d)", onoffP);
   pauseToggledM = true;
   pausedM = onoffP;
@@ -176,7 +175,7 @@ void cElvisReader::Pause(bool onoffP)
 
 bool cElvisReader::Connect()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   bool initialConnect = false;
   debug("cElvisReader::Connect()");
 
@@ -242,7 +241,7 @@ bool cElvisReader::Connect()
 
 bool cElvisReader::Disconnect()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::Disconnect()");
   if (handleM) {
      // cleanup curl stuff
@@ -262,7 +261,7 @@ bool cElvisReader::Disconnect()
 
 void cElvisReader::Retry()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisReader::Retry()");
   if (handleM) {
      double downloaded = 0.0;
@@ -299,7 +298,7 @@ void cElvisReader::Action()
            } while (err == CURLM_CALL_MULTI_PERFORM);
 
            // shall be continue filling up the buffer?
-           mutexM.Lock();
+           Lock();
            if (pauseToggledM) {
               curl_easy_pause(handleM, pausedM ? CURLPAUSE_ALL : CURLPAUSE_CONT);
               pauseToggledM = false;
@@ -309,7 +308,7 @@ void cElvisReader::Action()
               pausedM = false;
               curl_easy_pause(handleM, CURLPAUSE_CONT);
               }
-           mutexM.Unlock();
+           Unlock();
 
            // check end of file
            if (running_handles == 0) {
@@ -392,7 +391,7 @@ void cElvisPlayer::Activate(bool onP)
 
 bool cElvisPlayer::IsEOF()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   unsigned long limit = lengthM ? (lengthM - eEOFMark) * (fileSizeM / lengthM) : 0;
   debug("cElvisPlayer::IsEOF(): readSize=%ld limit=%ld", readSizeM, limit);
   return (readSizeM >= limit);
@@ -426,7 +425,7 @@ void cElvisPlayer::TrickSpeed(int incrementP)
 
 void cElvisPlayer::Play()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::Play()");
   if (playModeM != pmPlay) {
      DevicePlay();
@@ -439,7 +438,7 @@ void cElvisPlayer::Play()
 
 void cElvisPlayer::Pause()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::Pause()");
   if (playModeM == pmPause) {
      Play();
@@ -456,7 +455,7 @@ void cElvisPlayer::Pause()
 
 void cElvisPlayer::Clear()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::Clear()");
   if (readerM)
      readerM->ClearData();
@@ -469,7 +468,7 @@ void cElvisPlayer::Clear()
 
 void cElvisPlayer::Forward()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::Forward()");
   switch (playModeM) {
     case pmFast:
@@ -516,7 +515,7 @@ void cElvisPlayer::Forward()
 
 void cElvisPlayer::Backward()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::Backward()");
   switch (playModeM) {
     case pmFast:
@@ -564,7 +563,7 @@ void cElvisPlayer::Backward()
 
 void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisPlayer::SkipTime()");
   long skip = lengthM ? secondsP * (fileSizeM / lengthM) : 0;
   debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, fileSizeM);
@@ -585,7 +584,7 @@ void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 
 bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisPlayer::GetReplayMode()");
   playP = ((playModeM == pmPlay) || (playModeM == pmFast));
   forwardP = (playDirM == pdForward);
@@ -654,8 +653,8 @@ void cElvisPlayer::Action()
               sleep = true;
               continue;
               }
-           {
-             cMutexLock MutexLock(&mutexM);
+           { // start of block
+             LOCK_THREAD;
 
              if (!readFrameM) {
                 if (playDirM == pdBackward) {
@@ -733,9 +732,9 @@ void cElvisPlayer::Action()
                 }
              else
                 sleep = true;
-             }
+           } // end of block
            }
-           }
+     }
 }
 
 // --- cElvisPlayerControl ---------------------------------------------

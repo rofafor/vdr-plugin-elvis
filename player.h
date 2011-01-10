@@ -35,7 +35,6 @@ private:
   CURL *handleM;
   CURLM *multiM;
   struct curl_slist *headerListM;
-  cMutex mutexM;
   cRingBufferLinear *ringBufferM;
   bool Connect();
   bool Disconnect();
@@ -84,7 +83,6 @@ private:
   cElvisReader *readerM;
   unsigned long readSizeM;
   unsigned long fileSizeM;
-  cMutex mutexM;
   cRingBufferFrame *ringBufferM;
   cFrame *readFrameM;
   cFrame *playFrameM;

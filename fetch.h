@@ -69,7 +69,6 @@ private:
     eTimeoutMs = 10
   };
   static cElvisFetcher *instanceS;
-  cMutex mutexM;
   cVector<cElvisFetchItem *> itemsM;
   CURLM *multiM;
   // constructor

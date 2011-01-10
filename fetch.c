@@ -306,7 +306,6 @@ void cElvisFetcher::Destroy()
 
 cElvisFetcher::cElvisFetcher()
 : cThread("cElvisFetcher"),
-  mutexM(),
   itemsM(),
   multiM(NULL)
 {
@@ -328,7 +327,7 @@ cElvisFetcher::~cElvisFetcher()
 
 void cElvisFetcher::New(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisFetcher::New(): url='%s'", urlP);
 
   bool found = false;
@@ -360,7 +359,7 @@ void cElvisFetcher::New(const char *urlP, const char *nameP, const char *descrip
 
 void cElvisFetcher::Remove(CURL *handleP, bool statusP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisFetcher::Remove(): status=%d", statusP);
 
   int i = 0;
@@ -391,7 +390,7 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
 
 bool cElvisFetcher::Cleanup()
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   bool found = false;
   //debug("cElvisFetcher::Cleanup()");
 
@@ -411,7 +410,7 @@ bool cElvisFetcher::Cleanup()
 
 void cElvisFetcher::Abort(int indexP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   debug("cElvisFetcher::Abort()");
 
   if (indexP < 0) {
@@ -443,7 +442,7 @@ void cElvisFetcher::Abort(int indexP)
 
 cString cElvisFetcher::List(int prefixP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   cString list("");
   debug("cElvisFetcher::List()");
 
@@ -460,7 +459,7 @@ cString cElvisFetcher::List(int prefixP)
 
 cElvisFetchItem *cElvisFetcher::Get(int indexP)
 {
-  cMutexLock MutexLock(&mutexM);
+  LOCK_THREAD;
   //debug("cElvisFetcher::Get(%d)", indexP);
   if (indexP < itemsM.Size())
      return itemsM[indexP];
@@ -475,7 +474,7 @@ void cElvisFetcher::Action()
         int running_handles, maxfd;
         fd_set fdread, fdwrite, fdexcep;
         struct timeval timeout;
-        
+
         do {
           err = curl_multi_perform(multiM, &running_handles);
         } while (err == CURLM_CALL_MULTI_PERFORM);
