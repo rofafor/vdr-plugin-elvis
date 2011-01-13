@@ -283,6 +283,8 @@ void cElvisReader::Retry()
 void cElvisReader::Action()
 {
   debug("cElvisReader::Action(): start");
+  // set to higher priority
+  SetPriority(-1);
   if (ringBufferM && Connect()) {
      while (Running()) {
            CURLMcode err;
@@ -703,6 +705,10 @@ void cElvisPlayer::Action()
                 p = NULL;
                 pc = 0;
                 }
+
+             // to prevent busylooping with xineliboutput
+             if (!readFrameM && !playFrameM)
+                cCondWait::SleepMs(2);
 
              if (playFrameM) {
                 if (!p) {
