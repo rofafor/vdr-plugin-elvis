@@ -21,6 +21,7 @@ cElvisReader::cElvisReader(const char *urlP)
   rangeStartM(0),
   rangeSizeM(0),
   rangePendingM(0),
+  durationM(0),
   pauseToggledM(false),
   pausedM(false),
   eofM(false),
@@ -59,11 +60,18 @@ size_t cElvisReader::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, voi
   cElvisReader *obj = (cElvisReader *)dataP;
   size_t len = sizeP * nmembP;
 
-  if (obj && strstr((const char*)ptrP, "Content-Range:")) {
-     unsigned long start, stop, size;
-     if (sscanf((const char*)ptrP, "Content-Range: bytes %ld-%ld/%ld", &start, &stop, &size) == 3)
-        obj->SetRange(start, stop, size);
-     }
+  if (obj) {
+     if (strstr((const char*)ptrP, "Content-Range:")) {
+        unsigned long start, stop, size;
+        if (sscanf((const char*)ptrP, "Content-Range: bytes %ld-%ld/%ld", &start, &stop, &size) == 3)
+           obj->SetRange(start, stop, size);
+        }
+     else if (strstr((const char*)ptrP, "Content-Duration:")) {
+        unsigned long duration;
+        if (sscanf((const char*)ptrP, "Content-Duration: %ld", &duration) == 1)
+           obj->SetDuration(duration);
+        }
+    }
 
   return len;
 }
@@ -74,6 +82,13 @@ void cElvisReader::SetRange(unsigned long startP, unsigned long stopP, unsigned 
   debug("cElvisReader::SetRange(): start=%ld stop=%ld filesize=%ld", startP, stopP, sizeP);
   rangeStartM = startP;
   rangeSizeM = sizeP;
+}
+
+void cElvisReader::SetDuration(unsigned long durationP)
+{
+  LOCK_THREAD;
+  debug("cElvisReader::SetDuration(): duration=%ld", durationP);
+  durationM = durationP;
 }
 
 bool cElvisReader::PutData(uchar *dataP, int lenP)
@@ -345,13 +360,13 @@ void cElvisReader::Action()
 
 // --- cElvisPlayer ----------------------------------------------------
 
-cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP, unsigned long lengthP)
+cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP)
 : cThread("cElvisPlayer"),
   playModeM(pmPlay),
   playDirM(pdForward),
   trickSpeedM(0),
   programIdM(programIdP),
-  lengthM((lengthP + 1 + 5) * 60), // remember to add start & stop marginals
+  durationM(0),
   readerM(new cElvisReader(urlP)),
   readSizeM(0),
   fileSizeM(0),
@@ -394,7 +409,7 @@ void cElvisPlayer::Activate(bool onP)
 bool cElvisPlayer::IsEOF()
 {
   LOCK_THREAD;
-  unsigned long limit = lengthM ? (lengthM - eEOFMark) * (fileSizeM / lengthM) : 0;
+  unsigned long limit = durationM ? (durationM - eEOFMark) * (fileSizeM / durationM) : 0;
   debug("cElvisPlayer::IsEOF(): readSize=%ld limit=%ld", readSizeM, limit);
   return (readSizeM >= limit);
 }
@@ -567,7 +582,7 @@ void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
   LOCK_THREAD;
   debug("cElvisPlayer::SkipTime()");
-  long skip = lengthM ? secondsP * (fileSizeM / lengthM) : 0;
+  long skip = durationM ? secondsP * (fileSizeM / durationM) : 0;
   debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, fileSizeM);
   if (!relativeP)
      readSizeM = 0;
@@ -676,6 +691,8 @@ void cElvisPlayer::Action()
                    uchar *data = readerM->GetData(&len);
                    if (fileSizeM == 0)
                       fileSizeM = readerM->GetRangeSize();
+                   if (durationM == 0)
+                      durationM = readerM->GetDuration();
                    if (len < 0) {
                       debug("cElvisPlayer::Action(recv): EOF");
                       break;
@@ -745,10 +762,10 @@ void cElvisPlayer::Action()
 
 // --- cElvisPlayerControl ---------------------------------------------
 
-cElvisPlayerControl::cElvisPlayerControl(int programIdP, const char *urlP, unsigned int lengthP)
-: cControl(playerM = new cElvisPlayer(programIdP, urlP, lengthP))
+cElvisPlayerControl::cElvisPlayerControl(int programIdP, const char *urlP)
+: cControl(playerM = new cElvisPlayer(programIdP, urlP))
 {
-  debug("cElvisPlayerControl::cElvisPlayerControl(%s, %d)", urlP, lengthP);
+  debug("cElvisPlayerControl::cElvisPlayerControl(%s)", urlP);
 }
 
 cElvisPlayerControl::~cElvisPlayerControl()
@@ -814,6 +831,16 @@ void cElvisPlayerControl::SkipSeconds(int secondsP)
      }
 }
 
+bool cElvisPlayerControl::GetDuration(unsigned long &durationP)
+{
+  //debug("cElvisPlayerControl::GetDuration()");
+  if (playerM) {
+     durationP = playerM->Total();
+     return true;
+     }
+  return false;
+}
+
 bool cElvisPlayerControl::GetProgress(int &currentP, int &totalP)
 {
   //debug("cElvisPlayerControl::GetProgress()");
@@ -854,7 +881,7 @@ void cElvisPlayerControl::Goto(int secondsP, bool playP)
 // --- cElvisReplayControl ---------------------------------------------------
 
 cElvisReplayControl::cElvisReplayControl(int programIdP, const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
-: cElvisPlayerControl(programIdP, urlP, lengthP),
+: cElvisPlayerControl(programIdP, urlP),
   displayReplayM(NULL),
   urlM(urlP),
   nameM(nameP),
@@ -1085,8 +1112,12 @@ void cElvisReplayControl::TimeSearch()
 cOsdObject *cElvisReplayControl::GetInfo()
 {
   //debug("cElvisReplayControl::GetInfo()");
-  if (!isempty(*descriptionM))
-    return new cElvisRecordingInfoMenu(*urlM, *nameM, *descriptionM, *startTimeM, lengthM);
+  if (!isempty(*descriptionM)) {
+     unsigned long duration = 0;
+     if (!GetDuration(duration) || (duration == 0))
+        duration = lengthM;
+     return new cElvisRecordingInfoMenu(*urlM, *nameM, *descriptionM, *startTimeM, duration);
+     }
   return NULL;
 }
 

@@ -29,6 +29,7 @@ private:
   unsigned long rangeStartM;
   unsigned long rangeSizeM;
   unsigned long rangePendingM;
+  unsigned long durationM;
   bool pauseToggledM;
   bool pausedM;
   bool eofM;
@@ -46,6 +47,7 @@ public:
   cElvisReader(const char *urlP);
   virtual ~cElvisReader();
   void SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP);
+  void SetDuration(unsigned long durationP);
   bool PutData(uchar *dataP, int lenP);
   void DelData(int lenP);
   void ClearData();
@@ -54,6 +56,7 @@ public:
   void JumpRequest(unsigned long startbyteP);
   unsigned long GetRangeStart() { return rangeStartM; }
   unsigned long GetRangeSize() { return rangeSizeM; }
+  unsigned long GetDuration() { return durationM; }
 };
 
 // --- cElvisPlayer ----------------------------------------------------
@@ -79,7 +82,7 @@ private:
   ePlayDirs playDirM;
   int trickSpeedM;
   int programIdM;
-  const unsigned long lengthM;
+  unsigned long durationM;
   cElvisReader *readerM;
   unsigned long readSizeM;
   unsigned long fileSizeM;
@@ -95,7 +98,7 @@ protected:
   virtual void Activate(bool onP);
   virtual void Action();
 public:
-  cElvisPlayer(int programIdP, const char *urlP, unsigned long lengthP);
+  cElvisPlayer(int programIdP, const char *urlP);
   virtual ~cElvisPlayer();
   void Play();
   void Pause();
@@ -104,8 +107,8 @@ public:
   void Forward();
   void SkipTime(long secondsP, bool relativeP = true, bool playP = true);
   bool Finished() { return !Active(); }
-  unsigned long Total() { return lengthM; }
-  unsigned long Current() { return (readerM && readerM->GetRangeSize() && lengthM) ? (readSizeM / (readerM->GetRangeSize() / lengthM)) : 0; }
+  unsigned long Total() { return durationM; }
+  unsigned long Current() { return (readerM && readerM->GetRangeSize() && durationM) ? (readSizeM / (readerM->GetRangeSize() / durationM)) : 0; }
   unsigned int Progress() { return (readerM && readerM->GetRangeSize()) ? (unsigned int)((double)readSizeM / (double)readerM->GetRangeSize() * 100.0) : 0; }
   void ClearJump() { if (readerM) readerM->JumpRequest(0); } 
   bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);
@@ -117,7 +120,7 @@ class cElvisPlayerControl : public cControl {
 private:
   cElvisPlayer *playerM;
 public:
-  cElvisPlayerControl(int programIdP, const char *urlP, unsigned int lengthP);
+  cElvisPlayerControl(int programIdP, const char *urlP);
   virtual ~cElvisPlayerControl();
   bool Active();
   void Stop();
@@ -126,6 +129,7 @@ public:
   void Forward();
   void Backward();
   void SkipSeconds(int secondsP);
+  bool GetDuration(unsigned long &durationP);
   bool GetProgress(int &currentP, int &totalP);
   bool GetIndex(unsigned long &currentP, unsigned long &totalP);
   bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);

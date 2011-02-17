@@ -85,3 +85,4 @@ VDR Plugin 'elvis' Revision History
 - Removed unnecessary mutexes.
 - Increased reader thread priority.
 - Reduced CPU load on certain VDR setups.
+- Changed duration handling in player.
