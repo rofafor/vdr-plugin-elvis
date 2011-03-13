@@ -86,3 +86,7 @@ VDR Plugin 'elvis' Revision History
 - Increased the reader thread priority.
 - Reduced CPU load on certain VDR setups.
 - Changed duration handling in the player.
+
+2011-03-13: Version 0.1.4
+
+- Updated Makefile.

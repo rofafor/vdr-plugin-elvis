@@ -20,7 +20,7 @@
 #error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.1.3";
+       const char VERSION[]       = "0.1.4";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 

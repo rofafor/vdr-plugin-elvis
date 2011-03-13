@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: elvis 0.1.2\n"
+"Project-Id-Version: vdr-elvis 0.1.4\n"
 "Report-Msgid-Bugs-To: <see README>\n"
 "POT-Creation-Date: 2011-01-09 01:09+0200\n"
 "PO-Revision-Date: 2011-01-09 01:09+0200\n"
