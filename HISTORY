@@ -92,3 +92,4 @@ VDR Plugin 'elvis' Revision History
 - Updated Makefile.
 - Removed Saunavisio support.
 - Fixed strtotime() function.
+- Fixed adding/removing timers without any login session.

@@ -494,10 +494,11 @@ bool cElvisWidget::AddTimer(int programIdP, int folderIdP)
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
+         // always login
+         Login();
          if (Perform(*url, "AddTimer")) {
             if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::AddTimer(): relogin...");
-               Login();
                continue;
                }
             else if (strstr(*dataM, "TRUE")) {
@@ -520,10 +521,11 @@ bool cElvisWidget::RemoveTimer(int idP)
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
+         // always login
+         Login();
          if (Perform(*url, "RemoveTimer")) {
             if (IsLoginRequired(*dataM)) {
                info("cElvisWidget::RemoveTimer(): relogin...");
-               Login();
                continue;
                }
             else {
