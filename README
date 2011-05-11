@@ -32,10 +32,10 @@ Requirements:
 
 Description:
 
-The Elvis plugin allows Elisa Viihde and Saunavisio users to manage and
-watch their NPVR recordings, timers and search timers via VDR's familiar
-user interface. The plugin uses a separate 'elvis.conf' configuration file
-to store settings.
+The Elvis plugin allows Elisa Viihde users to manage and watch their NPVR
+recordings, timers and search timers via VDR's familiar user interface.
+The plugin uses a separate 'elvis.conf' configuration file to store
+settings.
 
 Installation:
 

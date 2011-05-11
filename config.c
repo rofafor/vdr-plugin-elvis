@@ -14,8 +14,6 @@ const char *cElvisConfig::confBaseNameS = PLUGIN_NAME_I18N ".conf";
 
 cElvisConfig::cElvisConfig()
 : HideMenu(0),
-  Service(0),
-  Ssl(0),
   ReplaceSchedule(0),
   ReplaceTimers(0),
   ReplaceRecordings(0)
@@ -80,8 +78,6 @@ bool cElvisConfig::Parse(const char *nameP, const char *valueP)
   if      (!strcasecmp(nameP, "Username")) Utf8Strn0Cpy(Username, valueP, sizeof(Username));
   else if (!strcasecmp(nameP, "Password")) Utf8Strn0Cpy(Password, valueP, sizeof(Password));
   else if (!strcasecmp(nameP, "HideMenu")) HideMenu = atoi(valueP);
-  else if (!strcasecmp(nameP, "Service"))  Service  = atoi(valueP);
-  else if (!strcasecmp(nameP, "Ssl"))      Ssl      = atoi(valueP);
   else
      return false;
   return true;
@@ -90,8 +86,6 @@ bool cElvisConfig::Parse(const char *nameP, const char *valueP)
 bool cElvisConfig::Save()
 {
   Store("HideMenu",  HideMenu);
-  Store("Service",   Service);
-  Store("Ssl",       Ssl);
   Store("Username",  Username);
   Store("Password",  Password);
 

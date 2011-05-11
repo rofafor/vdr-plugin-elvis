@@ -71,10 +71,7 @@ cElvisWidgetVODInfo::~cElvisWidgetVODInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char *cElvisWidget::baseCookieNameS = "cookie.conf";
-const char* cElvisWidget::baseUrlViihdeS = "http://elisaviihde.fi/etvrecorder";
-const char* cElvisWidget::baseUrlViihdeSslS = "https://elisaviihde.fi/etvrecorder";
-const char* cElvisWidget::baseUrlVisioS = "http://www.saunavisio.fi/tvrecorder";
-const char* cElvisWidget::baseUrlVisioSslS = "https://www.saunavisio.fi/tvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "http://api.elisaviihde.fi/etvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 
@@ -202,9 +199,9 @@ bool cElvisWidget::Login()
 
   if (!IsLogged() && handleM) {
 #ifdef USE_COOKIE_JAR
-     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", baseUrlViihdeS, ElvisConfig.Username, ElvisConfig.Password);
 #else
-     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", GetBase(), ElvisConfig.Username, ElvisConfig.Password);
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", baseUrlViihdeS, ElvisConfig.Username, ElvisConfig.Password);
 #endif
 
      if (Perform(*url, "Login"))
@@ -217,7 +214,7 @@ bool cElvisWidget::Login()
 bool cElvisWidget::Logout()
 {
   if (IsLogged() && handleM) {
-     cString url = cString::sprintf("%s/logout.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/logout.sl?ajax=true", baseUrlViihdeS);
 
      return Perform(*url, "Logout");
      }
@@ -228,7 +225,7 @@ bool cElvisWidget::Logout()
 bool cElvisWidget::IsLogged()
 {
   if (handleM) {
-     cString url = cString::sprintf("%s/login.sl?islogged", GetBase());
+     cString url = cString::sprintf("%s/login.sl?islogged", baseUrlViihdeS);
 
      if (Perform(*url, "IsLogged"))
         return strstr(*dataM, "TRUE");
@@ -256,14 +253,8 @@ bool cElvisWidget::Invalidate()
 
 bool cElvisWidget::IsLoginRequired(const char *stringP)
 {
-  if (ElvisConfig.Service == 0) {
-     if (strstr(stringP, "evlogin"))
-        return true;
-     }
-  else {
-     if (strstr(stringP, "svlogin"))
-        return true;
-     }
+  if (strstr(stringP, "</html>"))
+     return true;
 
   return false;
 }
@@ -324,8 +315,8 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = (folderIdP < 0) ? cString::sprintf("%s/ready.sl?ajax=true&clear=true", GetBase()) :
-                                     cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", GetBase(), folderIdP);
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/ready.sl?ajax=true&clear=true", baseUrlViihdeS) :
+                                     cString::sprintf("%s/ready.sl?folderid=%d&ajax=true&clear=true", baseUrlViihdeS, folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -414,7 +405,7 @@ bool cElvisWidget::RemoveRecording(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     cString url = cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?remove=true&removep=%d&ajax=true", baseUrlViihdeS, idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -440,7 +431,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/recordings.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/recordings.sl?ajax=true", baseUrlViihdeS);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -498,8 +489,8 @@ bool cElvisWidget::AddTimer(int programIdP, int folderIdP)
   cMutexLock(mutexM);
 
   if (handleM && (programIdP > 0)) {
-     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", GetBase(), programIdP, programIdP) :
-                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", GetBase(), programIdP, programIdP, folderIdP);
+     cString url = (folderIdP < 0) ? cString::sprintf("%s/program.sl?programid=%d&record=%d&ajax=true", baseUrlViihdeS, programIdP, programIdP) :
+                                     cString::sprintf("%s/program.sl?programid=%d&record=%d&folderid=%d&ajax=true", baseUrlViihdeS, programIdP, programIdP, folderIdP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -525,7 +516,7 @@ bool cElvisWidget::RemoveTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     cString url = cString::sprintf("%s/program.sl?remover=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?remover=%d&ajax=true", baseUrlViihdeS, idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -551,7 +542,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/wildcards.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/wildcards.sl?ajax=true", baseUrlViihdeS);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -605,9 +596,9 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
   cMutexLock(mutexM);
 
   if (handleM && channelP && wildcardP) {
-     cString url = (wildcardIdP < 0) ? cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(), *Escape(channelP),
+     cString url = (wildcardIdP < 0) ? cString::sprintf("%s/wildcards.sl?channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", baseUrlViihdeS, *Escape(channelP),
                                                         (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP)) :
-                                       cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", GetBase(),
+                                       cString::sprintf("%s/wildcards.sl?edit_wildcard=%d&channel=%s&folderid=%s&wildcard=%s&record=true&ajax=true", baseUrlViihdeS,
                                                         wildcardIdP, *Escape(channelP), (folderIdP < 0) ? "" : *cString::sprintf("%d", folderIdP), *Escape(wildcardP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
@@ -639,7 +630,7 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
   cMutexLock(mutexM);
 
   if (handleM && (idP > 0)) {
-     cString url = cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/wildcards.sl?remover=%d&ajax=true", baseUrlViihdeS, idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -665,7 +656,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel%s&ajax=true", GetBase(), (ElvisConfig.Service == 0) ? "list" : "s");
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channellist&ajax=true", baseUrlViihdeS);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -683,23 +674,16 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                     if (!strcmp(it.key, "channels")) {
                        for (int i = 0; i < json_object_array_length(it.val); ++i) {
                            json_object *json2 = json_object_array_get_idx(it.val, i);
-                           if (ElvisConfig.Service == 0) {
-                              json_object_iter it2;
-                              cString name = "", logo = "";
-                              json_object_object_foreachC(json2, it2) {
-                                if (!strcmp(it2.key, "name"))
-                                   name = Unescape(json_object_get_string(it2.val));
-                                else if (!strcmp(it2.key, "logo"))
-                                   logo = Unescape(json_object_get_string(it2.val));
-                                }
-                              debug("channel: '%s' Logo: '%s'", *name, *logo);
-                              callbackP.AddChannel(*name, *logo);
-                              }
-                           else {
-                              cString name = json_object_get_string(json2);
-                              debug("channel: '%s'", *name);
-                              callbackP.AddChannel(*name, "");
-                              }
+                           json_object_iter it2;
+                           cString name = "", logo = "";
+                           json_object_object_foreachC(json2, it2) {
+                             if (!strcmp(it2.key, "name"))
+                                name = Unescape(json_object_get_string(it2.val));
+                             else if (!strcmp(it2.key, "logo"))
+                                logo = Unescape(json_object_get_string(it2.val));
+                             }
+                           debug("channel: '%s' Logo: '%s'", *name, *logo);
+                           callbackP.AddChannel(*name, *logo);
                            }
                        }
                     }
@@ -719,7 +703,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
   cMutexLock(mutexM);
 
   if (handleM && channelP && !isempty(channelP)) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel=%s&ajax=true", GetBase(), *Escape(channelP));
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?channel=%s&ajax=true", baseUrlViihdeS, *Escape(channelP));
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -780,7 +764,7 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/ajaxprograminfo.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/ajaxprograminfo.sl?ajax=true", baseUrlViihdeS);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -845,7 +829,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/channels.sl?ajax=true", GetBase());
+     cString url = cString::sprintf("%s/channels.sl?ajax=true", baseUrlViihdeS);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -899,7 +883,7 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/vod.sl?data=true&category=%s&count=%d&ajax=true", GetBase(), *Escape(categoryP), countP);
+     cString url = cString::sprintf("%s/vod.sl?data=true&category=%s&count=%d&ajax=true", baseUrlViihdeS, *Escape(categoryP), countP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -960,7 +944,7 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
-     cString url = cString::sprintf("%s/program.sl?programid=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/program.sl?programid=%d&ajax=true", baseUrlViihdeS, idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -1035,7 +1019,7 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
 {
   cMutexLock(mutexM);
   if (handleM && (idP > 0)) {
-     cString url = cString::sprintf("%s/vod.sl?data=true&vod=%d&ajax=true", GetBase(), idP);
+     cString url = cString::sprintf("%s/vod.sl?data=true&vod=%d&ajax=true", baseUrlViihdeS, idP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);

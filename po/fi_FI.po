@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: vdr-elvis 0.1.4\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2011-01-09 01:09+0200\n"
-"PO-Revision-Date: 2011-01-09 01:09+0200\n"
+"POT-Creation-Date: 2011-05-11 05:11+0300\n"
+"PO-Revision-Date: 2011-05-11 05:11+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish <vdr@linuxtv.org>\n"
 "Language: fi\n"
@@ -31,35 +31,17 @@ msgstr "Piilota valinta päävalikosta"
 msgid "Define whether the main manu entry is hidden."
 msgstr "Määrittele, näytetäänkö laajennoksen valinta päävalikossa."
 
-msgid "Use service"
-msgstr "Käytä palvelua"
-
-msgid "Elisa Viihde"
-msgstr "Elisa Viihde"
-
-msgid "Saunavisio"
-msgstr "Saunavisio"
-
-msgid "Define whether your service is Elisa Viihde or Saunavisio."
-msgstr "Määrittele käyttämäsi palvelu: Elisa Viihde tai Saunavisio."
-
-msgid "Use SSL connection"
-msgstr "Käytä SSL-yhteyttä"
-
-msgid "Define whether SSL connection is used."
-msgstr "Määrittele, käytetäänkö SSL-yhteyttä."
-
 msgid "Username"
 msgstr "Käyttäjätunnus"
 
-msgid "Define your username for the service."
-msgstr "Määrittele käyttäjätunnuksesi palveluun."
+msgid "Define your Elisa Viihde username."
+msgstr "Määrittele Elisa Viihde -käyttäjätunnuksesi."
 
 msgid "Password"
 msgstr "Salasana"
 
-msgid "Define your password for the service."
-msgstr "Määrittele salasanasi palveluun."
+msgid "Define your Elisa Viihde password."
+msgstr "Määrittele Elisa Viihde -salasanasi."
 
 msgid "Replace 'Schedule' in main menu"
 msgstr "Korvaa päävalikon 'Ohjelmisto'-valinta"
@@ -172,6 +154,9 @@ msgstr "Uusimmat"
 
 msgid "Button$Popular"
 msgstr "Suosituimmat"
+
+msgid "Elisa Viihde"
+msgstr "Elisa Viihde"
 
 msgid "Abort fetch"
 msgstr "Keskeytä haku"

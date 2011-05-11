@@ -23,8 +23,6 @@ private:
 public:
   int __BeginData__;
   int HideMenu;
-  int Service;
-  int Ssl;
   int ReplaceSchedule;
   int ReplaceTimers;
   int ReplaceRecordings;

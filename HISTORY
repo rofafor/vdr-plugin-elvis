@@ -87,6 +87,8 @@ VDR Plugin 'elvis' Revision History
 - Reduced CPU load on certain VDR setups.
 - Changed duration handling in the player.
 
-2011-03-13: Version 0.1.4
+2011-05-11: Version 0.2.0
 
 - Updated Makefile.
+- Removed Saunavisio support.
+- Fixed strtotime() function.

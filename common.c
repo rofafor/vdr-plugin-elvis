@@ -115,12 +115,14 @@ cString ShortDateString(time_t t)
 
 time_t strtotime(const char *s)
 {
+  time_t r = 0;
+
   if (s && *s) {
      struct tm t;
-     char weekday[4];
+     char *weekday;
 
      // example inputs: "ke 22.09.2010 21:00", "19.10.2010 23:50:00"
-     if ((sscanf(s, "%s %d.%d.%d %d:%d", &weekday[0], &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 6) ||
+     if ((sscanf(s, "%a[^ ] %d.%d.%d %d:%d", &weekday, &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 6) ||
          (sscanf(s, "%d.%d.%d %d:%d", &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 5)) {
 
         t.tm_sec   = 0;
@@ -129,13 +131,16 @@ time_t strtotime(const char *s)
         t.tm_isdst = -1;
         t.tm_zone  = "EET";
 
-        return mktime(&t);
+        r = mktime(&t);
         }
      else
         error("string to time conversion failed: %s", s);
+
+     if (weekday)
+        free(weekday);
      }
 
-  return 0;
+  return r;
 }
 
 // --- cMenuEditHiddenStrItem -------------------------------------------

@@ -180,16 +180,12 @@ private:
   };
   static const char *baseCookieNameS;
   static const char *baseUrlViihdeS;
-  static const char *baseUrlViihdeSslS;
-  static const char *baseUrlVisioS;
-  static const char *baseUrlVisioSslS;
   static cElvisWidget *instanceS;
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   cString dataM;
   cMutex mutexM;
   CURL *handleM;
   struct curl_slist *headerListM;
-  const char *GetBase() { return (ElvisConfig.Ssl == 0) ? ((ElvisConfig.Service == 0) ? baseUrlViihdeS : baseUrlVisioS) : ((ElvisConfig.Service == 0) ? baseUrlViihdeSslS : baseUrlVisioSslS); }
   cString Unescape(const char *s);
   cString Escape(const char *s);
   bool Perform(const char *urlP, const char *msgP);

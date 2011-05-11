@@ -20,7 +20,7 @@
 #error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.1.4";
+       const char VERSION[]       = "0.2.0";
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 
@@ -280,17 +280,11 @@ void cPluginElvisSetup::Setup()
   Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &dataM.HideMenu));
   helpM.Append(tr("Define whether the main manu entry is hidden."));
 
-  Add(new cMenuEditBoolItem(tr("Use service"), &dataM.Service, tr("Elisa Viihde"), tr("Saunavisio")));
-  helpM.Append(tr("Define whether your service is Elisa Viihde or Saunavisio."));
-
-  Add(new cMenuEditBoolItem(tr("Use SSL connection"), &dataM.Ssl));
-  helpM.Append(tr("Define whether SSL connection is used."));
-
   Add(new cMenuEditStrItem(tr("Username"), dataM.Username, sizeof(dataM.Username)));
-  helpM.Append(tr("Define your username for the service."));
+  helpM.Append(tr("Define your Elisa Viihde username."));
 
   Add(new cMenuEditHiddenStrItem(tr("Password"), dataM.Password, sizeof(dataM.Password)));
-  helpM.Append(tr("Define your password for the service."));
+  helpM.Append(tr("Define your Elisa Viihde password."));
 
 #if defined(MAINMENUHOOKSVERSNUM)
   Add(new cMenuEditBoolItem(tr("Replace 'Schedule' in main menu"), &dataM.ReplaceSchedule));
