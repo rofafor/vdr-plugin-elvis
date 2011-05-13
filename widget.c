@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#include <jansson.h>
+
 #include "common.h"
 #include "widget.h"
 
@@ -327,70 +329,84 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "ready_data")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "folders")) {
-                                for (int j = 0; j < json_object_array_length(it2.val); ++j) {
-                                    json_object_iter it3;
-                                    json_object *json3 = json_object_array_get_idx(it2.val, j);
-                                    cString name = "", size = "";
-                                    int id = 0, count = 0;
-                                    json_object_object_foreachC(json3, it3) {
-                                      if (!strcmp(it3.key, "id"))
-                                         id = json_object_get_int(it3.val);
-                                      else if (!strcmp(it3.key, "name"))
-                                         name = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "size"))
-                                         size = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "recordings_count"))
-                                         count = json_object_get_int(it3.val);
-                                      }
-                                    debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
-                                    callbackP.AddFolder(id, count, *name, *size);
-                                    }
-                                }
-                             else if (!strcmp(it2.key, "recordings")) {
-                                for (int j = 0; j < json_object_array_length(it2.val); ++j) {
-                                    json_object_iter it3;
-                                    json_object *json3 = json_object_array_get_idx(it2.val, j);
-                                    cString name = "", channel = "", start_time = "", timestamp = "";
-                                    int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
-                                    json_object_object_foreachC(json3, it3) {
-                                      if (!strcmp(it3.key, "id"))
-                                         id = json_object_get_int(it3.val);
-                                      else if (!strcmp(it3.key, "program_id"))
-                                         program_id = json_object_get_int(it3.val);
-                                      else if (!strcmp(it3.key, "folder_id"))
-                                         folder_id = json_object_get_int(it3.val);
-                                      else if (!strcmp(it3.key, "name"))
-                                         name = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "channel"))
-                                         channel = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "start_time"))
-                                         start_time = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "timestamp"))
-                                         timestamp = Unescape(json_object_get_string(it3.val));
-                                      else if (!strcmp(it3.key, "viewcount"))
-                                         count = json_object_get_int(it3.val);
-                                      else if (!strcmp(it3.key, "length"))
-                                         length = json_object_get_int(it3.val);
-                                      }
-                                    debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
-                                    callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
-                                    }
-                                }
-                             }
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "ready_data") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               void *iter2 = json_object_iter(obj2);
+                               while (iter2) {
+                                     const char *key2 = json_object_iter_key(iter2);
+                                     json_t *value2 = json_object_iter_value(iter2);
+                                     if (!strcmp(key2, "folders") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", size = "";
+                                            int id = 0, count = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "size");
+                                            if (json_is_string(obj4))
+                                               size = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "recordings_count");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                            callbackP.AddFolder(id, count, *name, *size);
+                                            }
+                                        }
+                                     else if (!strcmp(key2, "recordings") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", channel = "", start_time = "", timestamp = "";
+                                            int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "program_id");
+                                            if (json_is_string(obj4))
+                                               program_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "folder_id");
+                                            if (json_is_string(obj4))
+                                               folder_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "channel");
+                                            if (json_is_string(obj4))
+                                               channel = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "start_time");
+                                            if (json_is_string(obj4))
+                                               start_time = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "timestamp");
+                                            if (json_is_string(obj4))
+                                               timestamp = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "viewcount");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "length");
+                                            if (json_is_string(obj4))
+                                               length = strtol(json_string_value(obj4), NULL, 10);
+                                           debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           }
+                                        }
+                                     iter2 = json_object_iter_next(obj2, iter2);
+                                     }
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -442,38 +458,48 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "recordings")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           int id = 0, program_id = 0, length = 0;
-                           cString name = "", channel = "", start_time = "", wild_card = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "id"))
-                                id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "program_id"))
-                                program_id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "length"))
-                                length = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "name"))
-                                name = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "channel"))
-                                channel = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "start_time"))
-                                start_time = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "wild_card"))
-                                wild_card = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", program_id, length, *name, *channel, *start_time, *wild_card);
-                           callbackP.AddTimer(program_id, length, *name, *channel, *start_time, *wild_card);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "recordings") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               if (json_is_object(obj2)) {
+                                  int id = 0, program_id = 0, length = 0;
+                                  cString name = "", channel = "", start_time = "", wild_card = "";
+                                  json_t *obj3 = json_object_get(obj2, "id");
+                                  if (json_is_string(obj3))
+                                     id = strtol(json_string_value(obj3), NULL, 10);
+                                  obj3 = json_object_get(obj2, "program_id");
+                                  if (json_is_string(obj3))
+                                     program_id = strtol(json_string_value(obj3), NULL, 10);
+                                  obj3 = json_object_get(obj2, "length");
+                                  if (json_is_string(obj3))
+                                     length = strtol(json_string_value(obj3), NULL, 10);
+                                  obj3 = json_object_get(obj2, "name");
+                                  if (json_is_string(obj3))
+                                     name = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "channel");
+                                  if (json_is_string(obj3))
+                                     channel = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "start_time");
+                                  if (json_is_string(obj3))
+                                     start_time = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "wild_card");
+                                  if (json_is_string(obj3))
+                                     wild_card = Unescape(json_string_value(obj3));
+                                  debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", program_id, length, *name, *channel, *start_time, *wild_card);
+                                  callbackP.AddTimer(program_id, length, *name, *channel, *start_time, *wild_card);
+                                  }
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -555,34 +581,40 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "wildcardrecordings")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i){
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           int recording_id = 0;
-                           cString folder = "", added = "", wild_card_channel = "", wild_card = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "recording_id"))
-                                recording_id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "folder"))
-                                folder = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "added"))
-                                added = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "wild_card_channel"))
-                                wild_card_channel = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "wild_card"))
-                                wild_card = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("recording_id: %d folder: '%s' added: '%s' wild_card_channel: '%s' wild_card: '%s'", recording_id, *folder, *added, *wild_card_channel, *wild_card);
-                           callbackP.AddSearchTimer(recording_id, *folder, *added, *wild_card_channel, *wild_card);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "wildcardrecordings") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               int recording_id = 0;
+                               cString folder = "", added = "", wild_card_channel = "", wild_card = "";
+                               json_t *obj2 = json_array_get(value, i);
+                               json_t *obj3 = json_object_get(obj2, "recording_id");
+                               if (json_is_string(obj3))
+                                  recording_id = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "folder");
+                               if (json_is_string(obj3))
+                                  folder = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "added");
+                               if (json_is_string(obj3))
+                                  added = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "wild_card_channel");
+                               if (json_is_string(obj3))
+                                  wild_card_channel = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "wild_card");
+                               if (json_is_string(obj3))
+                                  wild_card = Unescape(json_string_value(obj3));
+                               debug("recording_id: %d folder: '%s' added: '%s' wild_card_channel: '%s' wild_card: '%s'", recording_id, *folder, *added, *wild_card_channel, *wild_card);
+                               callbackP.AddSearchTimer(recording_id, *folder, *added, *wild_card_channel, *wild_card);
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -669,27 +701,32 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "channels")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           json_object_iter it2;
-                           cString name = "", logo = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "name"))
-                                name = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "logo"))
-                                logo = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("channel: '%s' Logo: '%s'", *name, *logo);
-                           callbackP.AddChannel(*name, *logo);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "channels") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               if (json_is_string(obj2)) {
+                                  cString name = "", logo = "";
+                                  json_t *obj3 = json_object_get(obj2, "name");
+                                  if (json_is_string(obj3))
+                                     name = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "logo");
+                                  if (json_is_string(obj3))
+                                     logo = Unescape(json_string_value(obj3));
+                                  debug("channel: '%s' Logo: '%s'", *name, *logo);
+                                  callbackP.AddChannel(*name, *logo);
+                                  }
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -716,41 +753,48 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "channelname")) {
-                       cString channelname = Unescape(json_object_get_string(it.val));
-                       if (strcmp(channelP, *channelname))
-                          error("cElvisWidget::GetEvents(): invalid channel: '%s' <> '%s'", channelP, *channelname);
-                       }
-                    else if (!strcmp(it.key, "programs")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           int id = 0;
-                           cString name = "", simple_start_time = "", simple_end_time = "", start_time = "", end_time = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "id"))
-                                id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "name"))
-                                name = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "simple_start_time"))
-                                simple_start_time = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "simple_end_time"))
-                                simple_end_time = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "start_time"))
-                                start_time = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "end_time"))
-                                end_time = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s'", id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
-                           callbackP.AddEvent(id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "channelname") && json_is_string(value)) {
+                           cString channelname = Unescape(json_string_value(value));
+                           if (strcmp(channelP, *channelname))
+                              error("cElvisWidget::GetEvents(): invalid channel: '%s' <> '%s'", channelP, *channelname);
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        else if (!strcmp(key, "programs") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               int id = 0;
+                               cString name = "", simple_start_time = "", simple_end_time = "", start_time = "", end_time = "";
+                               json_t *obj2 = json_array_get(value, i);
+                               json_t *obj3 = json_object_get(obj2, "id");
+                               if (json_is_string(obj3))
+                                  id = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "name");
+                               if (json_is_string(obj3))
+                                  name = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "simple_start_time");
+                               if (json_is_string(obj3))
+                                  simple_start_time = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "simple_end_time");
+                               if (json_is_string(obj3))
+                                  simple_end_time = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "start_time");
+                               if (json_is_string(obj3))
+                                  start_time = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "end_time");
+                               if (json_is_string(obj3))
+                                  end_time = Unescape(json_string_value(obj3));
+                               debug("id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s'", id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
+                               callbackP.AddEvent(id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
+                               }
+                           }
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -777,45 +821,59 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "channels")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           json_object_object_foreachC(json2, it2) {
-                             cString channel = Unescape(it2.key);
-                             for (int j = 0; j < json_object_array_length(it2.val); ++j) {
-                                 json_object_iter it3;
-                                 json_object *json3 = json_object_array_get_idx(it2.val, j);
-                                 int id = 0;
-                                 cString name = "", simple_start_time = "", simple_end_time = "", start_time = "", end_time = "", short_text = "";
-                                 json_object_object_foreachC(json3, it3) {
-                                   if (!strcmp(it3.key, "id"))
-                                      id = json_object_get_int(it3.val);
-                                   else if (!strcmp(it3.key, "name"))
-                                      name = Unescape(json_object_get_string(it3.val));
-                                   else if (!strcmp(it3.key, "simple_start_time"))
-                                      simple_start_time = Unescape(json_object_get_string(it3.val));
-                                   else if (!strcmp(it3.key, "simple_end_time"))
-                                      simple_end_time = Unescape(json_object_get_string(it3.val));
-                                   else if (!strcmp(it3.key, "start_time"))
-                                      start_time = Unescape(json_object_get_string(it3.val));
-                                   else if (!strcmp(it3.key, "end_time"))
-                                      end_time = Unescape(json_object_get_string(it3.val));
-                                   else if (!strcmp(it3.key, "short_text"))
-                                      short_text = Unescape(json_object_get_string(it3.val));
-                                   }
-                                 debug("channel: '%s' id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s' short_text: '%s'", *channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
-                                 callbackP.AddEvent(*channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
-                                 }
-                             }
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "channels") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               if (json_is_object(obj2)) {
+                                  void *iter2 = json_object_iter(obj2);
+                                  while (iter2) {
+                                        cString channel = Unescape(json_object_iter_key(iter2));
+                                        json_t *value2 = json_object_iter_value(iter2);
+                                        if (json_is_array(value2)) {
+                                           for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                               int id = 0;
+                                               cString name = "", simple_start_time = "", simple_end_time = "", start_time = "", end_time = "", short_text = "";
+                                               json_t *obj3 = json_array_get(value2, j);
+                                               json_t *obj4 = json_object_get(obj3, "id");
+                                               if (json_is_string(obj4))
+                                                  id = strtol(json_string_value(obj4), NULL, 10);
+                                               obj4 = json_object_get(obj3, "name");
+                                               if (json_is_string(obj4))
+                                                  name = Unescape(json_string_value(obj4));
+                                               obj4 = json_object_get(obj3, "simple_start_time");
+                                               if (json_is_string(obj4))
+                                                  simple_start_time = Unescape(json_string_value(obj4));
+                                               obj4 = json_object_get(obj3, "simple_end_time");
+                                               if (json_is_string(obj4))
+                                                  simple_end_time = Unescape(json_string_value(obj4));
+                                               obj4 = json_object_get(obj3, "start_time");
+                                               if (json_is_string(obj4))
+                                                  start_time = Unescape(json_string_value(obj4));
+                                               obj4 = json_object_get(obj3, "end_time");
+                                               if (json_is_string(obj4))
+                                                  end_time = Unescape(json_string_value(obj4));
+                                               obj4 = json_object_get(obj3, "short_text");
+                                               if (json_is_string(obj4))
+                                                  short_text = Unescape(json_string_value(obj4));
+                                               debug("channel: '%s' id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s' short_text: '%s'", *channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
+                                               callbackP.AddEvent(*channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
+                                               }
+                                           }
+                                        iter2 = json_object_iter_next(obj2, iter2);
+                                        }
+                                  }
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -842,34 +900,42 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "programs")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           int id = 0;
-                           cString name = "", channel = "", start_time = "", end_time = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "program_id"))
-                                id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "name"))
-                                name = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "channel"))
-                                channel = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "start_time"))
-                                start_time = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "end_time"))
-                                end_time = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("id: %d name: '%s' channel: '%s' start_time: '%s' end_time: '%s'", id, *name, *channel, *start_time, *end_time);
-                           callbackP.AddEvent(id, *name, *channel, *start_time, *end_time);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "programs") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               if (json_is_object(obj2)) {
+                                  int id = 0;
+                                  cString name = "", channel = "", start_time = "", end_time = "";
+                                  json_t *obj3 = json_object_get(obj2, "program_id");
+                                  if (json_is_string(obj3))
+                                     id = strtol(json_string_value(obj3), NULL, 10);
+                                  obj3 = json_object_get(obj2, "name");
+                                  if (json_is_string(obj3))
+                                     name = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "channel");
+                                  if (json_is_string(obj3))
+                                     channel = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "start_time");
+                                  if (json_is_string(obj3))
+                                     start_time = Unescape(json_string_value(obj3));
+                                  obj3 = json_object_get(obj2, "end_time");
+                                  if (json_is_string(obj3))
+                                     end_time = Unescape(json_string_value(obj3));
+                                  debug("id: %d name: '%s' channel: '%s' start_time: '%s' end_time: '%s'", id, *name, *channel, *start_time, *end_time);
+                                  callbackP.AddEvent(id, *name, *channel, *start_time, *end_time);
+                                  }
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -896,42 +962,52 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "vods")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
-                           cString title = "", currency = "", cover = "", trailer = "";
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "id"))
-                                id = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "length"))
-                                length = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "agelimit"))
-                                agelimit = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "year"))
-                                year = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "price"))
-                                price = json_object_get_int(it2.val);
-                             else if (!strcmp(it2.key, "title"))
-                                title = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "currency"))
-                                currency = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "cover"))
-                                cover = Unescape(json_object_get_string(it2.val));
-                             else if (!strcmp(it2.key, "trailer_url"))
-                                trailer = Unescape(json_object_get_string(it2.val));
-                             }
-                           debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
-                           callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "vods") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
+                               cString title = "", currency = "", cover = "", trailer = "";
+                               json_t *obj2 = json_array_get(value, i);
+                               json_t *obj3 = json_object_get(obj2, "id");
+                               if (json_is_string(obj3))
+                                  id = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "length");
+                               if (json_is_string(obj3))
+                                  length = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "agelimit");
+                               if (json_is_string(obj3))
+                                  agelimit = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "year");
+                               if (json_is_string(obj3))
+                                  year = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "price");
+                               if (json_is_string(obj3))
+                                  price = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "title");
+                               if (json_is_string(obj3))
+                                  title = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "currency");
+                               if (json_is_string(obj3))
+                                  currency = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "cover");
+                               if (json_is_string(obj3))
+                                  cover = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "trailer");
+                               if (json_is_string(obj3))
+                                  trailer = Unescape(json_string_value(obj3));
+                               debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               }
                            }
-                       }
-                    }
-                  json_object_put(json);
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
                   }
                return true;
                }
@@ -957,55 +1033,71 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
                   bool has_started = false, has_ended = false, recorded = false, ready = false, is_wildcard = false;
                   int id = 0, length = 0, programviewid = 0, recordingid = 0;
                   cString name = "", channel = "", short_text = "", description = "", flength = "", tn = "", start_time = "", end_time = "", url = "";
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "id"))
-                       id = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "length"))
-                       length = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "programviewid"))
-                       programviewid = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "recordingid"))
-                       recordingid = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "name"))
-                       name = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "channel"))
-                       channel = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "short_text"))
-                       short_text = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "description"))
-                       description = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "flength"))
-                       flength = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "tn"))
-                       tn = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "start_time"))
-                       start_time = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "end_time"))
-                       end_time = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "url"))
-                       url = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "has_started"))
-                       has_started = json_object_get_boolean(it.val);
-                    else if (!strcmp(it.key, "has_ended"))
-                       has_ended = json_object_get_boolean(it.val);
-                    else if (!strcmp(it.key, "recorded"))
-                       recorded = json_object_get_boolean(it.val);
-                    else if (!strcmp(it.key, "ready"))
-                       ready = json_object_get_boolean(it.val);
-                    else if (!strcmp(it.key, "is_wildcard"))
-                       is_wildcard = json_object_get_boolean(it.val);
-                    }
+                  json_t *obj2 = json_object_get(obj, "id");
+                  if (json_is_string(obj2))
+                     id = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "length");
+                  if (json_is_string(obj2))
+                     length = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "programviewid");
+                  if (json_is_string(obj2))
+                     programviewid = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "recordingid");
+                  if (json_is_string(obj2))
+                     recordingid = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "name");
+                  if (json_is_string(obj2))
+                     name = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "channel");
+                  if (json_is_string(obj2))
+                     channel = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "short_text");
+                  if (json_is_string(obj2))
+                     short_text = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "description");
+                  if (json_is_string(obj2))
+                     description = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "flength");
+                  if (json_is_string(obj2))
+                     flength = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "tn");
+                  if (json_is_string(obj2))
+                     tn = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "start_time");
+                  if (json_is_string(obj2))
+                     start_time = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "end_time");
+                  if (json_is_string(obj2))
+                     end_time = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "url");
+                  if (json_is_string(obj2))
+                     url = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "has_started");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     has_started = true;
+                  obj2 = json_object_get(obj, "has_ended");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     has_ended = true;
+                  obj2 = json_object_get(obj, "recorded");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     recorded = true;
+                  obj2 = json_object_get(obj, "ready");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     ready = true;
+                  obj2 = json_object_get(obj, "is_wildcard");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     is_wildcard = true;
                   debug("id: %d name: '%s' channel: '%s' short_text: '%s' description: '%s' length: %d flength: '%s' tn: '%s' start_time: '%s' end_time: '%s' url: '%s' "
                         "programviewid: %d recordingid: %d has_started: %d has_ended: %d recorded: %d ready: %d is_wildcard: %d",
                         id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid, recordingid, has_started,
                         has_ended, recorded, ready, is_wildcard);
-                  json_object_put(json);
+                  json_decref(obj);
                   return new cElvisWidgetEventInfo(id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid,
                                                recordingid, has_started, has_ended, recorded, ready, is_wildcard);
                   }
@@ -1032,51 +1124,67 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
                continue;
                }
             else {
-               json_object_iter it;
-               json_object *json = json_tokener_parse(*dataM);
-               if (!is_error(json)) {
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
                   int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
                   cString title = "", original_title = "", currency = "", short_desc = "", info = "", info2 = "", trailer_url = "", categories = "";
-                  json_object_object_foreachC(json, it) {
-                    if (!strcmp(it.key, "id"))
-                       id = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "length"))
-                       length = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "agelimit"))
-                       agelimit = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "year"))
-                       year = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "price"))
-                       price = json_object_get_int(it.val);
-                    else if (!strcmp(it.key, "title"))
-                       title = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "original_title"))
-                       original_title = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "currency"))
-                       currency = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "short_desc"))
-                       short_desc = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "info"))
-                       info = Unescape(strstrip(json_object_get_string(it.val), "\r"));
-                    else if (!strcmp(it.key, "info2"))
-                       info2 = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "trailer_url"))
-                       trailer_url = Unescape(json_object_get_string(it.val));
-                    else if (!strcmp(it.key, "categories")) {
-                       for (int i = 0; i < json_object_array_length(it.val); ++i) {
-                           json_object_iter it2;
-                           json_object *json2 = json_object_array_get_idx(it.val, i);
-                           json_object_object_foreachC(json2, it2) {
-                             if (!strcmp(it2.key, "cat"))
-                                categories = cString::sprintf("%s%s%s", *categories, isempty(*categories) ? "" : ", ", *Unescape(json_object_get_string(it2.val)));
-                             }
-                           }
-                       }
-                    }
+                  json_t *obj2 = json_object_get(obj, "id");
+                  if (json_is_string(obj2))
+                     id = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "length");
+                  if (json_is_string(obj2))
+                     length = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "agelimit");
+                  if (json_is_string(obj2))
+                     agelimit = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "year");
+                  if (json_is_string(obj2))
+                     year = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "price");
+                  if (json_is_string(obj2))
+                     price = strtol(json_string_value(obj2), NULL, 10);
+                  obj2 = json_object_get(obj, "title");
+                  if (json_is_string(obj2))
+                     title = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "original_title");
+                  if (json_is_string(obj2))
+                     original_title = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "currency");
+                  if (json_is_string(obj2))
+                     currency = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "short_desc");
+                  if (json_is_string(obj2))
+                     short_desc = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "info");
+                  if (json_is_string(obj2))
+                     info = Unescape(strstrip(json_string_value(obj2), "\r"));
+                  obj2 = json_object_get(obj, "info2");
+                  if (json_is_string(obj2))
+                     info2 = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "trailer_url");
+                  if (json_is_string(obj2))
+                     trailer_url = Unescape(json_string_value(obj2));
+                  obj2 = json_object_get(obj, "categories");
+                  if (json_is_array(obj2)) {
+                     for (unsigned int i = 0; i < json_array_size(obj2); i++) {
+                         json_t *obj3 = json_array_get(obj2, i);
+                         if (json_is_object(obj3)) {
+                            void *iter = json_object_iter(obj3);
+                            while (iter) {
+                                  const char *key = json_object_iter_key(iter);
+                                  json_t *value = json_object_iter_value(iter);
+                                  if (!strcmp(key, "cat") && json_is_string(value))
+                                     categories = cString::sprintf("%s%s%s", *categories, isempty(*categories) ? "" : ", ", *Unescape(json_string_value(value)));
+                                  iter = json_object_iter_next(obj3, iter);
+                                  }
+                            }
+                         }
+                     }
                   debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' original_title: '%s' currency: '%s' short_desc: '%s' info: '%s' info2: '%s' "
                         "trailer_url: '%s' categories: '%s'", id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2,
                         *trailer_url, *categories);
-                  json_object_put(json);
+                  json_decref(obj);
                   return new cElvisWidgetVODInfo(id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2, *trailer_url, *categories);
                   }
                }

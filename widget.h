@@ -10,9 +10,6 @@
 
 #include <string>
 
-#include <json/json.h>
-#include <json/json_object_private.h>
-
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>

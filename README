@@ -27,8 +27,8 @@ Requirements:
 - Libcurl - the multiprotocol file transfer library
   http://curl.haxx.se/libcurl/
 
-- JSON-C - A JSON implementation in C
-  http://oss.metaparadigm.com/json-c/
+- Jansson - a C library for encoding, decoding and manipulating JSON data
+  http://www.digip.org/jansson/
 
 Description:
 
