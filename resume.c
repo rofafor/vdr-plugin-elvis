@@ -12,7 +12,8 @@
 
 cElvisResumeItem::cElvisResumeItem()
 : programIdM(-1),
-  byteOffsetM(0)
+  byteOffsetM(0),
+  fileSizeM(0)
 {
   debug("cElvisResumeItem:cElvisResumeItem()");
 }

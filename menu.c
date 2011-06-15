@@ -148,13 +148,13 @@ void cElvisRecordingsMenu::SetHelpKeys()
 {
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
-     unsigned long offset = 0;
-     unsigned long size = 0;
      if (item->IsFolder())
         SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
-     else
+     else {
+        unsigned long offset = 0, size = 0;
         SetHelp(trVDR("Button$Play"), (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), offset, size) && (offset > 0)) ?
                 trVDR("Button$Rewind") : NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
+        }
      }
   else
      SetHelp(NULL, NULL, NULL, NULL);

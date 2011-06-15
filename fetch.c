@@ -373,8 +373,8 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
       }
   if (found) {
      cElvisFetchItem *item = itemsM[i];
-     debug("cElvisFetcher::Remove(%d): name='%s'", statusP, item->Name());
      if (item) {
+        debug("cElvisFetcher::Remove(%d): name='%s'", statusP, item->Name());
         // remove handle from multi set
         if (multiM && item->Handle())
            curl_multi_remove_handle(multiM, item->Handle());

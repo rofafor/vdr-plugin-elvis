@@ -469,12 +469,9 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                            for (unsigned int i = 0; i < json_array_size(value); i++) {
                                json_t *obj2 = json_array_get(value, i);
                                if (json_is_object(obj2)) {
-                                  int id = 0, program_id = 0, length = 0;
+                                  int program_id = 0, length = 0;
                                   cString name = "", channel = "", start_time = "", wild_card = "";
-                                  json_t *obj3 = json_object_get(obj2, "id");
-                                  if (json_is_string(obj3))
-                                     id = strtol(json_string_value(obj3), NULL, 10);
-                                  obj3 = json_object_get(obj2, "program_id");
+                                  json_t *obj3 = json_object_get(obj2, "program_id");
                                   if (json_is_string(obj3))
                                      program_id = strtol(json_string_value(obj3), NULL, 10);
                                   obj3 = json_object_get(obj2, "length");
