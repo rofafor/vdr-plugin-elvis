@@ -98,3 +98,4 @@ VDR Plugin 'elvis' Revision History
 2011-xx-xx: Version 0.2.1
 
 - Added cppcheck target into Makefile.
+- Cleaned up CURL includes.
