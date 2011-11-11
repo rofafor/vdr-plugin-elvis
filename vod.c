@@ -36,6 +36,19 @@ cElvisWidgetVODInfo *cElvisVOD::Info()
   return infoM;
 }
 
+void cElvisVOD::SetFavorite(bool onOffP)
+{
+  if (cElvisWidget::GetInstance()->SetVODFavorite(idM, onOffP))
+  {
+      cElvisVODCategory *favorites = cElvisVODCategories::GetInstance()->GetCategory("favorites");
+
+      if (favorites)
+      {
+         favorites->Update(true);
+      }
+  }
+}
+
 // --- cElvisVODCategory -----------------------------------------------
 
 cElvisVODCategory::cElvisVODCategory(const char *categoryP)
@@ -146,6 +159,7 @@ cElvisVODCategories::cElvisVODCategories()
 {
   Add(new cElvisVODCategory("newest"));
   Add(new cElvisVODCategory("popular"));
+  Add(new cElvisVODCategory("favorites"));
 }
 
 cElvisVODCategories::~cElvisVODCategories()
@@ -203,6 +217,88 @@ void cElvisVODCategories::Reset(bool foregroundP)
   Clear();
   Add(new cElvisVODCategory("newest"));
   Add(new cElvisVODCategory("popular"));
+  Add(new cElvisVODCategory("favorites"));
   for (cElvisVODCategory *i = First(); i; i = Next(i))
       i->Update(foregroundP);
+}
+
+// --- cElvisVODSearch -------------------------------------------------
+
+cElvisVODSearch::cElvisVODSearch()
+: cThread("cElvisVODSearch"),
+  stateM(0),
+  lastUpdateM(0),
+  titleM(""),
+  descM(""),
+  hdM(false)
+{
+}
+
+cElvisVODSearch::~cElvisVODSearch()
+{
+  LOCK_THREAD;
+  Cancel(3);
+}
+
+void cElvisVODSearch::AddVOD(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *currencyP, const char *coverP, const char *trailerP)
+{
+  LOCK_THREAD;
+  cElvisVOD *vod = GetVOD(idP);
+
+  if (vod)
+     vod->Tag(true);
+  else {
+     Add(new cElvisVOD(idP, lengthP, ageLimitP, yearP, priceP, titleP, currencyP, coverP, trailerP));
+     ChangeState();
+     }
+}
+
+cElvisVOD *cElvisVODSearch::GetVOD(int idP)
+{
+  for (cElvisVOD *i = cList<cElvisVOD>::First(); i; i = cList<cElvisVOD>::Next(i)) {
+      if (i->Id() == idP)
+         return i;
+      }
+
+  return NULL;
+}
+
+void cElvisVODSearch::Refresh()
+{
+  lastUpdateM = time(NULL);
+  Lock();
+  Clear();
+  ChangeState();
+  Unlock();
+  cElvisWidget::GetInstance()->SearchVOD(*this, *titleM, *descM, hdM);
+  Lock();
+  ChangeState();
+  Unlock();
+}
+
+void cElvisVODSearch::Search(const char *titleP, const char *descP, bool hdP)
+{
+  LOCK_THREAD;
+  Cancel(3);
+
+  titleM = titleP;
+  descM = descP;
+  hdM = hdP;
+
+  Start();
+}
+
+bool cElvisVODSearch::StateChanged(int &stateP)
+{
+  LOCK_THREAD;
+  bool result = (stateP != stateM);
+
+  stateP = stateM;
+
+  return result;
+}
+
+void cElvisVODSearch::Action()
+{
+  Refresh();
 }

@@ -32,7 +32,7 @@ private:
 public:
   cElvisSearchTimer(int idP, const char *folderP, const char *added, const char *channelP, const char *wildcardP);
   virtual ~cElvisSearchTimer();
-  void Tag(bool onOffP) { taggedM = onOffP; } 
+  void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   const char *Folder() { return *folderM; }

@@ -35,7 +35,8 @@ public:
   cElvisVOD(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *currencyP, const char *coverP, const char *trailerP);
   virtual ~cElvisVOD();
   cElvisWidgetVODInfo *Info();
-  void Tag(bool onOffP) { taggedM = onOffP; } 
+  void SetFavorite(bool onOffP);
+  void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   int Length() { return lengthM; }
@@ -96,6 +97,31 @@ public:
   bool DeleteCategory(const char *categoryP);
   cElvisVODCategory *GetCategory(const char *categoryP);
   void Reset(bool foregroundP = true);
+};
+
+// --- cElvisVODSearch -------------------------------------------------
+
+class cElvisVODSearch : public cThread, public cListObject, public cList<cElvisVOD>, public cElvisWidgetVODCallbackIf {
+private:
+  int stateM;
+  time_t lastUpdateM;
+  cString titleM;
+  cString descM;
+  bool hdM;
+  void Refresh();
+  cElvisVOD *GetVOD(int idP);
+  // to prevent copy constructor and assignment
+  cElvisVODSearch(const cElvisVODCategory&);
+  cElvisVODSearch& operator=(const cElvisVODCategory&);
+protected:
+  void Action();
+public:
+  cElvisVODSearch();
+  virtual ~cElvisVODSearch();
+  virtual void AddVOD(int idP, int lengthP, int ageLimitP, int yearP, int priceP, const char *titleP, const char *currencyP, const char *coverP, const char *trailerP);
+  void Search(const char *titleP, const char *descP, bool hdP);
+  void ChangeState() { ++stateM; }
+  bool StateChanged(int &stateP);
 };
 
 #endif // __ELVIS_VOD_H

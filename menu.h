@@ -26,9 +26,23 @@ private:
   cString descriptionM;
   cString startTimeM;
   unsigned int lengthM;
+  bool encryptedM;
 public:
-  cElvisRecordingInfoMenu(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
+  cElvisRecordingInfoMenu(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP, bool encryptedP);
   virtual void Display();
+  virtual eOSState ProcessKey(eKeys keyP);
+};
+
+// --- cElvisRecordingRenameMenu ---------------------------------------
+
+class cElvisRecordingRenameMenu : public cOsdMenu {
+private:
+  cElvisRecordingFolder *parentFolderM;
+  int folderIdM;
+  cString nameM;
+  char newNameM[256];
+public:
+  cElvisRecordingRenameMenu(cElvisRecordingFolder *parentFolderP, int folderIdP, const char *nameP);
   virtual eOSState ProcessKey(eKeys keyP);
 };
 
@@ -42,6 +56,7 @@ public:
   cElvisRecordingItem(cElvisRecording *recordingP);
   cElvisRecording *Recording() { return recordingM; }
   bool IsFolder() { return (recordingM && recordingM->IsFolder()); }
+  int FolderId() { return (recordingM ? recordingM->FolderId() : -1); }
   const char *Description();
 };
 
@@ -248,6 +263,26 @@ public:
   virtual eOSState ProcessKey(eKeys keyP);
 };
 
+// --- cElvisVODSearchMenu ---------------------------------------------
+
+class cElvisVODSearchMenu : public cOsdMenu {
+private:
+  cElvisVODSearch *searchDataM;
+  int stateM;
+  int useDescriptionM;
+  int useHdM;
+  char searchTermM[256];
+  void SetHelpKeys();
+  void Setup();
+  eOSState Search();
+  eOSState Info();
+  eOSState Favorite();  
+public:
+  cElvisVODSearchMenu();
+  ~cElvisVODSearchMenu();
+  virtual eOSState ProcessKey(eKeys keyP);
+};
+
 // --- cElvisVODItem ---------------------------------------------------
 
 class cElvisVODItem : public cOsdItem {
@@ -264,12 +299,19 @@ public:
 
 class cElvisVODMenu : public cOsdMenu {
 private:
-  bool popularModeM;
+  enum {
+    SHOWMODE_NEWEST = 0,
+    SHOWMODE_POPULAR,
+    SHOWMODE_FAVORITES,
+    SHOWMODE_COUNT
+  };
+  int showModeM;
   cElvisVODCategory *categoryM;
   int stateM;
   void SetHelpKeys();
   void Setup();
   eOSState Info();
+  eOSState Favorite();
 public:
   cElvisVODMenu();
   virtual eOSState ProcessKey(eKeys keyP);
@@ -292,4 +334,3 @@ public:
 };
 
 #endif // __ELVIS_MENU_H
-

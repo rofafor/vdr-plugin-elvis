@@ -36,7 +36,7 @@ public:
   cElvisTimer(int idP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP, const char *wildcardP);
   virtual ~cElvisTimer();
   cElvisWidgetEventInfo *Info();
-  void Tag(bool onOffP) { taggedM = onOffP; } 
+  void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   int Length() { return lengthM; }

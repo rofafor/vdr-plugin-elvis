@@ -40,7 +40,7 @@ public:
   cElvisEvent(int idP, const char *nameP, const char *channelP, const char *startTimeP, const char *endTimeP);
   virtual ~cElvisEvent();
   cElvisWidgetEventInfo *Info();
-  void Tag(bool onOffP) { taggedM = onOffP; } 
+  void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   const char *Name() { return *nameM; }

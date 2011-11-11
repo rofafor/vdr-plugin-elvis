@@ -109,7 +109,7 @@ public:
   unsigned long Total() { return durationM; }
   unsigned long Current() { return (readerM && readerM->GetRangeSize() && durationM) ? (readSizeM / (readerM->GetRangeSize() / durationM)) : 0; }
   unsigned int Progress() { return (readerM && readerM->GetRangeSize()) ? (unsigned int)((double)readSizeM / (double)readerM->GetRangeSize() * 100.0) : 0; }
-  void ClearJump() { if (readerM) readerM->JumpRequest(0); } 
+  void ClearJump() { if (readerM) readerM->JumpRequest(0); }
   bool GetReplayMode(bool &playP, bool &forwardP, int &speedP);
 };
 

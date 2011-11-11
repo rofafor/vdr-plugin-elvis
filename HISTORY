@@ -95,7 +95,11 @@ VDR Plugin 'elvis' Revision History
 - Fixed adding/removing timers without any login session.
 - Changed JSON-C to Jansson library.
 
-2011-xx-xx: Version 0.2.1
+2011-11-11: Version 0.2.1
 
 - Added cppcheck target into Makefile.
 - Cleaned up CURL includes.
+- Added detection for encrypted recordings.
+- Added support for deleting and renaming folders.
+- Added support for favourite VODs.
+- Added support to search VODs.

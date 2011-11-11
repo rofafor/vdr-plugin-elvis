@@ -91,6 +91,7 @@ private:
   bool isRecordedM;
   bool isReadyM;
   bool isWildcardM;
+  bool isEncryptedM;
   cString nameM;
   cString channelM;
   cString shortTextM;
@@ -110,7 +111,7 @@ private:
 public:
   cElvisWidgetEventInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
                     const char *thumbnailP, const char *startTimeP, const char *endTimeP, const char *urlP, int programViewIdP, int recordingIdP,
-                    bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP);
+                    bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP, bool isEncrypted);
   virtual ~cElvisWidgetEventInfo();
   int Id() { return idM; }
   int LengthValue() { return lengthM; }
@@ -124,6 +125,7 @@ public:
   const char *Length() { return *fLengthM; }
   time_t StartTimeValue() { return startTimeValueM; }
   time_t EndTimeValue() { return endTimeValueM; }
+  bool Encrypted() { return isEncryptedM; }
 };
 
 // --- cElvisWidgetVODInfo --------------------------------------------------
@@ -164,7 +166,7 @@ public:
   const char *Info() { return *infoM; }
   const char *Info2() { return *info2M; }
   const char *TrailerUrl() { return *trailerUrlM; }
-  const char *Categories() { return *categoriesM; }  
+  const char *Categories() { return *categoriesM; }
 };
 
 // --- cElvisWidget ----------------------------------------------------
@@ -204,6 +206,9 @@ public:
   void PutData(const char *dataP, unsigned int lenP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);
+  bool RemoveFolder(int idP);
+  bool RenameFolder(int idP, const char *nameP);
+  bool CreateFolder(const char *nameP, int parentFolderIdP = 1);
   bool GetTimers(cElvisWidgetTimerCallbackIf &callbackP);
   bool AddTimer(int programIdP, int folderIdP = -1);
   bool RemoveTimer(int idP);
@@ -217,6 +222,8 @@ public:
   bool GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *categoryP, unsigned int countP = 25);
   cElvisWidgetEventInfo *GetEventInfo(int idP);
   cElvisWidgetVODInfo *GetVODInfo(int idP);
+  bool SearchVOD(cElvisWidgetVODCallbackIf &callbackP, const char *titleP, const char *descP, bool hdP);
+  bool SetVODFavorite(int idP, bool onOffP);
 };
 
 #endif // __ELVIS_WIDGET_H

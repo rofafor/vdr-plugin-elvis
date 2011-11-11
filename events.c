@@ -124,7 +124,7 @@ void cElvisChannels::AddEvent(const char *channelP, int idP, const char *nameP, 
          }
       }
   if (!channel) {
-     channel = new cElvisChannel(channelP); 
+     channel = new cElvisChannel(channelP);
      Add(channel);
      }
   if (channel)

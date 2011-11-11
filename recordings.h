@@ -41,7 +41,7 @@ public:
   virtual ~cElvisRecording();
   cElvisWidgetEventInfo *Info();
   void DeleteInfo();
-  void Tag(bool onOffP) { taggedM = onOffP; } 
+  void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
   int Id() { return idM; }
   int ProgramId() { return programIdM; }
@@ -89,6 +89,7 @@ public:
   bool StateChanged(int &stateP);
   int Id() { return folderIdM; }
   const char *Name() { return *folderNameM; }
+  void SetName(const char *nameP) { folderNameM = nameP; }
 };
 
 // --- cElvisRecordings ------------------------------------------------
@@ -109,6 +110,8 @@ public:
   cElvisRecordingFolder *AddFolder(int folderIdP, const char *folderNameP);
   bool DeleteFolder(int folderIdP);
   cElvisRecordingFolder *GetFolder(int folderIdP);
+  bool RemoveRecordingFolder(int folderIdP);
+  bool RenameRecordingFolder(int folderIdP, const char *folderNameP);
   void Reset(bool foregroundP = true);
 };
 

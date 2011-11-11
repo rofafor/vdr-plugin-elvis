@@ -31,7 +31,7 @@ cElvisRecording::cElvisRecording(int idP, int countP, const char *nameP, const c
 : taggedM(true),
   idM(idP),
   programIdM(-1),
-  folderIdM(-1),
+  folderIdM(idP),
   countM(countP),
   lengthM(-1),
   nameM(nameP),
@@ -256,6 +256,28 @@ cElvisRecordingFolder *cElvisRecordings::GetFolder(int folderIdP)
      }
 
   return folder;
+}
+
+bool cElvisRecordings::RemoveRecordingFolder(int folderIdP)
+{
+  cMutexLock(mutexM);
+
+  return cElvisWidget::GetInstance()->RemoveFolder(folderIdP) ? DeleteFolder(folderIdP) : false;
+}
+
+bool cElvisRecordings::RenameRecordingFolder(int folderIdP, const char *folderNameP)
+{
+  cMutexLock(mutexM);
+
+  if (cElvisWidget::GetInstance()->RenameFolder(folderIdP, folderNameP)) {
+     cElvisRecordingFolder *folder = GetFolder(folderIdP);
+     if (folder)
+        folder->SetName(folderNameP);
+
+     return true;
+     }
+
+  return false;
 }
 
 void cElvisRecordings::Reset(bool foregroundP)

@@ -537,4 +537,3 @@ eOSState cMenuEditHiddenStrItem::ProcessKey(eKeys Key)
   Set();
   return osContinue;
 }
-

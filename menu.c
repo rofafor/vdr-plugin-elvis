@@ -18,15 +18,16 @@
 
 // --- cElvisRecordingInfoMenu -----------------------------------------
 
-cElvisRecordingInfoMenu::cElvisRecordingInfoMenu(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
+cElvisRecordingInfoMenu::cElvisRecordingInfoMenu(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP, bool encryptedP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Recordings"))),
   urlM(urlP),
   nameM(nameP),
   descriptionM(descriptionP),
   startTimeM(startTimeP),
-  lengthM(lengthP)
+  lengthM(lengthP),
+  encryptedM(encryptedP)
 {
-  SetHelp(trVDR("Button$Play"), tr("Button$Fetch"), NULL, NULL);
+  SetHelp(encryptedM ? NULL : trVDR("Button$Play"), encryptedM ? NULL : tr("Button$Fetch"), NULL, NULL);
 }
 
 void cElvisRecordingInfoMenu::Display()
@@ -63,11 +64,50 @@ eOSState cElvisRecordingInfoMenu::ProcessKey(eKeys keyP)
      switch (keyP) {
        case kPlay:
        case kRed:
-            cRemote::Put(kOk, true);
+            if (!encryptedM)
+               cRemote::Put(kOk, true);
        case kOk:
             return osBack;
        case kGreen:
-            cElvisFetcher::GetInstance()->New(*urlM, *nameM, *descriptionM, *startTimeM, lengthM);
+            if (!encryptedM)
+               cElvisFetcher::GetInstance()->New(*urlM, *nameM, *descriptionM, *startTimeM, lengthM);
+            break;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  return state;
+}
+
+// --- cElvisRecordingRenameMenu ---------------------------------------
+
+cElvisRecordingRenameMenu::cElvisRecordingRenameMenu(cElvisRecordingFolder *parentFolderP, int folderIdP, const char *nameP)
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Rename folder")), 12),
+  parentFolderM(parentFolderP),
+  folderIdM(folderIdP),
+  nameM(nameP)
+{
+  strn0cpy(newNameM, *nameM, sizeof(newNameM));
+  Clear();
+  Add(new cMenuEditStrItem(trVDR("Name"), newNameM, sizeof(newNameM), tr(FileNameChars)));
+  Display();
+  SetHelp(NULL, NULL, NULL, NULL);
+}
+
+eOSState cElvisRecordingRenameMenu::ProcessKey(eKeys keyP)
+{
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kOk:
+            if (!cElvisRecordings::GetInstance()->RenameRecordingFolder(folderIdM, newNameM))
+               Skins.Message(mtInfo, tr("Cannot rename folder!"));
+            else if (parentFolderM)
+               parentFolderM->Update(true);
+            return osBack;
             break;
        default:
             break;
@@ -149,10 +189,11 @@ void cElvisRecordingsMenu::SetHelpKeys()
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
      if (item->IsFolder())
-        SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
+        SetHelp(trVDR("Button$Open"), NULL, trVDR("Button$Delete"), tr("Button$Rename"));
      else {
         unsigned long offset = 0, size = 0;
-        SetHelp(trVDR("Button$Play"), (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), offset, size) && (offset > 0)) ?
+        SetHelp(!(item->Recording() && item->Recording()->Info() && item->Recording()->Info()->Encrypted()) ? trVDR("Button$Play") : NULL,
+                (item->Recording() && cElvisResumeItems::GetInstance()->HasResume(item->Recording()->ProgramId(), offset, size) && (offset > 0)) ?
                 trVDR("Button$Rewind") : NULL, trVDR("Button$Delete"), trVDR("Button$Info"));
         }
      }
@@ -183,14 +224,25 @@ eOSState cElvisRecordingsMenu::Delete()
 
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
   if (item) {
-     if (item->IsFolder())
-        Skins.Message(mtInfo, tr("Cannot delete folder!"));
-     else if (Interface->Confirm(trVDR("Delete recording?"))) {
-        if (!folderM->DeleteRecording(item->Recording()))
-           Skins.Message(mtError, tr("Cannot delete recording!"));
-        if (!Count())
-           return osBack;
-        Setup();
+     if (item->IsFolder()) {
+        if (Interface->Confirm(tr("Delete folder?"))) {
+           if (!cElvisRecordings::GetInstance()->RemoveRecordingFolder(item->FolderId()))
+              Skins.Message(mtInfo, tr("Cannot delete folder!"));
+           else if (folderM)
+                folderM->Update(true);
+           if (!Count())
+              return osBack;
+           Setup();
+           }
+        }
+     else {
+        if (Interface->Confirm(trVDR("Delete recording?"))) {
+           if (!folderM->DeleteRecording(item->Recording()))
+              Skins.Message(mtError, tr("Cannot delete recording!"));
+           if (!Count())
+              return osBack;
+           Setup();
+           }
         }
      }
 
@@ -203,9 +255,14 @@ eOSState cElvisRecordingsMenu::Info()
      return osContinue;
 
   cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
-  if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
-     return AddSubMenu(new cElvisRecordingInfoMenu(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
-                                                   item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue()));
+  if (item && item->Recording()) {
+     if (item->IsFolder())
+        return AddSubMenu(new cElvisRecordingRenameMenu(folderM, item->Recording()->FolderId(), item->Recording()->Name()));
+     else if (item->Recording()->Info())
+        return AddSubMenu(new cElvisRecordingInfoMenu(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
+                                                      item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue(),
+                                                      item->Recording()->Info()->Encrypted()));
+     }
 
   return osContinue;
 }
@@ -216,7 +273,7 @@ eOSState cElvisRecordingsMenu::Play(bool rewindP)
   if (item) {
      if (item->IsFolder())
         return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
-     else if (item->Recording()->Info()) {
+     else if (item->Recording()->Info() && !item->Recording()->Info()->Encrypted()) {
         if (rewindP)
            cElvisResumeItems::GetInstance()->Rewind(item->Recording()->ProgramId());
         cControl::Launch(new cElvisReplayControl(item->Recording()->ProgramId(), item->Recording()->Info()->Url(), item->Recording()->Name(),
@@ -1236,7 +1293,118 @@ eOSState cElvisVODInfoMenu::ProcessKey(eKeys keyP)
   return state;
 }
 
-// --- cElvisVODItem --------------------------------------------------------
+// --- cElvisVODSearchMenu ---------------------------------------------
+
+cElvisVODSearchMenu::cElvisVODSearchMenu()
+: cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Search VOD")), 12),
+  searchDataM(new cElvisVODSearch()),
+  useDescriptionM(0),
+  useHdM(0)
+{
+  strcpy(searchTermM, "");
+  if (searchDataM)
+     searchDataM->StateChanged(stateM);
+  Setup();
+  SetHelpKeys();
+}
+
+cElvisVODSearchMenu::~cElvisVODSearchMenu()
+{
+  DELETENULL(searchDataM);
+}
+
+void cElvisVODSearchMenu::Setup()
+{
+  int current = Current();
+
+  Clear();
+
+  Add(new cMenuEditStrItem(tr("Search term"), searchTermM, sizeof(searchTermM), tr(FileNameChars)));
+  Add(new cMenuEditBoolItem(tr("Search criteria"), &useDescriptionM, tr("Title"), tr("Description")));
+  Add(new cMenuEditBoolItem(tr("Show only HD"), &useHdM));
+  Add(new cOsdItem("", osUnknown, false));
+  if (searchDataM) {
+     for (cElvisVOD *item = searchDataM->cList<cElvisVOD>::First(); item; item = searchDataM->cList<cElvisVOD>::Next(item))
+         Add(new cElvisVODItem(item));
+     }
+
+  SetCurrent(Get(current));
+  Display();
+}
+
+void cElvisVODSearchMenu::SetHelpKeys()
+{
+  if (Current() > 3)
+     SetHelp(tr("Button$Search"), NULL, tr("Button$Add"), trVDR("Button$Info"));
+  else
+     SetHelp(tr("Button$Search"), NULL, NULL, NULL);
+}
+
+eOSState cElvisVODSearchMenu::Search()
+{
+  if (searchDataM)
+     searchDataM->Search(useDescriptionM ? "" : searchTermM, useDescriptionM ? searchTermM : "", useHdM);
+
+  return osContinue;
+}
+
+eOSState cElvisVODSearchMenu::Info()
+{
+  if (Current() < 3)
+     return osContinue;
+
+  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  if (item && item->Vod())
+     return AddSubMenu(new cElvisVODInfoMenu(item->Vod()->Title(), item->Description(), item->Vod()->Trailer()));
+
+  return osContinue;
+}
+
+eOSState cElvisVODSearchMenu::Favorite()
+{
+  if (Current() < 3)
+     return osContinue;
+
+  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  if (item && item->Vod())
+     item->Vod()->SetFavorite(true);
+
+  return osContinue;
+}
+
+eOSState cElvisVODSearchMenu::ProcessKey(eKeys keyP)
+{
+  eOSState state = cOsdMenu::ProcessKey(keyP);
+
+  if (state == osUnknown) {
+     switch (keyP) {
+       case kRed:
+       case kOk:
+            return Search();
+       case kYellow:
+            return Favorite();
+       case kBlue:
+            return Info();
+       case kNone:
+            if (searchDataM && searchDataM->StateChanged(stateM)) {
+               Setup();
+               SetHelpKeys();
+               return osContinue;
+               }
+            break;
+       default:
+            break;
+       }
+     state = osContinue;
+     }
+
+  if (!HasSubMenu() && (keyP != kNone))
+     SetHelpKeys();
+
+  return state;
+}
+
+// --- cElvisVODItem ---------------------------------------------------
 
 cElvisVODItem::cElvisVODItem(cElvisVOD *vodP)
 : vodM(vodP),
@@ -1264,9 +1432,22 @@ const char *cElvisVODItem::Description()
 
 cElvisVODMenu::cElvisVODMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("VOD"))),
-  popularModeM(false),
-  categoryM(cElvisVODCategories::GetInstance()->GetCategory(popularModeM ? "popular" : "newest"))
+  showModeM(SHOWMODE_NEWEST)
 {
+  switch (showModeM % SHOWMODE_COUNT) {
+    case SHOWMODE_NEWEST:
+         categoryM = cElvisVODCategories::GetInstance()->GetCategory("newest");
+         break;
+    case SHOWMODE_POPULAR:
+         categoryM = cElvisVODCategories::GetInstance()->GetCategory("popular");
+         break;
+    case SHOWMODE_FAVORITES:
+         categoryM = cElvisVODCategories::GetInstance()->GetCategory("favorites");
+         break;
+    default:
+         categoryM = NULL;
+         break;
+    }
   if (categoryM) {
      categoryM->StateChanged(stateM);
      categoryM->Update();
@@ -1277,11 +1458,21 @@ cElvisVODMenu::cElvisVODMenu()
 
 void cElvisVODMenu::SetHelpKeys()
 {
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
-  if (item)
-     SetHelp(popularModeM ? tr("Button$Newest") : tr("Button$Popular"), NULL, NULL, trVDR("Button$Info"));
-  else
-     SetHelp(NULL, NULL, NULL, NULL);
+  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  switch (showModeM % SHOWMODE_COUNT) {
+    case SHOWMODE_NEWEST:
+         SetHelp(tr("Button$Popular"), tr("Button$Search"), item ? tr("Button$Add") : NULL, item ? trVDR("Button$Info") : NULL);
+         break;
+    case SHOWMODE_POPULAR:
+         SetHelp(tr("Button$Favorites"), tr("Button$Search"), item ? tr("Button$Add") : NULL, item ? trVDR("Button$Info") : NULL);
+         break;
+    case SHOWMODE_FAVORITES:
+         SetHelp(tr("Button$Newest"), tr("Button$Search"), item ? trVDR("Button$Delete") : NULL, item ? trVDR("Button$Info") : NULL);
+         break;
+    default:
+         SetHelp(NULL, tr("Button$Search"), NULL, item ? trVDR("Button$Info") : NULL);
+         break;
+    }
 }
 
 void cElvisVODMenu::Setup()
@@ -1292,7 +1483,20 @@ void cElvisVODMenu::Setup()
 
   if (categoryM) {
      LOCK_THREAD_INSTANCE(categoryM);
-     SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), popularModeM ? tr("Button$Popular") : tr("Button$Newest")));
+     switch (showModeM % SHOWMODE_COUNT) {
+       case SHOWMODE_NEWEST:
+            SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), tr("Button$Newest")));
+            break;
+       case SHOWMODE_POPULAR:
+            SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), tr("Button$Popular")));
+            break;
+       case SHOWMODE_FAVORITES:
+            SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), tr("VOD"), tr("Button$Favorites")));
+            break;
+       default:
+            SetTitle(*cString::sprintf("%s - %s", tr("Elvis"), tr("VOD")));
+            break;
+       }
      for (cElvisVOD *item = categoryM->cList<cElvisVOD>::First(); item; item = categoryM->cList<cElvisVOD>::Next(item))
          Add(new cElvisVODItem(item));
      }
@@ -1313,6 +1517,16 @@ eOSState cElvisVODMenu::Info()
   return osContinue;
 }
 
+eOSState cElvisVODMenu::Favorite()
+{
+  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+
+  if (item && item->Vod())
+     item->Vod()->SetFavorite((showModeM % SHOWMODE_COUNT) != SHOWMODE_FAVORITES);
+
+  return osContinue;
+}
+
 eOSState cElvisVODMenu::ProcessKey(eKeys keyP)
 {
   bool HadSubMenu = HasSubMenu();
@@ -1321,11 +1535,27 @@ eOSState cElvisVODMenu::ProcessKey(eKeys keyP)
   if (state == osUnknown) {
      switch (keyP) {
        case kRed:
-            popularModeM = !popularModeM;
-            categoryM = cElvisVODCategories::GetInstance()->GetCategory(popularModeM ? "popular" : "newest");
+            switch (++showModeM % SHOWMODE_COUNT) {
+              case SHOWMODE_NEWEST:
+                   categoryM = cElvisVODCategories::GetInstance()->GetCategory("newest");
+                   break;
+              case SHOWMODE_POPULAR:
+                   categoryM = cElvisVODCategories::GetInstance()->GetCategory("popular");
+                   break;
+              case SHOWMODE_FAVORITES:
+                   categoryM = cElvisVODCategories::GetInstance()->GetCategory("favorites");
+                   break;
+              default:
+                   categoryM = NULL;
+                   break;
+              }
             Setup();
             SetHelpKeys();
             return osContinue;
+       case kGreen:
+            return AddSubMenu(new cElvisVODSearchMenu());
+       case kYellow:
+            return Favorite();
        case k5:
             if (categoryM)
                categoryM->Update(true);

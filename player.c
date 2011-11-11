@@ -1116,7 +1116,7 @@ cOsdObject *cElvisReplayControl::GetInfo()
      unsigned long duration = 0;
      if (!GetDuration(duration) || (duration == 0))
         duration = lengthM;
-     return new cElvisRecordingInfoMenu(*urlM, *nameM, *descriptionM, *startTimeM, duration);
+     return new cElvisRecordingInfoMenu(*urlM, *nameM, *descriptionM, *startTimeM, duration, false);
      }
   return NULL;
 }

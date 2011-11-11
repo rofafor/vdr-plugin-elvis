@@ -18,7 +18,7 @@
 
 cElvisWidgetEventInfo::cElvisWidgetEventInfo(int idP, const char *nameP, const char *channelP, const char *shortTextP, const char *descriptionP, int lengthP, const char *fLengthP,
                                      const char *thumbnailP, const char *startTimeP, const char *endTimeP, const char *urlP, int programViewIdP, int recordingIdP,
-                                     bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP)
+                                     bool hasStartedP, bool hasEndedP, bool isRecordedP, bool isReadyP, bool isWildcardP, bool isEncryptedP)
 : idM(idP),
   lengthM(lengthP),
   programViewIdM(programViewIdP),
@@ -28,6 +28,7 @@ cElvisWidgetEventInfo::cElvisWidgetEventInfo(int idP, const char *nameP, const c
   isRecordedM(isRecordedP),
   isReadyM(isReadyP),
   isWildcardM(isWildcardP),
+  isEncryptedM(isEncryptedP),
   nameM(nameP),
   channelM(channelP),
   shortTextM(shortTextP),
@@ -73,7 +74,7 @@ cElvisWidgetVODInfo::~cElvisWidgetVODInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char *cElvisWidget::baseCookieNameS = "cookie.conf";
-const char* cElvisWidget::baseUrlViihdeS = "http://api.elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "https://api.elisaviihde.fi/etvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 
@@ -432,7 +433,328 @@ bool cElvisWidget::RemoveRecording(int idP)
                continue;
                }
             else {
-               debug("added recording id: %d", idP);
+               debug("removed recording id: %d", idP);
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
+bool cElvisWidget::RemoveFolder(int idP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM && (idP > 0)) {
+     cString url = cString::sprintf("%s/ready.sl?delete_folder=%d&ajax=true", baseUrlViihdeS, idP);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "RemoveFolder")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::RemoveFolder(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+#if 0
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "ready_data") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               void *iter2 = json_object_iter(obj2);
+                               while (iter2) {
+                                     const char *key2 = json_object_iter_key(iter2);
+                                     json_t *value2 = json_object_iter_value(iter2);
+                                     if (!strcmp(key2, "folders") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", size = "";
+                                            int id = 0, count = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "size");
+                                            if (json_is_string(obj4))
+                                               size = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "recordings_count");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                            callbackP.AddFolder(id, count, *name, *size);
+                                            }
+                                        }
+                                     else if (!strcmp(key2, "recordings") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", channel = "", start_time = "", timestamp = "";
+                                            int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "program_id");
+                                            if (json_is_string(obj4))
+                                               program_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "folder_id");
+                                            if (json_is_string(obj4))
+                                               folder_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "channel");
+                                            if (json_is_string(obj4))
+                                               channel = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "start_time");
+                                            if (json_is_string(obj4))
+                                               start_time = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "timestamp");
+                                            if (json_is_string(obj4))
+                                               timestamp = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "viewcount");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "length");
+                                            if (json_is_string(obj4))
+                                               length = strtol(json_string_value(obj4), NULL, 10);
+                                           debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           }
+                                        }
+                                     iter2 = json_object_iter_next(obj2, iter2);
+                                     }
+                               }
+                           }
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
+                  }
+#endif
+               debug("removed folder id: %d", idP);
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
+bool cElvisWidget::RenameFolder(int idP, const char *nameP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM && (idP > 0)) {
+     cString url = cString::sprintf("%s/ready.sl?rename_folder=%d&name=%s&ajax=true", baseUrlViihdeS, idP, *Escape(nameP));
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "RenameFolder")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::RenameFolder(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+#if 0
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "ready_data") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               void *iter2 = json_object_iter(obj2);
+                               while (iter2) {
+                                     const char *key2 = json_object_iter_key(iter2);
+                                     json_t *value2 = json_object_iter_value(iter2);
+                                     if (!strcmp(key2, "folders") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", size = "";
+                                            int id = 0, count = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "size");
+                                            if (json_is_string(obj4))
+                                               size = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "recordings_count");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                            callbackP.AddFolder(id, count, *name, *size);
+                                            }
+                                        }
+                                     else if (!strcmp(key2, "recordings") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", channel = "", start_time = "", timestamp = "";
+                                            int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "program_id");
+                                            if (json_is_string(obj4))
+                                               program_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "folder_id");
+                                            if (json_is_string(obj4))
+                                               folder_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "channel");
+                                            if (json_is_string(obj4))
+                                               channel = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "start_time");
+                                            if (json_is_string(obj4))
+                                               start_time = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "timestamp");
+                                            if (json_is_string(obj4))
+                                               timestamp = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "viewcount");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "length");
+                                            if (json_is_string(obj4))
+                                               length = strtol(json_string_value(obj4), NULL, 10);
+                                           debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           }
+                                        }
+                                     iter2 = json_object_iter_next(obj2, iter2);
+                                     }
+                               }
+                           }
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
+                  }
+#endif
+               debug("renamed folder id: %d", idP);
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
+bool cElvisWidget::CreateFolder(const char *nameP, int parentFolderIdP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM && nameP && !isempty(nameP)) {
+     cString url = cString::sprintf("%s/ready.sl?create_subfolder=true&folder=%s%s&ajax=true", baseUrlViihdeS, *Escape(nameP), (parentFolderIdP > 0) ? *cString::sprintf("&parent=%d", parentFolderIdP) : "");
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "CreateFolder")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::CreateFolder(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+#if 0
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "ready_data") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               json_t *obj2 = json_array_get(value, i);
+                               void *iter2 = json_object_iter(obj2);
+                               while (iter2) {
+                                     const char *key2 = json_object_iter_key(iter2);
+                                     json_t *value2 = json_object_iter_value(iter2);
+                                     if (!strcmp(key2, "folders") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", size = "";
+                                            int id = 0, count = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "size");
+                                            if (json_is_string(obj4))
+                                               size = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "recordings_count");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                            callbackP.AddFolder(id, count, *name, *size);
+                                            }
+                                        }
+                                     else if (!strcmp(key2, "recordings") && json_is_array(value2)) {
+                                        for (unsigned int j = 0; j < json_array_size(value2); j++) {
+                                            cString name = "", channel = "", start_time = "", timestamp = "";
+                                            int id = 0, program_id = 0, folder_id = 0, count = 0, length = 0;
+                                            json_t *obj3 = json_array_get(value2, j);
+                                            json_t *obj4 = json_object_get(obj3, "id");
+                                            if (json_is_string(obj4))
+                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "program_id");
+                                            if (json_is_string(obj4))
+                                               program_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "folder_id");
+                                            if (json_is_string(obj4))
+                                               folder_id = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "name");
+                                            if (json_is_string(obj4))
+                                               name = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "channel");
+                                            if (json_is_string(obj4))
+                                               channel = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "start_time");
+                                            if (json_is_string(obj4))
+                                               start_time = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "timestamp");
+                                            if (json_is_string(obj4))
+                                               timestamp = Unescape(json_string_value(obj4));
+                                            obj4 = json_object_get(obj3, "viewcount");
+                                            if (json_is_string(obj4))
+                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                            obj4 = json_object_get(obj3, "length");
+                                            if (json_is_string(obj4))
+                                               length = strtol(json_string_value(obj4), NULL, 10);
+                                           debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                           }
+                                        }
+                                     iter2 = json_object_iter_next(obj2, iter2);
+                                     }
+                               }
+                           }
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
+                  }
+#endif
+               debug("created new folder");
                return true;
                }
             }
@@ -948,7 +1270,8 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
   cMutexLock(mutexM);
 
   if (handleM) {
-     cString url = cString::sprintf("%s/vod.sl?data=true&category=%s&count=%d&ajax=true", baseUrlViihdeS, *Escape(categoryP), countP);
+     cString url = !strcmp(categoryP, "favorites") ? cString::sprintf("%s/vod.sl?data=true&favorites=true&loadfavorites&ajax=true", baseUrlViihdeS) :
+                                                     cString::sprintf("%s/vod.sl?data=true&category=%s&count=%d&ajax=true", baseUrlViihdeS, *Escape(categoryP), countP);
      for (int retries = 0; retries < eLoginRetries; ++retries) {
          if (retries > 0)
             cCondWait::SleepMs(eLoginTimeout);
@@ -1033,7 +1356,7 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
                json_error_t error;
                json_t *obj = json_loads(*dataM, 0, &error);
                if (obj) {
-                  bool has_started = false, has_ended = false, recorded = false, ready = false, is_wildcard = false;
+                  bool has_started = false, has_ended = false, recorded = false, ready = false, is_wildcard = false, scrambled_channel = false;
                   int id = 0, length = 0, programviewid = 0, recordingid = 0;
                   cString name = "", channel = "", short_text = "", description = "", flength = "", tn = "", start_time = "", end_time = "", url = "";
                   json_t *obj2 = json_object_get(obj, "id");
@@ -1090,13 +1413,16 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
                   obj2 = json_object_get(obj, "is_wildcard");
                   if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
                      is_wildcard = true;
+                  obj2 = json_object_get(obj, "scrambled_channel");
+                  if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
+                     scrambled_channel = true;
                   debug("id: %d name: '%s' channel: '%s' short_text: '%s' description: '%s' length: %d flength: '%s' tn: '%s' start_time: '%s' end_time: '%s' url: '%s' "
-                        "programviewid: %d recordingid: %d has_started: %d has_ended: %d recorded: %d ready: %d is_wildcard: %d",
+                        "programviewid: %d recordingid: %d has_started: %d has_ended: %d recorded: %d ready: %d is_wildcard: %d scrambled_channel: %d",
                         id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid, recordingid, has_started,
-                        has_ended, recorded, ready, is_wildcard);
+                        has_ended, recorded, ready, is_wildcard, scrambled_channel);
                   json_decref(obj);
                   return new cElvisWidgetEventInfo(id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid,
-                                               recordingid, has_started, has_ended, recorded, ready, is_wildcard);
+                                               recordingid, has_started, has_ended, recorded, ready, is_wildcard, scrambled_channel);
                   }
                }
             }
@@ -1190,4 +1516,106 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
      }
 
   return NULL;
+}
+
+bool cElvisWidget::SearchVOD(cElvisWidgetVODCallbackIf &callbackP, const char *titleP, const char *descP, bool hdP)
+{
+  cMutexLock(mutexM);
+  cString term = cString::sprintf("&format=%s", hdP ? "HD" : "NONHD");
+
+  if (titleP && !isempty(titleP))
+     term = cString::sprintf("%s&title=%s", *term, *Escape(titleP));
+  if (descP && !isempty(descP))
+     term = cString::sprintf("%s&description=%s", *term, *Escape(descP));
+  if (handleM && !isempty(*term)) {
+     cString url = cString::sprintf("%s/vod.sl?data=true&category=all&advancedsearch=true&ajax=true%s", baseUrlViihdeS, *term);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "SearchVOD")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::SearchVOD(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj) {
+                  void *iter = json_object_iter(obj);
+                  while (iter) {
+                        const char *key = json_object_iter_key(iter);
+                        json_t *value = json_object_iter_value(iter);
+                        if (!strcmp(key, "vods") && json_is_array(value)) {
+                           for (unsigned int i = 0; i < json_array_size(value); i++) {
+                               int id = 0, length = 0, agelimit = 0, year = 0, price = 0;
+                               cString title = "", currency = "", cover = "", trailer = "";
+                               json_t *obj2 = json_array_get(value, i);
+                               json_t *obj3 = json_object_get(obj2, "id");
+                               if (json_is_string(obj3))
+                                  id = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "length");
+                               if (json_is_string(obj3))
+                                  length = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "agelimit");
+                               if (json_is_string(obj3))
+                                  agelimit = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "year");
+                               if (json_is_string(obj3))
+                                  year = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "price");
+                               if (json_is_string(obj3))
+                                  price = strtol(json_string_value(obj3), NULL, 10);
+                               obj3 = json_object_get(obj2, "title");
+                               if (json_is_string(obj3))
+                                  title = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "currency");
+                               if (json_is_string(obj3))
+                                  currency = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "cover");
+                               if (json_is_string(obj3))
+                                  cover = Unescape(json_string_value(obj3));
+                               obj3 = json_object_get(obj2, "trailer");
+                               if (json_is_string(obj3))
+                                  trailer = Unescape(json_string_value(obj3));
+                               debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               }
+                           }
+                        iter = json_object_iter_next(obj, iter);
+                        }
+                  json_decref(obj);
+                  }
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
+}
+
+bool cElvisWidget::SetVODFavorite(int idP, bool onOffP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM && (idP > 0)) {
+     cString url = cString::sprintf("%s/vod.sl?action=true&%sfavorite=%d&ajax=true", baseUrlViihdeS, onOffP ? "add" : "remove", idP);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "SetVODFavorite")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::SetVODFavorite(): relogin...");
+               Login();
+               continue;
+               }
+            else if (strstr(*dataM, "OK")) {
+               return true;
+               }
+            }
+         }
+     }
+
+  return false;
 }

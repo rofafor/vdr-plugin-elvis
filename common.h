@@ -73,4 +73,3 @@ public:
   };
 
 #endif // __ELVIS_COMMON_H
-

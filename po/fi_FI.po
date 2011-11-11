@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: vdr-elvis 0.2.0\n"
+"Project-Id-Version: vdr-elvis 0.2.1\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2011-05-15 05:15+0300\n"
-"PO-Revision-Date: 2011-05-15 05:15+0300\n"
+"POT-Creation-Date: 2011-11-11 19:21+0200\n"
+"PO-Revision-Date: 2011-10-10 10:10+0300\n"
 "Last-Translator: Rolf Ahrenberg\n"
 "Language-Team: Finnish <vdr@linuxtv.org>\n"
 "Language: fi\n"
@@ -86,8 +86,20 @@ msgstr "Haettu: %s"
 msgid "Button$Fetch"
 msgstr "Hae"
 
+msgid "Rename folder"
+msgstr "Kansion nimeäminen"
+
+msgid "Cannot rename folder!"
+msgstr "Kansion nimeäminen epäonnistui!"
+
 msgid "[DIR]"
 msgstr "[...]"
+
+msgid "Button$Rename"
+msgstr "Nimeä"
+
+msgid "Delete folder?"
+msgstr "Poistetaanko kansio?"
 
 msgid "Cannot delete folder!"
 msgstr "Kansiota ei voida poistaa!"
@@ -149,11 +161,35 @@ msgstr "Tilausvideot"
 msgid "Button$Preview"
 msgstr "Esikatsele"
 
-msgid "Button$Newest"
-msgstr "Uusimmat"
+msgid "Search VOD"
+msgstr "Hae tilausvideoita"
+
+msgid "Search criteria"
+msgstr "Hakukriteeri"
+
+msgid "Title"
+msgstr "nimike"
+
+msgid "Description"
+msgstr "kuvaus"
+
+msgid "Show only HD"
+msgstr "Näytä vain HD"
+
+msgid "Button$Search"
+msgstr "Hae"
+
+msgid "Button$Add"
+msgstr "Lisää"
 
 msgid "Button$Popular"
 msgstr "Suosituimmat"
+
+msgid "Button$Favorites"
+msgstr "Suosikit"
+
+msgid "Button$Newest"
+msgstr "Uusimmat"
 
 msgid "Elisa Viihde"
 msgstr "Elisa Viihde"
