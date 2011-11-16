@@ -216,7 +216,7 @@ cElvisRecordings::cElvisRecordings()
   stateM(0),
   lastUpdateM(0)
 {
-  GetFolder(-1);
+  AddFolder(-1, tr("(default)"));
 }
 
 cElvisRecordings::~cElvisRecordings()
@@ -285,18 +285,13 @@ bool cElvisRecordings::DeleteFolder(int folderIdP)
 cElvisRecordingFolder *cElvisRecordings::GetFolder(int folderIdP)
 {
   LOCK_THREAD;
-  cElvisRecordingFolder *folder = NULL;
+
   for (cElvisRecordingFolder *i = First(); i; i = Next(i)) {
       if (i->Id() == folderIdP)
          return i;
       }
 
-  if (folderIdP < 0) {
-     folder = new cElvisRecordingFolder(-1, tr("(default)"));
-     Add(folder);
-     }
-
-  return folder;
+  return NULL;
 }
 
 bool cElvisRecordings::RemoveRecordingFolder(int folderIdP)
@@ -339,6 +334,7 @@ void cElvisRecordings::Refresh(bool foregroundP)
   Lock();
   if (foregroundP) {
      Clear();
+     AddFolder(-1, tr("(default)"));
      ChangeState();
      }
   else {
@@ -347,15 +343,7 @@ void cElvisRecordings::Refresh(bool foregroundP)
      }
   Unlock();
   cElvisWidget::GetInstance()->GetFolders(*this);
-  cElvisRecordingFolder *folder = cElvisRecordings::GetFolder(-1);
   Lock();
-  if (folder) {
-     if (folder->IsTagged())
-        Add(folder);
-     else
-        folder->Tag(true);
-     folder->Update(foregroundP);
-     }
   for (cElvisRecordingFolder *i = cList<cElvisRecordingFolder>::First(); i; i = cList<cElvisRecordingFolder>::Next(i)) {
       if (!i->IsTagged()) {
          DeleteFolder(i->Id());
