@@ -350,9 +350,8 @@ cElvisTimerCreateMenu::cElvisTimerCreateMenu(cElvisEvent *eventP)
   eventM(eventP)
 {
   int i = 0;
-
-  if (cElvisRecordings::GetInstance()->Count() == 0)
-     cElvisRecordings::GetInstance()->Reset();
+  if (cElvisRecordings::GetInstance()->Count() <= 1)
+     cElvisRecordings::GetInstance()->Update(true);
   folderM = i;
   numFoldersM = cElvisRecordings::GetInstance()->Count();
   folderNamesM = new const char*[numFoldersM];
@@ -620,8 +619,8 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
       ++i;
       }
 
-  if (cElvisRecordings::GetInstance()->Count() == 0)
-     cElvisRecordings::GetInstance()->Reset();
+  if (cElvisRecordings::GetInstance()->Count() <= 1)
+     cElvisRecordings::GetInstance()->Update(true);
   i = 0;
   folderM = i;
   numFoldersM = cElvisRecordings::GetInstance()->Count();
@@ -639,6 +638,7 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
   if (timerM)
      Utf8Strn0Cpy(wildcardM, timerM->Wildcard(), sizeof(wildcardM));
 
+  SetHelp(NULL, NULL, NULL, NULL);
   Setup();
 }
 
@@ -655,9 +655,11 @@ void cElvisSearchTimerEditMenu::Setup()
 
   Clear();
 
-  Add(new cMenuEditStrItem(tr("Search term"), wildcardM, sizeof(wildcardM), tr(FileNameChars)));
-  Add(new cMenuEditStraItem(trVDR("Channel"), &channelM, numChannelsM,      channelNamesM));
-  Add(new cMenuEditStraItem(tr("Folder"),     &folderM,  numFoldersM,       folderNamesM));
+  Add(   new cMenuEditStrItem(tr("Search term"), wildcardM, sizeof(wildcardM), tr(FileNameChars)));
+  if (numChannelsM > 0)
+     Add(new cMenuEditStraItem(trVDR("Channel"), &channelM, numChannelsM,      channelNamesM));
+  if (numFoldersM > 0)
+     Add(new cMenuEditStraItem(tr("Folder"),     &folderM,  numFoldersM,       folderNamesM));
 
   SetCurrent(Get(current));
   Display();
@@ -671,13 +673,18 @@ eOSState cElvisSearchTimerEditMenu::ProcessKey(eKeys keyP)
      switch (keyP) {
        case kOk:
                if (timerM) {
-                  if (((strcmp(timerM->Channel(), channelNamesM[channelM]) || strcmp(timerM->Wildcard(), wildcardM) || strcmp(timerM->Folder(), folderNamesM[folderM]))) &&
-                      !cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
-                     Skins.Message(mtError, tr("Cannot edit search timer!"));
+                  if (((strcmp(timerM->Channel(), channelNamesM[channelM]) || strcmp(timerM->Wildcard(), wildcardM) || strcmp(timerM->Folder(), folderNamesM[folderM])))) {
+                     if (!cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
+                        Skins.Message(mtError, tr("Cannot edit search timer!"));
+                     else
+                        cElvisSearchTimers::GetInstance()->Update(true);
                   }
-               else {
-                  if (!isempty(wildcardM) && !cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
+               else if (!isempty(wildcardM)) {
+                  if (!cElvisSearchTimers::GetInstance()->Create(timerM, channelNamesM[channelM], wildcardM, folderIdsM[folderM]))
                      Skins.Message(mtError, tr("Cannot create search timer!"));
+                  else
+                     cElvisSearchTimers::GetInstance()->Update(true);
+                  }
                }
             return osBack;
        default:

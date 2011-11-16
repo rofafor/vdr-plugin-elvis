@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include <jansson.h>
+
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
@@ -20,6 +22,13 @@
 #include "config.h"
 
 // --- cElvisWidgetCallbacks -------------------------------------------
+
+class cElvisWidgetFolderCallbackIf {
+public:
+  cElvisWidgetFolderCallbackIf() {}
+  virtual ~cElvisWidgetFolderCallbackIf() {}
+  virtual void AddFolder(int folderIdP, const char *folderNameP, int recCountP, bool protectedP) = 0;
+};
 
 class cElvisWidgetRecordingCallbackIf {
 public:
@@ -192,6 +201,7 @@ private:
   bool Logout();
   bool IsLogged();
   bool IsLoginRequired(const char *stringP);
+  void ParseFolders(cElvisWidgetFolderCallbackIf &callbackP, json_t *objP, int folderIdP = -1);
   // constructor
   cElvisWidget();
   // to prevent copy constructor and assignment
@@ -204,6 +214,7 @@ public:
   bool Invalidate();
   bool Load(const char *directoryP);
   void PutData(const char *dataP, unsigned int lenP);
+  bool GetFolders(cElvisWidgetFolderCallbackIf &callbackP);
   bool GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int folderIdP = -1);
   bool RemoveRecording(int idP);
   bool RemoveFolder(int idP);

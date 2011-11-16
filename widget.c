@@ -7,8 +7,6 @@
 
 #include <string.h>
 
-#include <jansson.h>
-
 #include "common.h"
 #include "widget.h"
 
@@ -74,7 +72,7 @@ cElvisWidgetVODInfo::~cElvisWidgetVODInfo()
 // --- cElvisWidget ----------------------------------------------------
 
 const char *cElvisWidget::baseCookieNameS = "cookie.conf";
-const char* cElvisWidget::baseUrlViihdeS = "https://api.elisaviihde.fi/etvrecorder";
+const char* cElvisWidget::baseUrlViihdeS = "http://api.elisaviihde.fi/etvrecorder";
 
 cElvisWidget *cElvisWidget::instanceS = NULL;
 
@@ -308,6 +306,73 @@ bool cElvisWidget::Load(const char *directoryP)
      //Login();
 
      return true;
+     }
+
+  return false;
+}
+
+void cElvisWidget::ParseFolders(cElvisWidgetFolderCallbackIf &callbackP, json_t *objP, int folderIdP)
+{
+    void *iter = json_object_iter(objP);
+    while (iter) {
+        const char *key = json_object_iter_key(iter);
+        json_t *value = json_object_iter_value(iter);
+        if ((!strcmp(key, "folders") || !strcmp(key, "subfolders")) && json_is_array(value)) {
+            for (unsigned int i = 0; i < json_array_size(value); i++) {
+                cString name = "";
+                int id = 0, count = 0;
+                bool has_pin = false;
+                json_t *obj3 = json_array_get(value, i);
+                json_t *obj4 = json_object_get(obj3, "id");
+                if (json_is_string(obj4))
+                    id = strtol(json_string_value(obj4), NULL, 10);
+                obj4 = json_object_get(obj3, "count");
+                if (json_is_string(obj4))
+                    count = strtol(json_string_value(obj4), NULL, 10);
+                obj4 = json_object_get(obj3, "name");
+                if (json_is_string(obj4))
+                    name = Unescape(json_string_value(obj4));
+                obj4 = json_object_get(obj3, "has_pin");
+                if (json_is_string(obj4) && !strcasecmp(json_string_value(obj4), "true"))
+                    has_pin = true;
+                obj4 = json_object_get(obj3, "subfolders");
+                if (json_array_size(obj4)) {
+                    ParseFolders(callbackP, json_deep_copy(obj3), id);
+                }
+                debug("id: %d name: '%s' count: %d protected: %d", id, *name, count, has_pin);
+                callbackP.AddFolder(id, *name, count, has_pin);
+            }
+        }
+        iter = json_object_iter_next(objP, iter);
+    }
+    json_decref(objP);
+
+}
+
+bool cElvisWidget::GetFolders(cElvisWidgetFolderCallbackIf &callbackP)
+{
+  cMutexLock(mutexM);
+
+  if (handleM) {
+     cString url = cString::sprintf("%s/ready.sl?folderlist&ajax=true", baseUrlViihdeS);
+     for (int retries = 0; retries < eLoginRetries; ++retries) {
+         if (retries > 0)
+            cCondWait::SleepMs(eLoginTimeout);
+         if (Perform(*url, "GetFolders")) {
+            if (IsLoginRequired(*dataM)) {
+               info("cElvisWidget::GetFolders(): relogin...");
+               Login();
+               continue;
+               }
+            else {
+               json_error_t error;
+               json_t *obj = json_loads(*dataM, 0, &error);
+               if (obj)
+                  ParseFolders(callbackP, obj);
+               return true;
+               }
+            }
+         }
      }
 
   return false;

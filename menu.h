@@ -276,7 +276,7 @@ private:
   void Setup();
   eOSState Search();
   eOSState Info();
-  eOSState Favorite();  
+  eOSState Favorite();
 public:
   cElvisVODSearchMenu();
   ~cElvisVODSearchMenu();

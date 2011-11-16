@@ -19,6 +19,7 @@ class cElvisRecording : public cListObject {
   friend class cElvisRecordingFolder;
 private:
   bool taggedM;
+  bool protectedM;
   int idM;
   int programIdM;
   int folderIdM;
@@ -53,6 +54,7 @@ public:
   const char *StartTime() { return *startTimeM; }
   time_t StartTimeValue() { return startTimeValueM; }
   bool IsFolder() { return (programIdM < 0); }
+  bool IsProtected() { return protectedM; }
 };
 
 // --- cElvisRecordingFolder -------------------------------------------
@@ -67,6 +69,8 @@ private:
   time_t lastUpdateM;
   int folderIdM;
   cString folderNameM;
+  bool protectedM;
+  int countM;
   cElvisRecording *GetRecording(int idP);
   void Refresh(bool foregroundP = false);
   // to prevent default constructor
@@ -81,6 +85,7 @@ public:
   virtual ~cElvisRecordingFolder();
   virtual void AddFolder(int idP, int countP, const char *nameP, const char *sizeP);
   virtual void AddRecording(int idP, int programIdP, int folderIdP, int countP, int lengthP, const char *nameP, const char *channelP, const char *startTimeP);
+  void UpdateFolder(bool protectedP, int countP);
   bool DeleteRecording(cElvisRecording *recordingP);
   void Tag(bool onOffP) { taggedM = onOffP; }
   bool IsTagged() { return taggedM; }
@@ -90,29 +95,41 @@ public:
   int Id() { return folderIdM; }
   const char *Name() { return *folderNameM; }
   void SetName(const char *nameP) { folderNameM = nameP; }
+  bool IsProtected() { return protectedM; }
 };
 
 // --- cElvisRecordings ------------------------------------------------
 
-class cElvisRecordings : public cList<cElvisRecordingFolder> {
+class cElvisRecordings : public cThread, public cList<cElvisRecordingFolder>, public cElvisWidgetFolderCallbackIf {
 private:
+  enum {
+    eUpdateInterval = 3600 // 60min
+  };
   static cElvisRecordings *instanceS;
-  cMutex mutexM;
+  int stateM;
+  time_t lastUpdateM;
+  void Refresh(bool foregroundP = false);
   // constructor
   cElvisRecordings();
   // to prevent copy constructor and assignment
   cElvisRecordings(const cElvisRecordings&);
   cElvisRecordings& operator=(const cElvisRecordings&);
+protected:
+  void Action();
 public:
   static cElvisRecordings *GetInstance();
   static void Destroy();
   virtual ~cElvisRecordings();
+  virtual void AddFolder(int folderIdP, const char *folderNameP, int countP, bool protectedP);
   cElvisRecordingFolder *AddFolder(int folderIdP, const char *folderNameP);
   bool DeleteFolder(int folderIdP);
   cElvisRecordingFolder *GetFolder(int folderIdP);
   bool RemoveRecordingFolder(int folderIdP);
   bool RenameRecordingFolder(int folderIdP, const char *folderNameP);
   void Reset(bool foregroundP = true);
+  bool Update(bool waitP = false);
+  void ChangeState(void) { ++stateM; }
+  bool StateChanged(int &stateP);
 };
 
 #endif // __ELVIS_RECORDINGS_H
