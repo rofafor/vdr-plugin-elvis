@@ -475,9 +475,11 @@ void cElvisFetcher::Action()
         fd_set fdread, fdwrite, fdexcep;
         struct timeval timeout;
 
+        Lock();
         do {
           err = curl_multi_perform(multiM, &running_handles);
         } while (err == CURLM_CALL_MULTI_PERFORM);
+        Unlock();
 
         // check end of transfers
         if (running_handles == 0) {

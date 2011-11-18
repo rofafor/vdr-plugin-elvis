@@ -58,7 +58,7 @@ public:
   const char *Description() { return *descriptionM; }
   unsigned int Length() { return lengthM; }
   bool Ready() { return (indexGeneratorM && !indexGeneratorM->Active()); }
-  int Progress() { return (sizeM > 0) ? (int)(100L * fetchedM / sizeM) : 0; }
+  int Progress() { double progress = (sizeM > 0) ? (double)fetchedM / sizeM * 100. : 0.; return (int)ceil(progress); }
 };
 
 // --- cElvisFetcher ---------------------------------------------------

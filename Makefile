@@ -34,7 +34,7 @@ TMPDIR = /tmp
 
 ### Libraries
 
-LIBS = $(shell curl-config --libs) $(shell pkg-config --libs jansson)
+LIBS = -lm $(shell curl-config --libs) $(shell pkg-config --libs jansson)
 
 ### Make sure that necessary options are included:
 

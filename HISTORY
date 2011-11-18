@@ -103,3 +103,4 @@ VDR Plugin 'elvis' Revision History
 - Added support for deleting and renaming folders.
 - Added support for favourite VODs.
 - Added support to search VODs.
+- Fixed a possible crash while fetching.
