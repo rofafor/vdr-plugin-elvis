@@ -52,13 +52,13 @@ public:
   virtual ~cElvisFetchItem();
   void GenerateIndex();
   void Remove();
+  int Progress();
   CURL *Handle() { return handleM; }
   const char *Url() { return *urlM; }
   const char *Name() { return *nameM; }
   const char *Description() { return *descriptionM; }
   unsigned int Length() { return lengthM; }
   bool Ready() { return (indexGeneratorM && !indexGeneratorM->Active()); }
-  int Progress() { double progress = (sizeM > 0) ? (double)fetchedM / sizeM * 100. : 0.; return (int)ceil(progress); }
 };
 
 // --- cElvisFetcher ---------------------------------------------------

@@ -287,6 +287,16 @@ void cElvisFetchItem::Remove()
      }
 }
 
+int cElvisFetchItem::Progress()
+{
+  int progress = 0;
+
+  if (sizeM > 0)
+     progress = (int)ceil((double)fetchedM / sizeM * 100.0);
+
+  return progress;
+}
+
 // --- cElvisFetcher ---------------------------------------------------
 
 cElvisFetcher *cElvisFetcher::instanceS = NULL;
