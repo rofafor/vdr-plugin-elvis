@@ -371,7 +371,7 @@ eOSState cMenuEditHiddenStrItem::ProcessKey(eKeys Key)
      Set();
      return osContinue;
      }
-  switch (Key) {
+  switch (int(Key)) {
     case kRed:   // Switch between upper- and lowercase characters
                  if (InEditMode()) {
                     if (!insert || !newchar) {

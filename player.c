@@ -1147,7 +1147,7 @@ eOSState cElvisReplayControl::ProcessKey(eKeys keyP)
      return osContinue;
      }
 
-  switch (keyP) {
+  switch (int(keyP)) {
     case kPlay:
     case kUp:
          Play();

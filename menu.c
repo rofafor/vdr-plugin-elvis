@@ -40,7 +40,7 @@ void cElvisRecordingInfoMenu::Display()
 eOSState cElvisRecordingInfoMenu::ProcessKey(eKeys keyP)
 {
   if (!HasSubMenu()) {
-     switch (keyP) {
+     switch (int(keyP)) {
        case kUp|k_Repeat:
        case kUp:
        case kDown|k_Repeat:
@@ -439,7 +439,7 @@ void cElvisTimerInfoMenu::Display()
 eOSState cElvisTimerInfoMenu::ProcessKey(eKeys keyP)
 {
   if (!HasSubMenu()) {
-     switch (keyP) {
+     switch (int(keyP)) {
        case kUp|k_Repeat:
        case kUp:
        case kDown|k_Repeat:
@@ -874,7 +874,7 @@ eOSState cElvisChannelEventInfoMenu::Record(bool quickP)
 eOSState cElvisChannelEventInfoMenu::ProcessKey(eKeys keyP)
 {
   if (!HasSubMenu()) {
-     switch (keyP) {
+     switch (int(keyP)) {
        case kUp|k_Repeat:
        case kUp:
        case kDown|k_Repeat:
@@ -1264,7 +1264,7 @@ eOSState cElvisVODInfoMenu::Preview()
 eOSState cElvisVODInfoMenu::ProcessKey(eKeys keyP)
 {
   if (!HasSubMenu()) {
-     switch (keyP) {
+     switch (int(keyP)) {
        case kUp|k_Repeat:
        case kUp:
        case kDown|k_Repeat:
