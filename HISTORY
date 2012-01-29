@@ -95,7 +95,7 @@ VDR Plugin 'elvis' Revision History
 - Fixed adding/removing timers without any login session.
 - Changed JSON-C to Jansson library.
 
-2011-11-16: Version 0.2.1
+2012-01-29: Version 0.2.1
 
 - Added cppcheck target into Makefile.
 - Cleaned up CURL includes.
