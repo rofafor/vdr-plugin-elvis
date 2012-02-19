@@ -325,10 +325,10 @@ void cElvisWidget::ParseFolders(cElvisWidgetFolderCallbackIf &callbackP, json_t 
                 json_t *obj3 = json_array_get(value, i);
                 json_t *obj4 = json_object_get(obj3, "id");
                 if (json_is_string(obj4))
-                    id = strtol(json_string_value(obj4), NULL, 10);
+                    id = (int)strtol(json_string_value(obj4), NULL, 10);
                 obj4 = json_object_get(obj3, "count");
                 if (json_is_string(obj4))
-                    count = strtol(json_string_value(obj4), NULL, 10);
+                    count = (int)strtol(json_string_value(obj4), NULL, 10);
                 obj4 = json_object_get(obj3, "name");
                 if (json_is_string(obj4))
                     name = Unescape(json_string_value(obj4));
@@ -416,7 +416,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                             json_t *obj3 = json_array_get(value2, j);
                                             json_t *obj4 = json_object_get(obj3, "id");
                                             if (json_is_string(obj4))
-                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                               id = (int)strtol(json_string_value(obj4), NULL, 10);
                                             obj4 = json_object_get(obj3, "name");
                                             if (json_is_string(obj4))
                                                name = Unescape(json_string_value(obj4));
@@ -425,7 +425,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                                size = Unescape(json_string_value(obj4));
                                             obj4 = json_object_get(obj3, "recordings_count");
                                             if (json_is_string(obj4))
-                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                               count = (int)strtol(json_string_value(obj4), NULL, 10);
                                             debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
                                             callbackP.AddFolder(id, count, *name, *size);
                                             }
@@ -437,13 +437,13 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                             json_t *obj3 = json_array_get(value2, j);
                                             json_t *obj4 = json_object_get(obj3, "id");
                                             if (json_is_string(obj4))
-                                               id = strtol(json_string_value(obj4), NULL, 10);
+                                               id = (int)strtol(json_string_value(obj4), NULL, 10);
                                             obj4 = json_object_get(obj3, "program_id");
                                             if (json_is_string(obj4))
-                                               program_id = strtol(json_string_value(obj4), NULL, 10);
+                                               program_id = (int)strtol(json_string_value(obj4), NULL, 10);
                                             obj4 = json_object_get(obj3, "folder_id");
                                             if (json_is_string(obj4))
-                                               folder_id = strtol(json_string_value(obj4), NULL, 10);
+                                               folder_id = (int)strtol(json_string_value(obj4), NULL, 10);
                                             obj4 = json_object_get(obj3, "name");
                                             if (json_is_string(obj4))
                                                name = Unescape(json_string_value(obj4));
@@ -458,10 +458,10 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                                timestamp = Unescape(json_string_value(obj4));
                                             obj4 = json_object_get(obj3, "viewcount");
                                             if (json_is_string(obj4))
-                                               count = strtol(json_string_value(obj4), NULL, 10);
+                                               count = (int)strtol(json_string_value(obj4), NULL, 10);
                                             obj4 = json_object_get(obj3, "length");
                                             if (json_is_string(obj4))
-                                               length = strtol(json_string_value(obj4), NULL, 10);
+                                               length = (int)strtol(json_string_value(obj4), NULL, 10);
                                            debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
                                            callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
                                            }
@@ -617,10 +617,10 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                                   cString name = "", channel = "", start_time = "", wild_card = "";
                                   json_t *obj3 = json_object_get(obj2, "program_id");
                                   if (json_is_string(obj3))
-                                     program_id = strtol(json_string_value(obj3), NULL, 10);
+                                     program_id = (int)strtol(json_string_value(obj3), NULL, 10);
                                   obj3 = json_object_get(obj2, "length");
                                   if (json_is_string(obj3))
-                                     length = strtol(json_string_value(obj3), NULL, 10);
+                                     length = (int)strtol(json_string_value(obj3), NULL, 10);
                                   obj3 = json_object_get(obj2, "name");
                                   if (json_is_string(obj3))
                                      name = Unescape(json_string_value(obj3));
@@ -736,7 +736,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
                                json_t *obj2 = json_array_get(value, i);
                                json_t *obj3 = json_object_get(obj2, "recording_id");
                                if (json_is_string(obj3))
-                                  recording_id = strtol(json_string_value(obj3), NULL, 10);
+                                  recording_id = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "folder");
                                if (json_is_string(obj3))
                                   folder = Unescape(json_string_value(obj3));
@@ -913,7 +913,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
                                json_t *obj2 = json_array_get(value, i);
                                json_t *obj3 = json_object_get(obj2, "id");
                                if (json_is_string(obj3))
-                                  id = strtol(json_string_value(obj3), NULL, 10);
+                                  id = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "name");
                                if (json_is_string(obj3))
                                   name = Unescape(json_string_value(obj3));
@@ -984,7 +984,7 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
                                                json_t *obj3 = json_array_get(value2, j);
                                                json_t *obj4 = json_object_get(obj3, "id");
                                                if (json_is_string(obj4))
-                                                  id = strtol(json_string_value(obj4), NULL, 10);
+                                                  id = (int)strtol(json_string_value(obj4), NULL, 10);
                                                obj4 = json_object_get(obj3, "name");
                                                if (json_is_string(obj4))
                                                   name = Unescape(json_string_value(obj4));
@@ -1056,7 +1056,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
                                   cString name = "", channel = "", start_time = "", end_time = "";
                                   json_t *obj3 = json_object_get(obj2, "program_id");
                                   if (json_is_string(obj3))
-                                     id = strtol(json_string_value(obj3), NULL, 10);
+                                     id = (int)strtol(json_string_value(obj3), NULL, 10);
                                   obj3 = json_object_get(obj2, "name");
                                   if (json_is_string(obj3))
                                      name = Unescape(json_string_value(obj3));
@@ -1118,19 +1118,19 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
                                json_t *obj2 = json_array_get(value, i);
                                json_t *obj3 = json_object_get(obj2, "id");
                                if (json_is_string(obj3))
-                                  id = strtol(json_string_value(obj3), NULL, 10);
+                                  id = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "length");
                                if (json_is_string(obj3))
-                                  length = strtol(json_string_value(obj3), NULL, 10);
+                                  length = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "agelimit");
                                if (json_is_string(obj3))
-                                  agelimit = strtol(json_string_value(obj3), NULL, 10);
+                                  agelimit = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "year");
                                if (json_is_string(obj3))
-                                  year = strtol(json_string_value(obj3), NULL, 10);
+                                  year = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "price");
                                if (json_is_string(obj3))
-                                  price = strtol(json_string_value(obj3), NULL, 10);
+                                  price = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "title");
                                if (json_is_string(obj3))
                                   title = Unescape(json_string_value(obj3));
@@ -1183,16 +1183,16 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
                   cString name = "", channel = "", short_text = "", description = "", flength = "", tn = "", start_time = "", end_time = "", url = "";
                   json_t *obj2 = json_object_get(obj, "id");
                   if (json_is_string(obj2))
-                     id = strtol(json_string_value(obj2), NULL, 10);
+                     id = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "length");
                   if (json_is_string(obj2))
-                     length = strtol(json_string_value(obj2), NULL, 10);
+                     length = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "programviewid");
                   if (json_is_string(obj2))
-                     programviewid = strtol(json_string_value(obj2), NULL, 10);
+                     programviewid = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "recordingid");
                   if (json_is_string(obj2))
-                     recordingid = strtol(json_string_value(obj2), NULL, 10);
+                     recordingid = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "name");
                   if (json_is_string(obj2))
                      name = Unescape(json_string_value(obj2));
@@ -1276,19 +1276,19 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
                   cString title = "", original_title = "", currency = "", short_desc = "", info = "", info2 = "", trailer_url = "", categories = "";
                   json_t *obj2 = json_object_get(obj, "id");
                   if (json_is_string(obj2))
-                     id = strtol(json_string_value(obj2), NULL, 10);
+                     id = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "length");
                   if (json_is_string(obj2))
-                     length = strtol(json_string_value(obj2), NULL, 10);
+                     length = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "agelimit");
                   if (json_is_string(obj2))
-                     agelimit = strtol(json_string_value(obj2), NULL, 10);
+                     agelimit = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "year");
                   if (json_is_string(obj2))
-                     year = strtol(json_string_value(obj2), NULL, 10);
+                     year = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "price");
                   if (json_is_string(obj2))
-                     price = strtol(json_string_value(obj2), NULL, 10);
+                     price = (int)strtol(json_string_value(obj2), NULL, 10);
                   obj2 = json_object_get(obj, "title");
                   if (json_is_string(obj2))
                      title = Unescape(json_string_value(obj2));
@@ -1375,19 +1375,19 @@ bool cElvisWidget::SearchVOD(cElvisWidgetVODCallbackIf &callbackP, const char *t
                                json_t *obj2 = json_array_get(value, i);
                                json_t *obj3 = json_object_get(obj2, "id");
                                if (json_is_string(obj3))
-                                  id = strtol(json_string_value(obj3), NULL, 10);
+                                  id = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "length");
                                if (json_is_string(obj3))
-                                  length = strtol(json_string_value(obj3), NULL, 10);
+                                  length = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "agelimit");
                                if (json_is_string(obj3))
-                                  agelimit = strtol(json_string_value(obj3), NULL, 10);
+                                  agelimit = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "year");
                                if (json_is_string(obj3))
-                                  year = strtol(json_string_value(obj3), NULL, 10);
+                                  year = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "price");
                                if (json_is_string(obj3))
-                                  price = strtol(json_string_value(obj3), NULL, 10);
+                                  price = (int)strtol(json_string_value(obj3), NULL, 10);
                                obj3 = json_object_get(obj2, "title");
                                if (json_is_string(obj3))
                                   title = Unescape(json_string_value(obj3));

@@ -292,7 +292,7 @@ int cElvisFetchItem::Progress()
   int progress = 0;
 
   if (sizeM > 0)
-     progress = (int)ceil((double)fetchedM / sizeM * 100.0);
+     progress = (int)ceil((double)fetchedM / (double)sizeM * 100.0);
 
   return progress;
 }
