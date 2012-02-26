@@ -20,7 +20,11 @@
 #error "VDR-1.7.16 API version or greater is required!"
 #endif
 
-       const char VERSION[]       = "0.2.1";
+#ifndef GITVERSION
+#define GITVERSION ""
+#endif
+
+       const char VERSION[]       = "0.2.1" GITVERSION;
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 
@@ -30,7 +34,7 @@ private:
 public:
   cPluginElvis();
   virtual ~cPluginElvis();
-  virtual const char *Version() { return VERSION; }
+  virtual const char *Version(void) { return VERSION; }
   virtual const char *Description() { return tr(DESCRIPTION); }
   virtual const char *CommandLineHelp();
   virtual bool ProcessArgs(int argc, char *argv[]);
