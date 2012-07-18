@@ -36,7 +36,7 @@ void cElvisIndexGenerator::Action()
   bool Rewind = false;
   cFileName FileName(recordingNameM, false);
   cUnbufferedFile *ReplayFile = FileName.Open();
-  cRingBufferLinear Buffer(KILOBYTE(100), 2 * TS_SIZE);
+  cRingBufferLinear Buffer(eIfgBufferSize, eMinTsPacketsForFrameDetector * TS_SIZE);
   cPatPmtParser PatPmtParser;
   cFrameDetector FrameDetector;
   cIndexFile IndexFile(recordingNameM, true);
@@ -94,7 +94,7 @@ void cElvisIndexGenerator::Action()
                     if (PatPmtParser.Vpid()) {
                        // Found Vpid, so rewind to sync FrameDetector:
                        FrameDetector.SetPid(PatPmtParser.Vpid(), PatPmtParser.Vtype());
-                       BufferChunks = KILOBYTE(100);
+                       BufferChunks = eIfgBufferSize;
                        Rewind = true;
                        break;
                        }
@@ -390,7 +390,7 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
            curl_multi_remove_handle(multiM, item->Handle());
         if (!statusP) {
            item->Remove();
-           Skins.Message(mtInfo, *cString::sprintf(tr("Fetching failed: %s"), item->Name()));
+           Skins.QueueMessage(mtInfo, *cString::sprintf(tr("Fetching failed: %s"), item->Name()));
            }
         else
            item->GenerateIndex();
@@ -410,7 +410,7 @@ bool cElvisFetcher::Cleanup()
          found = true;
          itemsM.Remove(i);
          debug("cElvisFetcher::Cleanup(): name='%s'", item->Name());
-         Skins.Message(mtInfo, *cString::sprintf(tr("Fetched: %s"), item->Name()));
+         Skins.QueueMessage(mtInfo, *cString::sprintf(tr("Fetched: %s"), item->Name()));
          DELETE_POINTER(item);
          }
       }

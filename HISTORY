@@ -104,3 +104,7 @@ VDR Plugin 'elvis' Revision History
 - Added support for favourite VODs.
 - Added support to search VODs.
 - Fixed a possible crash while fetching.
+
+2012-07-18: Version 0.2.2
+
+- Fixed index file generation after fetching.

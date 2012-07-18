@@ -8,6 +8,9 @@
 # Strip debug symbols?  Set eg. to /bin/true if not
 STRIP = strip
 
+# Install command
+INSTALL = cp --remove-destination
+
 # The official name of this plugin.
 # This name will be used in the '-P...' option of VDR to load the plugin.
 # By default the main source file also carries this name.
@@ -73,7 +76,8 @@ all-redirect: all
 
 ### The object files (add further files here):
 
-OBJS = common.o config.o events.o fetch.o menu.o player.o recordings.o resume.o searchtimers.o timers.o elvis.o vod.o widget.o
+OBJS = common.o config.o events.o fetch.o menu.o player.o recordings.o \
+       resume.o searchtimers.o timers.o elvis.o vod.o widget.o
 
 ### The main target:
 
@@ -125,7 +129,7 @@ libvdr-$(PLUGIN).so: $(OBJS)
 ifndef ELVIS_DEBUG
 	@$(STRIP) $@
 endif
-	@cp --remove-destination $@ $(LIBDIR)/$@.$(APIVERSION)
+	@$(INSTALL) $@ $(LIBDIR)/$@.$(APIVERSION)
 
 dist: $(I18Npo) clean
 	@-rm -rf $(TMPDIR)/$(ARCHIVE)
