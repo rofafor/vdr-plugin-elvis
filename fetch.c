@@ -33,10 +33,11 @@ void cElvisIndexGenerator::Action()
 {
   debug("cElvisIndexGenerator::Action()");
   bool IndexFileComplete = false;
+  bool IndexFileWritten = false;
   bool Rewind = false;
   cFileName FileName(recordingNameM, false);
   cUnbufferedFile *ReplayFile = FileName.Open();
-  cRingBufferLinear Buffer(eIfgBufferSize, eMinTsPacketsForFrameDetector * TS_SIZE);
+  cRingBufferLinear Buffer(eIfgBufferSize, MIN_TS_PACKETS_FOR_FRAME_DETECTOR * TS_SIZE);
   cPatPmtParser PatPmtParser;
   cFrameDetector FrameDetector;
   cIndexFile IndexFile(recordingNameM, true);
@@ -63,6 +64,7 @@ void cElvisIndexGenerator::Action()
                  if (FrameDetector.NewFrame()) {
                     IndexFile.Write(FrameDetector.IndependentFrame(), FileName.Number(), FrameOffset >= 0 ? FrameOffset : FileSize);
                     FrameOffset = -1;
+                    IndexFileWritten = true;
                     }
                  FileSize += Processed;
                  Buffer.Del(Processed);
@@ -74,7 +76,6 @@ void cElvisIndexGenerator::Action()
               if (Processed > 0) {
                  if (FrameDetector.Synced()) {
                     // Synced FrameDetector, so rewind for actual processing:
-                    FrameDetector.Reset();
                     Rewind = true;
                     }
                  Buffer.Del(Processed);
@@ -85,7 +86,7 @@ void cElvisIndexGenerator::Action()
               uchar *p = Data;
               while (Length >= TS_SIZE) {
                     int Pid = TsPid(p);
-                    if (Pid == 0)
+                    if (Pid == PATPID)
                        PatPmtParser.ParsePat(p, TS_SIZE);
                     else if (Pid == PatPmtParser.PmtPid())
                        PatPmtParser.ParsePmt(p, TS_SIZE);
@@ -109,6 +110,7 @@ void cElvisIndexGenerator::Action()
               ReplayFile = FileName.NextFile();
               FileSize = 0;
               FrameOffset = -1;
+              Buffer.Clear();
               }
            }
         // Recording has been processed:
@@ -118,7 +120,7 @@ void cElvisIndexGenerator::Action()
            }
         }
   // Delete the index file if the recording has not been processed entirely:
-  if (!IndexFileComplete) {
+  if (!IndexFileComplete || !IndexFileWritten) {
      debug("cElvisIndexGenerator::Action(delindex)");
      IndexFile.Delete();
      }

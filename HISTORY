@@ -108,3 +108,7 @@ VDR Plugin 'elvis' Revision History
 2012-07-18: Version 0.2.2
 
 - Fixed index file generation after fetching.
+
+2012-11-19: Version 0.2.3
+
+- Updated for vdr-1.7.32.

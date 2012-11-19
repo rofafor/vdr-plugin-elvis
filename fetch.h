@@ -18,8 +18,7 @@
 class cElvisIndexGenerator : public cThread {
 private:
   enum {
-    eMinTsPacketsForFrameDetector = 5,
-    eIfgBufferSize                = KILOBYTE(100)
+    eIfgBufferSize = KILOBYTE(100)
   };
   cString recordingNameM;
 protected:
