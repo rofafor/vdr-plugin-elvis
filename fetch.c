@@ -88,7 +88,7 @@ void cElvisIndexGenerator::Action()
                     int Pid = TsPid(p);
                     if (Pid == PATPID)
                        PatPmtParser.ParsePat(p, TS_SIZE);
-                    else if (Pid == PatPmtParser.PmtPid())
+                    else if (PatPmtParser.IsPmtPid(Pid))
                        PatPmtParser.ParsePmt(p, TS_SIZE);
                     Length -= TS_SIZE;
                     p += TS_SIZE;
