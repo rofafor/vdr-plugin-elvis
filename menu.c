@@ -27,6 +27,7 @@ cElvisRecordingInfoMenu::cElvisRecordingInfoMenu(const char *urlP, const char *n
   lengthM(lengthP),
   encryptedM(encryptedP)
 {
+  SetMenuCategory(mcRecordingInfo);
   SetHelp(encryptedM ? NULL : trVDR("Button$Play"), encryptedM ? NULL : tr("Button$Fetch"), NULL, NULL);
 }
 
@@ -173,6 +174,7 @@ cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
   folderM(cElvisRecordings::GetInstance()->GetFolder(folderIdP)),
   levelM(levelP)
 {
+  SetMenuCategory(mcRecording);
   if (folderM) {
      if (levelP)
         SetTitle(*cString::sprintf("%s - %s - %s", tr("Elvis"), trVDR("Recordings"), folderM->Name()));
@@ -350,6 +352,8 @@ cElvisTimerCreateMenu::cElvisTimerCreateMenu(cElvisEvent *eventP)
   eventM(eventP)
 {
   int i = 0;
+
+  SetMenuCategory(mcTimerEdit);
   if (cElvisRecordings::GetInstance()->Count() <= 1)
      cElvisRecordings::GetInstance()->Update(true);
   folderM = i;
@@ -421,6 +425,7 @@ eOSState cElvisTimerCreateMenu::ProcessKey(eKeys keyP)
 cElvisTimerInfoMenu::cElvisTimerInfoMenu(cElvisTimer *timerP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")))
 {
+  SetMenuCategory(mcText);
   if (timerP)
      textM = cString::sprintf("%s %s - %s (%d %s)\n%s%s\n\n%s\n\n%s\n\n%s", *DateString(timerP->Info()->StartTimeValue()), *TimeString(timerP->Info()->StartTimeValue()),
                               *TimeString(timerP->Info()->EndTimeValue()), timerP->Info()->LengthValue(), tr("min"), timerP->Channel(),
@@ -488,6 +493,7 @@ cElvisTimerItem::cElvisTimerItem(cElvisTimer *timerP)
 cElvisTimersMenu::cElvisTimersMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("Timers")), 10, 7, 7, 2)
 {
+  SetMenuCategory(mcTimer);
   cElvisTimers::GetInstance()->StateChanged(stateM);
   cElvisTimers::GetInstance()->Update();
   Setup();
@@ -607,6 +613,7 @@ cElvisSearchTimerEditMenu::cElvisSearchTimerEditMenu(cElvisSearchTimer *timerP)
 {
   int i = 0;
 
+  SetMenuCategory(mcTimerEdit);
   if (cElvisChannels::GetInstance()->Count() == 0)
      cElvisChannels::GetInstance()->Update(true);
   channelM = i;
@@ -710,6 +717,7 @@ cElvisSearchTimerItem::cElvisSearchTimerItem(cElvisSearchTimer *timerP)
 cElvisSearchTimersMenu::cElvisSearchTimersMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Search timers")), 10, 12)
 {
+  SetMenuCategory(mcTimer);
   cElvisSearchTimers::GetInstance()->StateChanged(stateM);
   cElvisSearchTimers::GetInstance()->Update();
   Setup();
@@ -827,6 +835,7 @@ cElvisChannelEventInfoMenu::cElvisChannelEventInfoMenu(cElvisEvent *eventP, cons
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG"))),
   eventM(eventP)
 {
+  SetMenuCategory(mcEvent);
   if (eventM) {
      if (!isempty(eventM->Description()))
         textM = cString::sprintf("%s %s - %s (%d %s)\n%s\n\n%s\n\n%s", *DateString(eventM->StartTimeValue()), *TimeString(eventP->StartTimeValue()),
@@ -929,6 +938,7 @@ cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), channelP ? channelP->Name() : trVDR("EPG")), 7, 7),
   channelM(channelP)
 {
+  SetMenuCategory(mcSchedule);
   Setup();
   SetHelpKeys();
 }
@@ -1042,6 +1052,7 @@ cElvisChannelItem::cElvisChannelItem(cElvisChannel *channelP)
 cElvisEPGMenu::cElvisEPGMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), trVDR("EPG")), 17)
 {
+  SetMenuCategory(mcSchedule);
   cElvisChannels::GetInstance()->StateChanged(stateM);
   cElvisChannels::GetInstance()->Update();
   Setup();
@@ -1124,6 +1135,7 @@ eOSState cElvisEPGMenu::ProcessKey(eKeys keyP)
 cElvisTopEventsMenu::cElvisTopEventsMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("Top events")), 7, 7)
 {
+  SetMenuCategory(mcSchedule);
   cElvisTopEvents::GetInstance()->StateChanged(stateM);
   cElvisTopEvents::GetInstance()->Update();
   Setup();
@@ -1240,6 +1252,7 @@ cElvisVODInfoMenu::cElvisVODInfoMenu(const char *titleP, const char *description
   descriptionM(descriptionP),
   trailerM(trailerP)
 {
+  SetMenuCategory(mcText);
   SetHelp(0 && !isempty(*trailerM) ? tr("Button$Preview") : NULL, NULL, NULL, NULL);
 }
 
@@ -1308,6 +1321,7 @@ cElvisVODSearchMenu::cElvisVODSearchMenu()
   useDescriptionM(0),
   useHdM(0)
 {
+  SetMenuCategory(mcSetup);
   strcpy(searchTermM, "");
   if (searchDataM)
      searchDataM->StateChanged(stateM);
@@ -1441,6 +1455,7 @@ cElvisVODMenu::cElvisVODMenu()
 : cOsdMenu(*cString::sprintf("%s - %s", tr("Elvis"), tr("VOD"))),
   showModeM(SHOWMODE_NEWEST)
 {
+  SetMenuCategory(mcUnknown);
   switch (showModeM % SHOWMODE_COUNT) {
     case SHOWMODE_NEWEST:
          categoryM = cElvisVODCategories::GetInstance()->GetCategory("newest");
@@ -1606,6 +1621,7 @@ cElvisMenu::cElvisMenu()
   updateTimeoutM(0),
   fetchCountM(cElvisFetcher::GetInstance()->FetchCount())
 {
+  SetMenuCategory(mcMain);
   Setup();
   SetHelpKeys();
 }
