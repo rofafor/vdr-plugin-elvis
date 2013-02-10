@@ -135,7 +135,7 @@ public:
 class cElvisSearchTimerEditMenu : public cOsdMenu {
 private:
   cElvisSearchTimer *timerM;
-  char wildcardM[MaxFileName];
+  char wildcardM[NAME_MAX];
   const char **channelNamesM;
   const char **folderNamesM;
   int *folderIdsM;
