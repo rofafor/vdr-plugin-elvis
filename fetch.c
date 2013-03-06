@@ -233,7 +233,7 @@ cElvisFetchItem::~cElvisFetchItem()
 
 size_t cElvisFetchItem::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
-  cElvisFetchItem *obj = (cElvisFetchItem *)dataP;
+  cElvisFetchItem *obj = reinterpret_cast<cElvisFetchItem *>(dataP);
   size_t len = sizeP * nmembP;
 
   if (obj)
@@ -244,7 +244,7 @@ size_t cElvisFetchItem::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, v
 
 size_t cElvisFetchItem::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
-  cElvisFetchItem *obj = (cElvisFetchItem *)dataP;
+  cElvisFetchItem *obj = reinterpret_cast<cElvisFetchItem *>(dataP);
   size_t len = sizeP * nmembP;
 
   if (obj && strstr((const char*)ptrP, "Content-Range:")) {

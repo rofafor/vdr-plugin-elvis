@@ -113,7 +113,7 @@ cElvisWidget::~cElvisWidget()
 
 size_t cElvisWidget::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
-  cElvisWidget *obj = (cElvisWidget *)dataP;
+  cElvisWidget *obj = reinterpret_cast<cElvisWidget *>(dataP);
   size_t len = sizeP * nmembP;
 
   if (obj)

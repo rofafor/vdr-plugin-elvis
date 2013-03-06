@@ -46,7 +46,7 @@ cElvisReader::~cElvisReader()
 
 size_t cElvisReader::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
-  cElvisReader *obj = (cElvisReader *)dataP;
+  cElvisReader *obj = reinterpret_cast<cElvisReader *>(dataP);
   size_t len = sizeP * nmembP;
 
   if (obj && !obj->PutData((uchar *)ptrP, (int)len))
@@ -57,7 +57,7 @@ size_t cElvisReader::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void
 
 size_t cElvisReader::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
-  cElvisReader *obj = (cElvisReader *)dataP;
+  cElvisReader *obj = reinterpret_cast<cElvisReader *>(dataP);
   size_t len = sizeP * nmembP;
 
   if (obj) {
@@ -955,7 +955,7 @@ void cElvisReplayControl::Hide()
 void cElvisReplayControl::ShowMode()
 {
   //debug("cElvisReplayControl::ShowMode()");
-  if (visibleM || Setup.ShowReplayMode && !cOsd::IsOpen()) {
+  if (visibleM || (Setup.ShowReplayMode && !cOsd::IsOpen())) {
      bool play, forward;
      int speed;
      if (GetReplayMode(play, forward, speed) && (!visibleM || play != lastPlayM || forward != lastForwardM || speed != lastSpeedM)) {

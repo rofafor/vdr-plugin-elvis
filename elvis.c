@@ -167,7 +167,7 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
 {
   if (strcmp(idP, "ElvisService-Timer-v1.0") == 0) {
      if (dataP) {
-        ElvisService_Timer_v1_0 *data = (ElvisService_Timer_v1_0*)dataP;
+        ElvisService_Timer_v1_0 *data = reinterpret_cast<ElvisService_Timer_v1_0*>(dataP);
         if (data->addMode)
            cElvisChannels::GetInstance()->AddTimer(data->eventId);
         else
@@ -263,8 +263,8 @@ cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, in
 }
 
 cPluginElvisSetup::cPluginElvisSetup()
+: dataM(ElvisConfig)
 {
-  dataM = ElvisConfig;
   Setup();
   SetHelpKeys();
 }

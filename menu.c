@@ -188,7 +188,7 @@ cElvisRecordingsMenu::cElvisRecordingsMenu(int folderIdP, int levelP)
 
 void cElvisRecordingsMenu::SetHelpKeys()
 {
-  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  cElvisRecordingItem *item = reinterpret_cast<cElvisRecordingItem *>(Get(Current()));
   if (item) {
      if (item->IsFolder())
         SetHelp(trVDR("Button$Open"), NULL, trVDR("Button$Delete"), tr("Button$Rename"));
@@ -224,7 +224,7 @@ eOSState cElvisRecordingsMenu::Delete()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  cElvisRecordingItem *item = reinterpret_cast<cElvisRecordingItem *>(Get(Current()));
   if (item) {
      if (item->IsFolder()) {
         if (Interface->Confirm(tr("Delete folder?"))) {
@@ -256,7 +256,7 @@ eOSState cElvisRecordingsMenu::Info()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  cElvisRecordingItem *item = reinterpret_cast<cElvisRecordingItem *>(Get(Current()));
   if (item && item->Recording()) {
      if (item->IsFolder())
         return AddSubMenu(new cElvisRecordingRenameMenu(folderM, item->Recording()->FolderId(), item->Recording()->Name()));
@@ -271,7 +271,7 @@ eOSState cElvisRecordingsMenu::Info()
 
 eOSState cElvisRecordingsMenu::Play(bool rewindP)
 {
-  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  cElvisRecordingItem *item = reinterpret_cast<cElvisRecordingItem *>(Get(Current()));
   if (item) {
      if (item->IsFolder())
         return AddSubMenu(new cElvisRecordingsMenu(item->Recording()->Id(), levelM + 1));
@@ -289,7 +289,7 @@ eOSState cElvisRecordingsMenu::Play(bool rewindP)
 
 eOSState cElvisRecordingsMenu::Fetch()
 {
-  cElvisRecordingItem *item = (cElvisRecordingItem *)Get(Current());
+  cElvisRecordingItem *item = reinterpret_cast<cElvisRecordingItem *>(Get(Current()));
   if (item && item->Recording() && item->Recording()->Info() && !item->IsFolder())
      cElvisFetcher::GetInstance()->New(item->Recording()->Info()->Url(), item->Recording()->Name(), item->Description(),
                                        item->Recording()->Info()->StartTime(), item->Recording()->Info()->LengthValue());
@@ -502,7 +502,7 @@ cElvisTimersMenu::cElvisTimersMenu()
 
 void cElvisTimersMenu::SetHelpKeys()
 {
-  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  cElvisTimerItem *item = reinterpret_cast<cElvisTimerItem *>(Get(Current()));
   if (item) {
      if (item->Wildcard())
         SetHelp(NULL, NULL, NULL, trVDR("Button$Info"));
@@ -535,7 +535,7 @@ eOSState cElvisTimersMenu::Delete()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  cElvisTimerItem *item = reinterpret_cast<cElvisTimerItem *>(Get(Current()));
   if (item) {
      if (item->Wildcard())
         Skins.Message(mtInfo, tr("Cannot delete search timer!"));
@@ -556,7 +556,7 @@ eOSState cElvisTimersMenu::Info()
   if (HasSubMenu() || Count() == 0)
      return (osContinue);
 
-  cElvisTimerItem *item = (cElvisTimerItem *)Get(Current());
+  cElvisTimerItem *item = reinterpret_cast<cElvisTimerItem *>(Get(Current()));
   if (item)
      return AddSubMenu(new cElvisTimerInfoMenu(item->Timer()));
 
@@ -726,7 +726,7 @@ cElvisSearchTimersMenu::cElvisSearchTimersMenu()
 
 void cElvisSearchTimersMenu::SetHelpKeys()
 {
-  cElvisSearchTimer *item = (cElvisSearchTimer *)Get(Current());
+  cElvisSearchTimer *item = reinterpret_cast<cElvisSearchTimer *>(Get(Current()));
   if (item)
      SetHelp(trVDR("Button$Edit"), trVDR("Button$New"), trVDR("Button$Delete"), NULL);
   else
@@ -754,7 +754,7 @@ eOSState cElvisSearchTimersMenu::Delete()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisSearchTimerItem *item = (cElvisSearchTimerItem *)Get(Current());
+  cElvisSearchTimerItem *item = reinterpret_cast<cElvisSearchTimerItem *>(Get(Current()));
   if (item && Interface->Confirm(tr("Delete search timer?"))) {
      if (!cElvisSearchTimers::GetInstance()->Delete(item->Timer()))
         Skins.Message(mtError, tr("Cannot delete search timer!"));
@@ -779,7 +779,7 @@ eOSState cElvisSearchTimersMenu::Edit()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisSearchTimerItem *item = (cElvisSearchTimerItem *)Get(Current());
+  cElvisSearchTimerItem *item = reinterpret_cast<cElvisSearchTimerItem *>(Get(Current()));
   if (item)
      return AddSubMenu(new cElvisSearchTimerEditMenu(item->Timer()));
 
@@ -945,7 +945,7 @@ cElvisChannelEventsMenu::cElvisChannelEventsMenu(cElvisChannel *channelP)
 
 void cElvisChannelEventsMenu::SetHelpKeys()
 {
-  cElvisEvent *item = (cElvisEvent *)Get(Current());
+  cElvisEvent *item = reinterpret_cast<cElvisEvent *>(Get(Current()));
   if (item)
      SetHelp(trVDR("Button$Record"), trVDR("Button$Folder"), NULL, trVDR("Button$Info"));
   else
@@ -973,7 +973,7 @@ eOSState cElvisChannelEventsMenu::Record(bool quickP)
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  cElvisChannelEventItem *item = reinterpret_cast<cElvisChannelEventItem *>(Get(Current()));
   if (item) {
         if (quickP) {
            if (cElvisTimers::GetInstance()->Create(item->Event()->Id()))
@@ -994,7 +994,7 @@ eOSState cElvisChannelEventsMenu::Info()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  cElvisChannelEventItem *item = reinterpret_cast<cElvisChannelEventItem *>(Get(Current()));
   if (item)
      return AddSubMenu(new cElvisChannelEventInfoMenu(item->Event(), channelM->Name()));
 
@@ -1061,7 +1061,7 @@ cElvisEPGMenu::cElvisEPGMenu()
 
 void cElvisEPGMenu::SetHelpKeys()
 {
-  cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
+  cElvisChannelItem *item = reinterpret_cast<cElvisChannelItem *>(Get(Current()));
   if (item)
      SetHelp(trVDR("Button$Open"), NULL, NULL, NULL);
   else
@@ -1091,7 +1091,7 @@ eOSState cElvisEPGMenu::Select()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisChannelItem *item = (cElvisChannelItem *)Get(Current());
+  cElvisChannelItem *item = reinterpret_cast<cElvisChannelItem *>(Get(Current()));
   if (item)
      return AddSubMenu(new cElvisChannelEventsMenu(item->Channel()));
 
@@ -1144,7 +1144,7 @@ cElvisTopEventsMenu::cElvisTopEventsMenu()
 
 void cElvisTopEventsMenu::SetHelpKeys()
 {
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  cElvisChannelEventItem *item = reinterpret_cast<cElvisChannelEventItem *>(Get(Current()));
   if (item)
      SetHelp(trVDR("Button$Record"), trVDR("Button$New"), NULL, trVDR("Button$Info"));
   else
@@ -1172,7 +1172,7 @@ eOSState cElvisTopEventsMenu::Record(bool quickP)
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  cElvisChannelEventItem *item = reinterpret_cast<cElvisChannelEventItem *>(Get(Current()));
   if (item && item->Event()) {
         if (quickP) {
            if (cElvisTimers::GetInstance()->Create(item->Event()->Id()))
@@ -1193,7 +1193,7 @@ eOSState cElvisTopEventsMenu::Info()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisChannelEventItem *item = (cElvisChannelEventItem *)Get(Current());
+  cElvisChannelEventItem *item = reinterpret_cast<cElvisChannelEventItem *>(Get(Current()));
   if (item && item->Event())
      return AddSubMenu(new cElvisChannelEventInfoMenu(item->Event(), item->Event()->Channel()));
 
@@ -1374,7 +1374,7 @@ eOSState cElvisVODSearchMenu::Info()
   if (Current() < 3)
      return osContinue;
 
-  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  cElvisVODItem *item = reinterpret_cast<cElvisVODItem *>(Get(Current()));
   if (item && item->Vod())
      return AddSubMenu(new cElvisVODInfoMenu(item->Vod()->Title(), item->Description(), item->Vod()->Trailer()));
 
@@ -1386,7 +1386,7 @@ eOSState cElvisVODSearchMenu::Favorite()
   if (Current() < 3)
      return osContinue;
 
-  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  cElvisVODItem *item = reinterpret_cast<cElvisVODItem *>(Get(Current()));
   if (item && item->Vod())
      item->Vod()->SetFavorite(true);
 
@@ -1480,7 +1480,7 @@ cElvisVODMenu::cElvisVODMenu()
 
 void cElvisVODMenu::SetHelpKeys()
 {
-  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  cElvisVODItem *item = reinterpret_cast<cElvisVODItem *>(Get(Current()));
   switch (showModeM % SHOWMODE_COUNT) {
     case SHOWMODE_NEWEST:
          SetHelp(tr("Button$Popular"), tr("Button$Search"), item ? tr("Button$Add") : NULL, item ? trVDR("Button$Info") : NULL);
@@ -1532,7 +1532,7 @@ eOSState cElvisVODMenu::Info()
   if (HasSubMenu() || Count() == 0)
      return osContinue;
 
-  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  cElvisVODItem *item = reinterpret_cast<cElvisVODItem *>(Get(Current()));
   if (item && item->Vod())
      return AddSubMenu(new cElvisVODInfoMenu(item->Vod()->Title(), item->Description(), item->Vod()->Trailer()));
 
@@ -1541,7 +1541,7 @@ eOSState cElvisVODMenu::Info()
 
 eOSState cElvisVODMenu::Favorite()
 {
-  cElvisVODItem *item = (cElvisVODItem *)Get(Current());
+  cElvisVODItem *item = reinterpret_cast<cElvisVODItem *>(Get(Current()));
 
   if (item && item->Vod())
      item->Vod()->SetFavorite((showModeM % SHOWMODE_COUNT) != SHOWMODE_FAVORITES);
