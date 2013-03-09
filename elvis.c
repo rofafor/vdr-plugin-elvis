@@ -24,7 +24,7 @@
 #define GITVERSION ""
 #endif
 
-       const char VERSION[]       = "0.2.4" GITVERSION;
+       const char VERSION[]       = "0.2.5" GITVERSION;
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 

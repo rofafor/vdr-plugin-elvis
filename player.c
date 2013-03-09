@@ -31,8 +31,10 @@ cElvisReader::cElvisReader(const char *urlP)
   ringBufferM(new cRingBufferLinear(MEGABYTE(2), 7 * TS_SIZE))
 {
   debug("cElvisReader::cElvisReader()");
-  if (ringBufferM)
+  if (ringBufferM) {
      ringBufferM->SetTimeouts(10, 0);
+     ringBufferM->SetIoThrottle();
+     }
   Start();
 }
 
