@@ -265,6 +265,7 @@ cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, in
 cPluginElvisSetup::cPluginElvisSetup()
 : dataM(ElvisConfig)
 {
+  SetMenuCategory(mcSetupPlugins);
   Setup();
   SetHelpKeys();
 }
