@@ -38,13 +38,8 @@ settings.
 
 Installation:
 
-cd /put/your/path/here/VDR/PLUGINS/src
 tar -xzf /put/your/path/here/vdr-elvis-X.Y.Z.tgz
-ln -s elvis-X.Y.Z elvis
-cd /put/your/path/here/VDR
-make
-make plugins
-./vdr -P elvis
+make -C elvis-X.Y.Z install
  
 Notes:
 
