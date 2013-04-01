@@ -1,5 +1,6 @@
+===================================
 VDR Plugin 'elvis' Revision History
-------------------------------------
+===================================
 
 2010-08-13: Version 0.0.1
 
@@ -117,6 +118,12 @@ VDR Plugin 'elvis' Revision History
 
 - Updated for vdr-1.7.37.
 
-2013-xx-xx: Version 0.2.5
 
+===================================
+VDR Plugin 'elvis' Revision History
+===================================
+
+2013-04-01: Version 2.0.0
+
+- Updated for vdr-2.0.0.
 - Enabled I/O throttling.
