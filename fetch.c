@@ -149,7 +149,7 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
   int year = 2010, mon = 1, day = 1, hour = 12, min = 0, sec = 0;
   sscanf(startTimeP, "%d.%d.%d %d:%d:%d", &day, &mon, &year, &hour, &min, &sec);
   char *name = strdup(nameP);
-  dirNameM = cString::sprintf("%s/Elvis/%s/%4d-%02d-%02d.%02d.%02d.99-0.rec", VideoDirectory, ExchangeChars(name, true), year, mon, day, hour, min);
+  dirNameM = cString::sprintf("%s/Elvis/%s/%4d-%02d-%02d.%02d.%02d.99-0.rec", cVideoDirectory::Name(), ExchangeChars(name, true), year, mon, day, hour, min);
   free(name);
   if (DirectoryOk(*dirNameM, false)) {
      error("cElvisFetchItem(): directory already exists: '%s'", *dirNameM);
@@ -285,7 +285,7 @@ void cElvisFetchItem::Remove()
 
   if (fileNameM) {
      info("removing recording '%s'", fileNameM->Name());
-     RemoveVideoFile(*dirNameM);
+     cVideoDirectory::RemoveVideoFile(*dirNameM);
      }
 }
 
