@@ -59,7 +59,7 @@ bool cElvisResumeItem::Parse(const char *strP)
 bool cElvisResumeItem::Save(FILE *fdP)
 {
   debug("cElvisResumeItem:Save(): programid=%d, byteoffset=%ld filesize=%ld", programIdM, byteOffsetM, fileSizeM);
-  return fprintf(fdP, "%d:%ld:%ld\n", programIdM, byteOffsetM, fileSizeM) > 0;
+  return fprintf(fdP, "%d:%lu:%lu\n", programIdM, byteOffsetM, fileSizeM) > 0;
 }
 
 // --- cElvisResumeItems -----------------------------------------------

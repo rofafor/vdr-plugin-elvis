@@ -249,7 +249,7 @@ size_t cElvisFetchItem::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, 
 
   if (obj && strstr((const char*)ptrP, "Content-Range:")) {
      unsigned long start, stop, size;
-     if (sscanf((const char*)ptrP, "Content-Range: bytes %ld-%ld/%ld", &start, &stop, &size) == 3)
+     if (sscanf((const char*)ptrP, "Content-Range: bytes %lu-%lu/%lu", &start, &stop, &size) == 3)
         obj->SetRange(start, stop, size);
      }
 

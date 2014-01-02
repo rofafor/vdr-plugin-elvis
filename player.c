@@ -65,12 +65,12 @@ size_t cElvisReader::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, voi
   if (obj) {
      if (strstr((const char*)ptrP, "Content-Range:")) {
         unsigned long start, stop, size;
-        if (sscanf((const char*)ptrP, "Content-Range: bytes %ld-%ld/%ld", &start, &stop, &size) == 3)
+        if (sscanf((const char*)ptrP, "Content-Range: bytes %lu-%lu/%lu", &start, &stop, &size) == 3)
            obj->SetRange(start, stop, size);
         }
      else if (strstr((const char*)ptrP, "Content-Duration:")) {
         unsigned long duration;
-        if (sscanf((const char*)ptrP, "Content-Duration: %ld", &duration) == 1)
+        if (sscanf((const char*)ptrP, "Content-Duration: %lu", &duration) == 1)
            obj->SetDuration(duration);
         }
     }

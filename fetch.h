@@ -49,6 +49,9 @@ private:
   unsigned long fetchedM;
   void WriteData(uchar *dataP, int lenP);
   void SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP);
+  // to prevent copy constructor and assignment
+  cElvisFetchItem(const cElvisFetchItem&);
+  cElvisFetchItem& operator=(const cElvisFetchItem&);
 public:
   cElvisFetchItem(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP);
   virtual ~cElvisFetchItem();
