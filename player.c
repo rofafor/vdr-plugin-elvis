@@ -434,11 +434,11 @@ void cElvisPlayer::TrickSpeed(int incrementP)
         DeviceMute();
         }
      else if ((trickSpeedM == 1) && (playDirM == pdForward))
-        DeviceTrickSpeed((playModeM == pmSlow) ? 8 : 6);
+        DeviceTrickSpeed((playModeM == pmSlow) ? 8 : 6, (playDirM == pdForward));
      else if ((trickSpeedM == 2) && (playDirM == pdForward))
-        DeviceTrickSpeed((playModeM == pmSlow) ? 4 : 3);
+        DeviceTrickSpeed((playModeM == pmSlow) ? 4 : 3, (playDirM == pdForward));
      else if ((trickSpeedM == 3) && (playDirM == pdForward))
-        DeviceTrickSpeed((playModeM == pmSlow) ? 2 : 1);
+        DeviceTrickSpeed((playModeM == pmSlow) ? 2 : 1, (playDirM == pdForward));
      }
 }
 
