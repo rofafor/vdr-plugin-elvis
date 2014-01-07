@@ -122,7 +122,7 @@ time_t strtotime(const char *s)
      char *weekday;
 
      // example inputs: "ke 22.09.2010 21:00", "19.10.2010 23:50:00"
-     if ((sscanf(s, "%a[^ ] %d.%d.%d %d:%d", &weekday, &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 6) ||
+     if ((sscanf(s, "%m[^ ] %d.%d.%d %d:%d", &weekday, &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 6) ||
          (sscanf(s, "%d.%d.%d %d:%d", &t.tm_mday, &t.tm_mon, &t.tm_year, &t.tm_hour, &t.tm_min) == 5)) {
 
         t.tm_sec   = 0;
