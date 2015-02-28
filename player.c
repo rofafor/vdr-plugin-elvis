@@ -222,6 +222,8 @@ bool cElvisReader::Connect()
 
      // set timeout
      curl_easy_setopt(handleM, CURLOPT_CONNECTTIMEOUT, 5L);
+     curl_easy_setopt(handleM, CURLOPT_LOW_SPEED_LIMIT, 100L);
+     curl_easy_setopt(handleM, CURLOPT_LOW_SPEED_TIME, 3L);
 
      // set user-agent
      curl_easy_setopt(handleM, CURLOPT_USERAGENT, *cString::sprintf("vdr-%s/%s", PLUGIN_NAME_I18N, VERSION));
