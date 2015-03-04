@@ -5,6 +5,7 @@
  *
  */
 
+#include <getopt.h>
 #include <vdr/plugin.h>
 #include <vdr/menu.h>
 
@@ -83,12 +84,28 @@ cPluginElvis::~cPluginElvis()
 const char *cPluginElvis::CommandLineHelp()
 {
   // Return a string that describes all known command line options.
-  return NULL;
+  return "  -t <mode>, --trace=<mode>  set the tracing mode\n";
 }
 
 bool cPluginElvis::ProcessArgs(int argc, char *argv[])
 {
   // Implement command line argument processing here if applicable.
+  static const struct option long_options[] = {
+    { "trace",    required_argument, NULL, 't' },
+    { NULL,       no_argument,       NULL,  0  }
+    };
+
+  cString server;
+  int c;
+  while ((c = getopt_long(argc, argv, "t:", long_options, NULL)) != -1) {
+    switch (c) {
+      case 't':
+           ElvisConfig.SetTraceMode(strtol(optarg, NULL, 0));
+           break;
+      default:
+           return false;
+      }
+    }
   return true;
 }
 
@@ -216,6 +233,8 @@ const char **cPluginElvis::SVDRPHelpPages()
     "    Add a new timer.",
     "DELT [eventid]\n"
     "    Delete an existing timer.",
+    "TRAC [ <mode> ]\n"
+    "    Gets and/or sets used tracing mode.\n",
     NULL
     };
   return HelpPages;
@@ -257,6 +276,11 @@ cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, in
         return cString("Timer action failed");
         }
      return cString("Timer deleted");
+     }
+  else if (strcasecmp(commandP, "TRAC") == 0) {
+     if (optionP && *optionP)
+        ElvisConfig.SetTraceMode(strtol(optionP, NULL, 0));
+     return cString::sprintf("Tracing mode: 0x%04X\n", ElvisConfig.GetTraceMode());
      }
 
   return NULL;

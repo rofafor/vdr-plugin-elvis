@@ -10,6 +10,7 @@
 
 #include <vdr/remote.h>
 
+#include "log.h"
 #include "common.h"
 
 static int hex2dec(char hex)
@@ -134,7 +135,7 @@ time_t strtotime(const char *s)
         r = mktime(&t);
         }
      else
-        error("string to time conversion failed: %s", s);
+        error("%s (%s) Conversion failed", __PRETTY_FUNCTION__, s);
 
      if (weekday)
         free(weekday);

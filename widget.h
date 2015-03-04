@@ -188,6 +188,7 @@ private:
   static const char *baseCookieNameS;
   static const char *baseUrlViihdeS;
   static cElvisWidget *instanceS;
+  static int DebugCallback(CURL *handleP, curl_infotype typeP, char *dataP, size_t sizeP, void *userPtrP);
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   cString dataM;
   cMutex mutexM;

@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "log.h"
 #include "widget.h"
 
 #undef USE_COOKIE_JAR
@@ -111,6 +112,35 @@ cElvisWidget::~cElvisWidget()
      }
 }
 
+int cElvisWidget::DebugCallback(CURL *handleP, curl_infotype typeP, char *dataP, size_t sizeP, void *userPtrP)
+{
+  cElvisWidget *obj = reinterpret_cast<cElvisWidget *>(userPtrP);
+
+  if (obj) {
+     switch (typeP) {
+       case CURLINFO_TEXT:
+            debug8("%s INFO %.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_IN:
+            debug8("%s HEAD <<< %.*s", __PRETTY_FUNCTION__,  (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_OUT:
+            debug8("%s HEAD >>>\n%.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_DATA_IN:
+            debug8("%s DATA <<< %.*s", __PRETTY_FUNCTION__,  (int)sizeP, dataP);
+            break;
+       case CURLINFO_DATA_OUT:
+            debug8("%s DATA >>>\n%.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       default:
+            break;
+       }
+     }
+
+  return 0;
+}
+
 size_t cElvisWidget::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
 {
   cElvisWidget *obj = reinterpret_cast<cElvisWidget *>(dataP);
@@ -155,7 +185,7 @@ void cElvisWidget::PutData(const char *dataP, unsigned int lenP)
 
 bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 {
-  debug("cElvisWidget::Perform(%s)", msgP ? msgP : "unknown");
+  debug16("%s (%s, %s)", __PRETTY_FUNCTION__, urlP,  msgP);
 
   if (handleM) {
      CURLcode err;
@@ -167,23 +197,23 @@ bool cElvisWidget::Perform(const char *urlP, const char *msgP)
      curl_easy_setopt(handleM, CURLOPT_URL, urlP);
      err = curl_easy_perform(handleM);
      if (err != CURLE_OK) {
-        error("cElvisWidget::Perform(%s): %s", msgP ? msgP : "unknown", curl_easy_strerror(err));
+        error("%s (%s, %s) Perform (%s)", __PRETTY_FUNCTION__, urlP, msgP, curl_easy_strerror(err));
         return false;
         }
 
      err = curl_easy_getinfo(handleM, CURLINFO_RESPONSE_CODE, &http_code);
      if (err != CURLE_OK) {
-        error("cElvisWidget::Perform(%s): getinfo (%s)", msgP ? msgP : "unknown", curl_easy_strerror(err));
+        error("%s (%s, %s) Getinfo (%s)", __PRETTY_FUNCTION__, urlP, msgP, curl_easy_strerror(err));
         return false;
         }
 
      if (http_code != 200) {
-        error("cElvisWidget::Perform(%s): invalid HTTP Code (%ld)", msgP ? msgP : "unknown", http_code);
+        error("%s (%s, %s) Invalid HTTP code (%ld)", __PRETTY_FUNCTION__, urlP, msgP, http_code);
         return false;
         }
 
      if (isempty(*dataM)) {
-        debug("cElvisWidget::Perform(%s): empty data", msgP ? msgP : "unknown");
+        debug2("%s (%s, %s) Empty data", __PRETTY_FUNCTION__, urlP,  msgP);
         return false;
         }
      }
@@ -194,7 +224,7 @@ bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 bool cElvisWidget::Login()
 {
   if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
-     error("cElvisWidget::Login(): invalid credentials");
+     error("Invalid credentials");
      return false;
      }
 
@@ -267,10 +297,11 @@ bool cElvisWidget::Load(const char *directoryP)
      handleM = curl_easy_init();
 
   if (handleM) {
-#ifdef DEBUG
      // verbose output
      curl_easy_setopt(handleM, CURLOPT_VERBOSE, 1L);
-#endif
+     curl_easy_setopt(handleM, CURLOPT_DEBUGFUNCTION, cElvisWidget::DebugCallback);
+     curl_easy_setopt(handleM, CURLOPT_DEBUGDATA, this);
+
      // set callback
      curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisWidget::WriteCallback);
      curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
@@ -339,7 +370,7 @@ void cElvisWidget::ParseFolders(cElvisWidgetFolderCallbackIf &callbackP, json_t 
                 if (json_array_size(obj4)) {
                     ParseFolders(callbackP, json_deep_copy(obj3), id);
                 }
-                debug("id: %d name: '%s' count: %d protected: %d", id, *name, count, has_pin);
+                debug2("%s (, , %d) id=%d name='%s' count=%d protected=%d", __PRETTY_FUNCTION__, folderIdP, id, *name, count, has_pin);
                 callbackP.AddFolder(id, *name, count, has_pin);
             }
         }
@@ -360,7 +391,7 @@ bool cElvisWidget::GetFolders(cElvisWidgetFolderCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetFolders")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetFolders(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -390,7 +421,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetRecordings")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetRecordings(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -426,7 +457,7 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                             obj4 = json_object_get(obj3, "recordings_count");
                                             if (json_is_string(obj4))
                                                count = (int)strtol(json_string_value(obj4), NULL, 10);
-                                            debug("id: %d count: %d name: '%s' size: '%s'", id, count, *name, *size);
+                                            debug2("%s (, %d): id=%d count=%d name='%s' size='%s'", __PRETTY_FUNCTION__, folderIdP, id, count, *name, *size);
                                             callbackP.AddFolder(id, count, *name, *size);
                                             }
                                         }
@@ -462,9 +493,9 @@ bool cElvisWidget::GetRecordings(cElvisWidgetRecordingCallbackIf &callbackP, int
                                             obj4 = json_object_get(obj3, "length");
                                             if (json_is_string(obj4))
                                                length = (int)strtol(json_string_value(obj4), NULL, 10);
-                                           debug("id: %d program_id: %d folder_id: %d count: %d length: %d name: '%s' channel: '%s' start_time: '%s'", id, program_id, folder_id, count, length, *name, *channel, *start_time);
-                                           callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
-                                           }
+                                            debug2("%s (, %d): id=%d program_id=%d folder_id=%d count=%d length=%d name='%s' channel='%s' start_time='%s'", __PRETTY_FUNCTION__, folderIdP, id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                            callbackP.AddRecording(id, program_id, folder_id, count, length, *name, *channel, *start_time);
+                                            }
                                         }
                                      iter2 = json_object_iter_next(obj2, iter2);
                                      }
@@ -493,12 +524,12 @@ bool cElvisWidget::RemoveRecording(int idP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveRecording")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::RemoveRecording(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else {
-               debug("removed recording id: %d", idP);
+               debug2("%s (%d) Removed recording", __PRETTY_FUNCTION__, idP);
                return true;
                }
             }
@@ -519,12 +550,12 @@ bool cElvisWidget::RemoveFolder(int idP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveFolder")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::RemoveFolder(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else {
-               debug("removed folder id: %d", idP);
+               debug2("%s (%d) Removed folder", __PRETTY_FUNCTION__, idP);
                return true;
                }
             }
@@ -545,12 +576,12 @@ bool cElvisWidget::RenameFolder(int idP, const char *nameP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RenameFolder")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::RenameFolder(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else {
-               debug("renamed folder id: %d", idP);
+               debug2("%s (%d, %s) Renamed folder", __PRETTY_FUNCTION__, idP, nameP);
                return true;
                }
             }
@@ -571,12 +602,12 @@ bool cElvisWidget::CreateFolder(const char *nameP, int parentFolderIdP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "CreateFolder")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::CreateFolder(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else {
-               debug("created new folder");
+               debug2("%s (%s, %d) Created new folder", __PRETTY_FUNCTION__, nameP, parentFolderIdP);
                return true;
                }
             }
@@ -597,7 +628,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetTimers")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetTimers(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -633,7 +664,7 @@ bool cElvisWidget::GetTimers(cElvisWidgetTimerCallbackIf &callbackP)
                                   obj3 = json_object_get(obj2, "wild_card");
                                   if (json_is_string(obj3))
                                      wild_card = Unescape(json_string_value(obj3));
-                                  debug("program_id: %d length: %d name: '%s' channel: '%s' start_time: '%s' wild_card: '%s'", program_id, length, *name, *channel, *start_time, *wild_card);
+                                  debug2("%s program_id=%d length=%d name='%s' channel='%s' start_time='%s' wild_card='%s'", __PRETTY_FUNCTION__, program_id, length, *name, *channel, *start_time, *wild_card);
                                   callbackP.AddTimer(program_id, length, *name, *channel, *start_time, *wild_card);
                                   }
                                }
@@ -665,11 +696,11 @@ bool cElvisWidget::AddTimer(int programIdP, int folderIdP)
          Login();
          if (Perform(*url, "AddTimer")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::AddTimer(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                continue;
                }
             else if (strstr(*dataM, "TRUE")) {
-               debug("added timer id: %d", programIdP);
+               debug2("%s (%d, %d) Added timer", __PRETTY_FUNCTION__, programIdP, folderIdP);
                return true;
                }
             }
@@ -692,11 +723,11 @@ bool cElvisWidget::RemoveTimer(int idP)
          Login();
          if (Perform(*url, "RemoveTimer")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::RemoveTimer(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                continue;
                }
             else {
-               debug("removed timer id: %d", idP);
+               debug2("%s (%d) Removed timer", __PRETTY_FUNCTION__, idP);
                return true;
                }
             }
@@ -717,7 +748,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetSearchTimers")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetSearchTimers(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -749,7 +780,7 @@ bool cElvisWidget::GetSearchTimers(cElvisWidgetSearchTimerCallbackIf &callbackP)
                                obj3 = json_object_get(obj2, "wild_card");
                                if (json_is_string(obj3))
                                   wild_card = Unescape(json_string_value(obj3));
-                               debug("recording_id: %d folder: '%s' added: '%s' wild_card_channel: '%s' wild_card: '%s'", recording_id, *folder, *added, *wild_card_channel, *wild_card);
+                               debug2("%s recording_id=%d folder='%s' added='%s' wild_card_channel='%s' wild_card='%s'", __PRETTY_FUNCTION__, recording_id, *folder, *added, *wild_card_channel, *wild_card);
                                callbackP.AddSearchTimer(recording_id, *folder, *added, *wild_card_channel, *wild_card);
                                }
                            }
@@ -780,16 +811,16 @@ bool cElvisWidget::AddSearchTimer(const char *channelP, const char *wildcardP, i
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "AddSearchTimer")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::AddSearchTimer(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else if (strstr(*dataM, "TRUE")) {
                if (wildcardIdP < 0) {
-                  debug("added search timer: %s (folder:%d channel:%s)", wildcardP, folderIdP, channelP);
+                  debug2("%s (%s, %s, %d, %d) Added search timer", __PRETTY_FUNCTION__, channelP, wildcardP, folderIdP, wildcardIdP);
                   }
                else {
-                  debug("edited search timer: %s (id: %d folder:%d channel:%s)", wildcardP, wildcardIdP, folderIdP, channelP);
+                  debug2("%s (%s, %s, %d, %d) Edited search timer", __PRETTY_FUNCTION__, channelP, wildcardP, folderIdP, wildcardIdP);
                   }
                return true;
                }
@@ -811,12 +842,12 @@ bool cElvisWidget::RemoveSearchTimer(int idP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "RemoveSearchTimer")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::RemoveSearchTimer(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
             else {
-               debug("removed search timer id: %d", idP);
+               debug2("%s (%d) Removed search timer", __PRETTY_FUNCTION__, idP);
                return true;
                }
             }
@@ -837,7 +868,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetChannels")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetChannels(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -860,7 +891,7 @@ bool cElvisWidget::GetChannels(cElvisWidgetChannelCallbackIf &callbackP)
                                   obj3 = json_object_get(obj2, "logo");
                                   if (json_is_string(obj3))
                                      logo = Unescape(json_string_value(obj3));
-                                  debug("channel: '%s' Logo: '%s'", *name, *logo);
+                                  debug2("%s channel='%s' logo='%s'", __PRETTY_FUNCTION__, *name, *logo);
                                   callbackP.AddChannel(*name, *logo);
                                   }
                                }
@@ -889,7 +920,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEvents")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetEvents(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -904,7 +935,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
                         if (!strcmp(key, "channelname") && json_is_string(value)) {
                            cString channelname = Unescape(json_string_value(value));
                            if (strcmp(channelP, *channelname))
-                              error("cElvisWidget::GetEvents(): invalid channel: '%s' <> '%s'", channelP, *channelname);
+                              error("%s (, %s) Invalid channelname '%s'", __PRETTY_FUNCTION__, channelP, *channelname);
                            }
                         else if (!strcmp(key, "programs") && json_is_array(value)) {
                            for (unsigned int i = 0; i < json_array_size(value); i++) {
@@ -929,7 +960,7 @@ bool cElvisWidget::GetEvents(cElvisWidgetEventCallbackIf &callbackP, const char 
                                obj3 = json_object_get(obj2, "end_time");
                                if (json_is_string(obj3))
                                   end_time = Unescape(json_string_value(obj3));
-                               debug("id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s'", id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
+                               debug2("%s (%s) id=%d name='%s' simple_start_time='%s' simple_end_time='%s' start_time='%s' end_time='%s'", __PRETTY_FUNCTION__, channelP, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
                                callbackP.AddEvent(id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time);
                                }
                            }
@@ -957,7 +988,7 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEPG")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetEPG(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1003,7 +1034,7 @@ bool cElvisWidget::GetEPG(cElvisWidgetEPGCallbackIf &callbackP)
                                                obj4 = json_object_get(obj3, "short_text");
                                                if (json_is_string(obj4))
                                                   short_text = Unescape(json_string_value(obj4));
-                                               debug("channel: '%s' id: %d name: '%s' simple_start_time: '%s' simple_end_time: '%s' start_time: '%s' end_time: '%s' short_text: '%s'", *channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
+                                               debug2("%s channel='%s' id=%d name='%s' simple_start_time='%s' simple_end_time='%s' start_time='%s' end_time='%s' short_text='%s'", __PRETTY_FUNCTION__, *channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
                                                callbackP.AddEvent(*channel, id, *name, *simple_start_time, *simple_end_time, *start_time, *end_time, *short_text);
                                                }
                                            }
@@ -1036,7 +1067,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEvents")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetTopEvents(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1069,7 +1100,7 @@ bool cElvisWidget::GetTopEvents(cElvisWidgetTopEventCallbackIf &callbackP)
                                   obj3 = json_object_get(obj2, "end_time");
                                   if (json_is_string(obj3))
                                      end_time = Unescape(json_string_value(obj3));
-                                  debug("id: %d name: '%s' channel: '%s' start_time: '%s' end_time: '%s'", id, *name, *channel, *start_time, *end_time);
+                                  debug2("%s id=%d name='%s' channel='%s' start_time='%s' end_time='%s'", __PRETTY_FUNCTION__, id, *name, *channel, *start_time, *end_time);
                                   callbackP.AddEvent(id, *name, *channel, *start_time, *end_time);
                                   }
                                }
@@ -1099,7 +1130,7 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetVOD")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetVOD(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1143,7 +1174,7 @@ bool cElvisWidget::GetVOD(cElvisWidgetVODCallbackIf &callbackP, const char *cate
                                obj3 = json_object_get(obj2, "trailer");
                                if (json_is_string(obj3))
                                   trailer = Unescape(json_string_value(obj3));
-                               debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               debug2("%s (%s, %u): id=%d length=%d agelimit=%d year=%d price=%d title='%s' currency='%s' cover='%s' trailer='%s'", __PRETTY_FUNCTION__, categoryP, countP, id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
                                callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
                                }
                            }
@@ -1170,7 +1201,7 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetEventInfo")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetEventInfo(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1238,8 +1269,8 @@ cElvisWidgetEventInfo *cElvisWidget::GetEventInfo(int idP)
                   obj2 = json_object_get(obj, "scrambled_channel");
                   if (json_is_string(obj2) && !strcasecmp(json_string_value(obj2), "true"))
                      scrambled_channel = true;
-                  debug("id: %d name: '%s' channel: '%s' short_text: '%s' description: '%s' length: %d flength: '%s' tn: '%s' start_time: '%s' end_time: '%s' url: '%s' "
-                        "programviewid: %d recordingid: %d has_started: %d has_ended: %d recorded: %d ready: %d is_wildcard: %d scrambled_channel: %d",
+                  debug2("%s (%d) id=%d name='%s' channel='%s' short_text='%s' description='%s' length=%d flength='%s' tn='%s' start_time='%s' end_time='%s' url='%s' "
+                        "programviewid=%d recordingid=%d has_started=%d has_ended=%d recorded=%d ready=%d is_wildcard=%d scrambled_channel=%d", __PRETTY_FUNCTION__, idP,
                         id, *name, *channel, *short_text, *description, length, *flength, *tn, *start_time, *end_time, *url, programviewid, recordingid, has_started,
                         has_ended, recorded, ready, is_wildcard, scrambled_channel);
                   json_decref(obj);
@@ -1264,7 +1295,7 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "GetVODInfo")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::GetVODInfo(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1326,9 +1357,9 @@ cElvisWidgetVODInfo *cElvisWidget::GetVODInfo(int idP)
                             }
                          }
                      }
-                  debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' original_title: '%s' currency: '%s' short_desc: '%s' info: '%s' info2: '%s' "
-                        "trailer_url: '%s' categories: '%s'", id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2,
-                        *trailer_url, *categories);
+                  debug2("%s (%d) id=%d length=%d agelimit=%d year=%d price=%d title='%s' original_title='%s' currency='%s' short_desc='%s' info='%s' info2='%s' "
+                        "trailer_url='%s' categories='%s'", __PRETTY_FUNCTION__, idP, id, length, agelimit, year, price, *title, *original_title, *currency,
+                        *short_desc, *info, *info2, *trailer_url, *categories);
                   json_decref(obj);
                   return new cElvisWidgetVODInfo(id, length, agelimit, year, price, *title, *original_title, *currency, *short_desc, *info, *info2, *trailer_url, *categories);
                   }
@@ -1356,7 +1387,7 @@ bool cElvisWidget::SearchVOD(cElvisWidgetVODCallbackIf &callbackP, const char *t
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "SearchVOD")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::SearchVOD(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }
@@ -1400,7 +1431,9 @@ bool cElvisWidget::SearchVOD(cElvisWidgetVODCallbackIf &callbackP, const char *t
                                obj3 = json_object_get(obj2, "trailer");
                                if (json_is_string(obj3))
                                   trailer = Unescape(json_string_value(obj3));
-                               debug("id: %d length: %d agelimit: %d year: %d price: %d title: '%s' currency: '%s' cover: '%s' trailer: '%s'", id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
+                               debug2("%s (, %s, %s, %d) id=%d length=%d agelimit=%d year=%d price=%d title='%s' currency='%s' cover='%s' trailer='%s'",
+                                      __PRETTY_FUNCTION__, titleP, descP, hdP,
+                                      id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
                                callbackP.AddVOD(id, length, agelimit, year, price, *title, *currency, *cover, *trailer);
                                }
                            }
@@ -1428,7 +1461,7 @@ bool cElvisWidget::SetVODFavorite(int idP, bool onOffP)
             cCondWait::SleepMs(eLoginTimeout);
          if (Perform(*url, "SetVODFavorite")) {
             if (IsLoginRequired(*dataM)) {
-               info("cElvisWidget::SetVODFavorite(): relogin...");
+               info("%s Relogin...", __PRETTY_FUNCTION__);
                Login();
                continue;
                }

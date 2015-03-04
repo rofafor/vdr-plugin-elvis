@@ -22,6 +22,7 @@ private:
     eTimeoutMs             = 10, // in milliseconds
     eMaxDownloadSpeedMBits = 18  // in megabits per second
   };
+  static int DebugCallback(CURL *handleP, curl_infotype typeP, char *dataP, size_t sizeP, void *userPtrP);
   static size_t WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   static size_t HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP);
   const cString urlM;

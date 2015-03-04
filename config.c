@@ -6,6 +6,7 @@
  */
 
 #include "common.h"
+#include "log.h"
 #include "config.h"
 
 cElvisConfig ElvisConfig;
@@ -13,7 +14,8 @@ cElvisConfig ElvisConfig;
 const char *cElvisConfig::confBaseNameS = PLUGIN_NAME_I18N ".conf";
 
 cElvisConfig::cElvisConfig()
-: __BeginData__(0),
+: traceModeM(eTraceModeNormal),
+  __BeginData__(0),
   HideMenu(0),
   ReplaceSchedule(0),
   ReplaceTimers(0),
@@ -66,7 +68,7 @@ bool cElvisConfig::Load(const char *directoryP)
                error = true;
             }
          if (error) {
-            error("unknown config parameter: %s = %s", l->Name(), l->Value());
+            error("Unknown config parameter: %s = %s", l->Name(), l->Value());
             result = false;
             }
          }
@@ -94,7 +96,7 @@ bool cElvisConfig::Save()
   Sort();
 
   if (cConfig<cSetupLine>::Save()) {
-     debug("saved setup to %s", FileName());
+     debug3("%s Saved setup to %s", __PRETTY_FUNCTION__, FileName());
      return true;
      }
   return false;

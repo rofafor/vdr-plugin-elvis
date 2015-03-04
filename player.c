@@ -9,6 +9,7 @@
 #include <vdr/status.h>
 
 #include "common.h"
+#include "log.h"
 #include "menu.h"
 #include "resume.h"
 #include "player.h"
@@ -30,7 +31,7 @@ cElvisReader::cElvisReader(const char *urlP)
   headerListM(NULL),
   ringBufferM(new cRingBufferLinear(MEGABYTE(2), 7 * TS_SIZE))
 {
-  debug("cElvisReader::cElvisReader()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (ringBufferM) {
      ringBufferM->SetTimeouts(10, 0);
      ringBufferM->SetIoThrottle();
@@ -40,10 +41,39 @@ cElvisReader::cElvisReader(const char *urlP)
 
 cElvisReader::~cElvisReader()
 {
-  debug("cElvisReader::~cElvisReader()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Cancel(3);
   Disconnect();
   DELETE_POINTER(ringBufferM);
+}
+
+int cElvisReader::DebugCallback(CURL *handleP, curl_infotype typeP, char *dataP, size_t sizeP, void *userPtrP)
+{
+  cElvisReader *obj = reinterpret_cast<cElvisReader *>(userPtrP);
+
+  if (obj) {
+     switch (typeP) {
+       case CURLINFO_TEXT:
+            debug8("%s INFO %.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_IN:
+            debug8("%s HEAD <<< %.*s", __PRETTY_FUNCTION__,  (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_OUT:
+            debug8("%s HEAD >>>\n%.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_DATA_IN:
+            debug8("%s DATA <<< %zu", __PRETTY_FUNCTION__,  sizeP);
+            break;
+       case CURLINFO_DATA_OUT:
+            debug8("%s DATA >>> %zu", __PRETTY_FUNCTION__, sizeP);
+            break;
+       default:
+            break;
+       }
+     }
+
+  return 0;
 }
 
 size_t cElvisReader::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
@@ -81,7 +111,7 @@ size_t cElvisReader::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, voi
 void cElvisReader::SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP)
 {
   LOCK_THREAD;
-  debug("cElvisReader::SetRange(): start=%ld stop=%ld filesize=%ld", startP, stopP, sizeP);
+  debug1("%s (%ld, %ld, %ld)", __PRETTY_FUNCTION__, startP, stopP, sizeP);
   rangeStartM = startP;
   rangeSizeM = sizeP;
 }
@@ -89,20 +119,20 @@ void cElvisReader::SetRange(unsigned long startP, unsigned long stopP, unsigned 
 void cElvisReader::SetDuration(unsigned long durationP)
 {
   LOCK_THREAD;
-  debug("cElvisReader::SetDuration(): duration=%ld", durationP);
+  debug1("%s (%ld)", __PRETTY_FUNCTION__, durationP);
   durationM = durationP;
 }
 
 bool cElvisReader::PutData(uchar *dataP, int lenP)
 {
   LOCK_THREAD;
-  //debug("cElvisReader::PutData(%d)", lenP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, lenP);
   if (pausedM)
      return false;
   if (ringBufferM && (lenP >= 0)) {
      // should be pause the transfer?
      if (ringBufferM->Free() < (2 * CURL_MAX_WRITE_SIZE)) {
-        debug("cElvisReader::PutData(pause): free=%d available=%d len=%d", ringBufferM->Free(), ringBufferM->Available(), lenP);
+        debug5("%s (%d) Pausing free=%d available=%d", __PRETTY_FUNCTION__, lenP, ringBufferM->Free(), ringBufferM->Available());
         pausedM = true;
         return false;
         }
@@ -117,7 +147,7 @@ bool cElvisReader::PutData(uchar *dataP, int lenP)
 void cElvisReader::DelData(int lenP)
 {
   LOCK_THREAD;
-  //debug("cElvisReader::DelData()");
+  debug16("%s (%d)", __PRETTY_FUNCTION__, lenP);
   if (ringBufferM && (lenP >= 0))
      ringBufferM->Del(lenP);
 }
@@ -125,7 +155,7 @@ void cElvisReader::DelData(int lenP)
 void cElvisReader::ClearData()
 {
   LOCK_THREAD;
-  //debug("cElvisReader::ClearData()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (ringBufferM)
      ringBufferM->Clear();
 }
@@ -133,7 +163,7 @@ void cElvisReader::ClearData()
 uchar *cElvisReader::GetData(int *lenP)
 {
   LOCK_THREAD;
-  //debug("cElvisReader::GetData()");
+  debug16("%s", __PRETTY_FUNCTION__);
   uchar *p = NULL;
   *lenP = 0;
   if (ringBufferM) {
@@ -165,14 +195,14 @@ uchar *cElvisReader::GetData(int *lenP)
 void cElvisReader::JumpRequest(unsigned long startbyteP)
 {
   LOCK_THREAD;
-  debug("cElvisReader::JumpRequest(%ld)", startbyteP);
+  debug1("%s (%ld)", __PRETTY_FUNCTION__, startbyteP);
   rangePendingM = startbyteP;
 }
 
 void cElvisReader::Jump(unsigned long startbyteP)
 {
   LOCK_THREAD;
-  debug("cElvisReader::Jump(%ld)", startbyteP);
+  debug1("%s (%ld)", __PRETTY_FUNCTION__, startbyteP);
   rangePendingM = 0;
   rangeStartM = startbyteP;
   curl_multi_remove_handle(multiM, handleM);
@@ -185,7 +215,7 @@ void cElvisReader::Jump(unsigned long startbyteP)
 void cElvisReader::Pause(bool onoffP)
 {
   LOCK_THREAD;
-  debug("cElvisReader::Pause(%d)", onoffP);
+  debug1("%s (%d)", __PRETTY_FUNCTION__, onoffP);
   pauseToggledM = true;
   pausedM = onoffP;
 }
@@ -194,7 +224,7 @@ bool cElvisReader::Connect()
 {
   LOCK_THREAD;
   bool initialConnect = false;
-  debug("cElvisReader::Connect()");
+  debug1("%s", __PRETTY_FUNCTION__);
 
   // initialize the curl session
   if (!handleM)
@@ -206,10 +236,11 @@ bool cElvisReader::Connect()
 
   if (handleM && multiM) {
      pausedM = false;
-#ifdef DEBUG
      // verbose output
      curl_easy_setopt(handleM, CURLOPT_VERBOSE, 1L);
-#endif
+     curl_easy_setopt(handleM, CURLOPT_DEBUGFUNCTION, cElvisReader::DebugCallback);
+     curl_easy_setopt(handleM, CURLOPT_DEBUGDATA, this);
+
      // set callbacks
      curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisReader::WriteCallback);
      curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
@@ -261,7 +292,7 @@ bool cElvisReader::Connect()
 bool cElvisReader::Disconnect()
 {
   LOCK_THREAD;
-  debug("cElvisReader::Disconnect()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (handleM) {
      // cleanup curl stuff
      if (headerListM) {
@@ -281,7 +312,7 @@ bool cElvisReader::Disconnect()
 void cElvisReader::Retry()
 {
   LOCK_THREAD;
-  debug("cElvisReader::Retry()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (handleM) {
      double downloaded = 0.0;
 
@@ -290,7 +321,7 @@ void cElvisReader::Retry()
 
      // check how much we downloaded already
      curl_easy_getinfo(handleM, CURLINFO_SIZE_DOWNLOAD, &downloaded);
-     debug("cElvisReader::Retry(): rangeStart=%ld, downloaded=%f", rangeStartM, downloaded);
+     debug5("%s rangestart=%ld, downloaded=%f", __PRETTY_FUNCTION__, rangeStartM, downloaded);
 
      // continue
      rangeStartM += (unsigned long)downloaded;
@@ -301,7 +332,7 @@ void cElvisReader::Retry()
 
 void cElvisReader::Action()
 {
-  debug("cElvisReader::Action(): start");
+  debug1("%s Start", __PRETTY_FUNCTION__);
   // set to higher priority
   SetPriority(-1);
   if (ringBufferM && Connect()) {
@@ -325,7 +356,7 @@ void cElvisReader::Action()
               pauseToggledM = false;
               }
            if (pausedM && (ringBufferM->Free() > ringBufferM->Available())) {
-              debug("cElvisReader::Action(continue): free=%d available=%d", ringBufferM->Free(), ringBufferM->Available());
+              debug5("%s Continuing free=%d available=%d", __PRETTY_FUNCTION__, ringBufferM->Free(), ringBufferM->Available());
               pausedM = false;
               curl_easy_pause(handleM, CURLPAUSE_CONT);
               }
@@ -340,7 +371,7 @@ void cElvisReader::Action()
                     Retry();
                  else {
                     if (msg->data.result != CURLE_OK)
-                       info("cElvisReader::Action(done): %s (%d)", curl_easy_strerror(msg->data.result), msg->data.result);
+                       info("%s %s (%d)", __PRETTY_FUNCTION__, curl_easy_strerror(msg->data.result), msg->data.result);
                     eofM = true;
                     break;
                     }
@@ -381,11 +412,11 @@ cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP)
 {
   unsigned long offset = 0;
   unsigned long size = 0;
-  debug("cElvisPlayer::cElvisPlayer()");
+  debug1("%s (%d, %s)", __PRETTY_FUNCTION__, programIdP, urlP);
   if (cElvisResumeItems::GetInstance()->HasResume(programIdM, offset, size) && (offset > 0)) {
      readSizeM = offset;
      fileSizeM = size;
-     debug("cElvisPlayer::cElvisPlayer(): resuming to %ld/%ld", readSizeM, fileSizeM);
+     debug1("%s (%d, %s) Resuming to %ld/%ld", __PRETTY_FUNCTION__, programIdP, urlP, readSizeM, fileSizeM);
      if (readerM)
         readerM->JumpRequest(readSizeM);
      }
@@ -393,7 +424,7 @@ cElvisPlayer::cElvisPlayer(int programIdP, const char *urlP)
 
 cElvisPlayer::~cElvisPlayer()
 {
-  debug("cElvisPlayer::~cElvisPlayer()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Activate(false);
   DELETE_POINTER(readerM);
   DELETE_POINTER(readFrameM);
@@ -403,7 +434,7 @@ cElvisPlayer::~cElvisPlayer()
 
 void cElvisPlayer::Activate(bool onP)
 {
-  debug("cElvisPlayer::Activate(%d)", onP);
+  debug1("%s (%d)", __PRETTY_FUNCTION__, onP);
   if (onP)
      Start();
   else
@@ -414,14 +445,14 @@ bool cElvisPlayer::IsEOF()
 {
   LOCK_THREAD;
   unsigned long limit = durationM ? (durationM - eEOFMark) * (fileSizeM / durationM) : 0;
-  debug("cElvisPlayer::IsEOF(): readSize=%ld limit=%ld", readSizeM, limit);
+  debug1("%s readSize=%ld limit=%ld", __PRETTY_FUNCTION__, readSizeM, limit);
   return (readSizeM >= limit);
 }
 
 void cElvisPlayer::TrickSpeed(int incrementP)
 {
   int nts = trickSpeedM + incrementP;
-  debug("cElvisPlayer::TrickSpeed(): old=%d, new=%d", trickSpeedM, nts);
+  debug1("%s (%d) old=%d, new=%d", __PRETTY_FUNCTION__, incrementP, trickSpeedM, nts);
   if (nts == 0) {
      trickSpeedM = nts;
      if (playModeM == pmFast)
@@ -456,7 +487,7 @@ void cElvisPlayer::TrickSpeed(int incrementP)
 void cElvisPlayer::Play()
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::Play()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playModeM != pmPlay) {
      DevicePlay();
      playModeM = pmPlay;
@@ -469,7 +500,7 @@ void cElvisPlayer::Play()
 void cElvisPlayer::Pause()
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::Pause()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playModeM == pmPause) {
      Play();
      if (readerM)
@@ -486,7 +517,7 @@ void cElvisPlayer::Pause()
 void cElvisPlayer::Clear()
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::Clear()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (readerM)
      readerM->ClearData();
   playFrameM = NULL;
@@ -499,7 +530,7 @@ void cElvisPlayer::Clear()
 void cElvisPlayer::Forward()
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::Forward()");
+  debug1("%s", __PRETTY_FUNCTION__);
   switch (playModeM) {
     case pmFast:
          if (Setup.MultiSpeedMode) {
@@ -538,7 +569,7 @@ void cElvisPlayer::Forward()
          TrickSpeed(1);
          break;
     default:
-         error("cElvisPlayer::Forward(): Unknown playmode=%d", playModeM);
+         error("%s Unknown playmode=%d", __PRETTY_FUNCTION__, playModeM);
          break;
     }
 }
@@ -546,7 +577,7 @@ void cElvisPlayer::Forward()
 void cElvisPlayer::Backward()
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::Backward()");
+  debug1("%s", __PRETTY_FUNCTION__);
   switch (playModeM) {
     case pmFast:
          if (Setup.MultiSpeedMode) {
@@ -586,7 +617,7 @@ void cElvisPlayer::Backward()
          TrickSpeed(-1);
          break;
     default:
-         error("cElvisPlayer::Backward(): Unknown playmode=%d", playModeM);
+         error("%s Unknown playmode=%d", __PRETTY_FUNCTION__, playModeM);
          break;
     }
 }
@@ -594,9 +625,8 @@ void cElvisPlayer::Backward()
 void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 {
   LOCK_THREAD;
-  debug("cElvisPlayer::SkipTime()");
   long skip = durationM ? secondsP * (fileSizeM / durationM) : 0;
-  debug("cElvisPlayer::SkipTime(%ld): skip=%ld filesize=%ld", secondsP, skip, fileSizeM);
+  debug1("%s (%ld, %d, %d): skip=%ld filesize=%ld", __PRETTY_FUNCTION__, secondsP, relativeP, playP, skip, fileSizeM);
   if (!relativeP)
      readSizeM = 0;
   if ((skip < 0) && (readSizeM < (unsigned long)labs(skip)))
@@ -615,7 +645,7 @@ void cElvisPlayer::SkipTime(long secondsP, bool relativeP, bool playP)
 bool cElvisPlayer::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
 {
   LOCK_THREAD;
-  //debug("cElvisPlayer::GetReplayMode()");
+  debug16("%s", __PRETTY_FUNCTION__);
   playP = ((playModeM == pmPlay) || (playModeM == pmFast));
   forwardP = (playDirM == pdForward);
   if ((playModeM == pmFast) || (playModeM == pmSlow))
@@ -666,7 +696,7 @@ int cElvisPlayer::GetBackwardJumpPeriod()
 
 void cElvisPlayer::Action()
 {
-  debug("cElvisPlayer::Action(): start");
+  debug1("%s Start", __PRETTY_FUNCTION__);
   if (ringBufferM) {
      uchar *p = NULL;
      int pc = 0;
@@ -707,7 +737,7 @@ void cElvisPlayer::Action()
                    if (durationM == 0)
                       durationM = readerM->GetDuration();
                    if (len < 0) {
-                      debug("cElvisPlayer::Action(recv): EOF");
+                      debug1("%s EOF", __PRETTY_FUNCTION__);
                       break;
                       }
                    else if (data && (len > 0)) {
@@ -778,30 +808,30 @@ void cElvisPlayer::Action()
 cElvisPlayerControl::cElvisPlayerControl(int programIdP, const char *urlP)
 : cControl(playerM = new cElvisPlayer(programIdP, urlP))
 {
-  debug("cElvisPlayerControl::cElvisPlayerControl(%s)", urlP);
+  debug1("%s (%d, %s)", __PRETTY_FUNCTION__, programIdP, urlP);
 }
 
 cElvisPlayerControl::~cElvisPlayerControl()
 {
-  debug("cElvisPlayerControl::~cElvisPlayerControl()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Stop();
 }
 
 bool cElvisPlayerControl::Active()
 {
-  //debug("cElvisPlayerControl::Active()");
+  debug16("%s", __PRETTY_FUNCTION__);
   return (playerM && !playerM->Finished());
 }
 
 void cElvisPlayerControl::Stop()
 {
-  //debug("cElvisPlayerControl::Stop()");
+  debug16("%s", __PRETTY_FUNCTION__);
   DELETENULL(playerM);
 }
 
 void cElvisPlayerControl::Pause()
 {
-  debug("cElvisPlayerControl::Pause()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playerM) {
      playerM->ClearJump();
      playerM->Pause();
@@ -810,16 +840,16 @@ void cElvisPlayerControl::Pause()
 
 void cElvisPlayerControl::Play()
 {
-  debug("cElvisPlayerControl::Play()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playerM) {
-     playerM->ClearJump(); 
+     playerM->ClearJump();
      playerM->Play();
      }
 }
 
 void cElvisPlayerControl::Forward()
 {
-  debug("cElvisPlayerControl::Forward()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playerM) {
      playerM->ClearJump();
      playerM->Forward();
@@ -828,25 +858,25 @@ void cElvisPlayerControl::Forward()
 
 void cElvisPlayerControl::Backward()
 {
-  debug("cElvisPlayerControl::Backward()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (playerM) {
-     playerM->ClearJump(); 
+     playerM->ClearJump();
      playerM->Backward();
      }
 }
 
 void cElvisPlayerControl::SkipSeconds(int secondsP)
 {
-  debug("cElvisPlayerControl::SkipSeconds(%d)", secondsP);
+  debug1("%s (%d)", __PRETTY_FUNCTION__, secondsP);
   if (playerM) {
-     playerM->ClearJump(); 
+     playerM->ClearJump();
      playerM->SkipTime(secondsP);
      }
 }
 
 bool cElvisPlayerControl::GetDuration(unsigned long &durationP)
 {
-  //debug("cElvisPlayerControl::GetDuration()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (playerM) {
      durationP = playerM->Total();
      return true;
@@ -856,7 +886,7 @@ bool cElvisPlayerControl::GetDuration(unsigned long &durationP)
 
 bool cElvisPlayerControl::GetProgress(int &currentP, int &totalP)
 {
-  //debug("cElvisPlayerControl::GetProgress()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (playerM) {
      currentP = playerM->Progress();
      totalP = 100;
@@ -867,7 +897,7 @@ bool cElvisPlayerControl::GetProgress(int &currentP, int &totalP)
 
 bool cElvisPlayerControl::GetIndex(unsigned long &currentP, unsigned long &totalP)
 {
-  //debug("cElvisPlayerControl::GetIndex()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (playerM) {
      currentP = playerM->Current();
      totalP = playerM->Total();
@@ -878,13 +908,13 @@ bool cElvisPlayerControl::GetIndex(unsigned long &currentP, unsigned long &total
 
 bool cElvisPlayerControl::GetReplayMode(bool &playP, bool &forwardP, int &speedP)
 {
-  //debug("cElvisPlayerControl::GetReplayMode()");
+  debug16("%s", __PRETTY_FUNCTION__);
   return (playerM && playerM->GetReplayMode(playP, forwardP, speedP));
 }
 
 void cElvisPlayerControl::Goto(int secondsP, bool playP)
 {
-  debug("cElvisPlayerControl::Goto()");
+  debug1("%s (%d, %d)", __PRETTY_FUNCTION__, secondsP, playP);
   if (playerM) {
      playerM->ClearJump();
      playerM->SkipTime(secondsP, false, playP);
@@ -915,14 +945,14 @@ cElvisReplayControl::cElvisReplayControl(int programIdP, const char *urlP, const
   timeSearchTimeM(-1),
   timeSearchPosM(-1)
 {
-  debug("cElvisReplayControl::cElvisReplayControl()");
+  debug1("%s (%d, %s, %s, %s, %s, %u)", __PRETTY_FUNCTION__, programIdP, urlP, nameP, descriptionP, startTimeP, lengthP);
   cStatus::MsgReplaying(this, nameP, PLUGIN_NAME_I18N ".ts", true);
   cDevice::PrimaryDevice()->ClrAvailableTracks(true);
 }
 
 cElvisReplayControl::~cElvisReplayControl()
 {
-  debug("cElvisReplayControl::~cElvisReplayControl()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Hide();
   cStatus::MsgReplaying(this, NULL, PLUGIN_NAME_I18N ".ts", false);
   Stop();
@@ -930,13 +960,13 @@ cElvisReplayControl::~cElvisReplayControl()
 
 void cElvisReplayControl::Stop()
 {
-  debug("cElvisReplayControl::Stop()");
+  debug1("%s", __PRETTY_FUNCTION__);
   cElvisPlayerControl::Stop();
 }
 
 void cElvisReplayControl::ShowTimed(int secondsP)
 {
-  //debug("cElvisReplayControl::ShowTimed(%d)", secondsP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, secondsP);
   if (modeOnlyM)
      Hide();
   if (!visibleM) {
@@ -947,13 +977,13 @@ void cElvisReplayControl::ShowTimed(int secondsP)
 
 void cElvisReplayControl::Show()
 {
-  //debug("cElvisReplayControl::Show()");
+  debug16("%s", __PRETTY_FUNCTION__);
   ShowTimed();
 }
 
 void cElvisReplayControl::Hide()
 {
-  //debug("cElvisReplayControl::Hide()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (visibleM) {
      DELETENULL(displayReplayM);
      SetNeedsFastResponse(false);
@@ -967,7 +997,7 @@ void cElvisReplayControl::Hide()
 
 void cElvisReplayControl::ShowMode()
 {
-  //debug("cElvisReplayControl::ShowMode()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (visibleM || (Setup.ShowReplayMode && !cOsd::IsOpen())) {
      bool play, forward;
      int speed;
@@ -992,14 +1022,14 @@ void cElvisReplayControl::ShowMode()
 
 cString cElvisReplayControl::SecondsToHMSF(unsigned long secondsP)
 {
-  //debug("cElvisReplayControl::SecondsToHMSF(%ld)", secondsP);
+  debug16("%s (%ld)", __PRETTY_FUNCTION__, secondsP);
   return cString::sprintf("%ld:%02ld:%02ld", secondsP / 3600, (secondsP % 3600) / 60, secondsP % 60);
 }
 
 bool cElvisReplayControl::ShowProgress(bool initialP)
 {
   unsigned long current, total;
-  //debug("cElvisReplayControl::ShowProgress(%d)", initialP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, initialP);
 
   if (GetIndex(current, total) && (total > 0)) {
      if (!visibleM) {
@@ -1037,7 +1067,7 @@ bool cElvisReplayControl::ShowProgress(bool initialP)
 void cElvisReplayControl::TimeSearchDisplay()
 {
   char buf[64];
-  //debug("cElvisReplayControl::TimeSearchDisplay()");
+  debug16("%s", __PRETTY_FUNCTION__);
   strcpy(buf, trVDR("Jump: "));
   size_t len = strlen(buf);
   char h10 = (char)('0' + (timeSearchTimeM >> 24));
@@ -1054,7 +1084,7 @@ void cElvisReplayControl::TimeSearchDisplay()
 
 void cElvisReplayControl::TimeSearchProcess(eKeys keyP)
 {
-  //debug("cElvisReplayControl::TimeSearchProcess(%d)", keyP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, keyP);
   int seconds = (timeSearchTimeM >> 24) * 36000 + ((timeSearchTimeM & 0x00FF0000) >> 16) * 3600 + ((timeSearchTimeM & 0x0000FF00) >> 8) * 600 + (timeSearchTimeM & 0x000000FF) * 60;
   unsigned long current = lastCurrentM;
   unsigned long total = lastTotalM;
@@ -1104,7 +1134,7 @@ void cElvisReplayControl::TimeSearchProcess(eKeys keyP)
 
 void cElvisReplayControl::TimeSearch()
 {
-  //debug("cElvisReplayControl::TimeSearch()");
+  debug16("%s", __PRETTY_FUNCTION__);
   timeSearchTimeM = 0;
   timeSearchPosM = 0;
   timeSearchHideM = false;
@@ -1124,7 +1154,7 @@ void cElvisReplayControl::TimeSearch()
 
 cOsdObject *cElvisReplayControl::GetInfo()
 {
-  //debug("cElvisReplayControl::GetInfo()");
+  debug16("%s", __PRETTY_FUNCTION__);
   if (!isempty(*descriptionM)) {
      unsigned long duration = 0;
      if (!GetDuration(duration) || (duration == 0))
@@ -1136,7 +1166,7 @@ cOsdObject *cElvisReplayControl::GetInfo()
 
 eOSState cElvisReplayControl::ProcessKey(eKeys keyP)
 {
-  //debug("cElvisReplayControl::ProcessKey(%d)", keyP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, keyP);
   if (!Active()) {
      cRemote::CallPlugin(PLUGIN_NAME_I18N);
      cRemote::Put(k1);

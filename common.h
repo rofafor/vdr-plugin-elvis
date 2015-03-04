@@ -11,16 +11,6 @@
 #include <vdr/menuitems.h>
 #include <vdr/tools.h>
 
-#ifdef DEBUG
-#define debug(x...) dsyslog("ELVIS: " x)
-#define info(x...)  isyslog("ELVIS: " x)
-#define error(x...) esyslog("ELVIS: " x)
-#else
-#define debug(x...) ;
-#define info(x...)  isyslog("ELVIS: " x)
-#define error(x...) esyslog("ELVIS: " x)
-#endif
-
 #define DELETE_POINTER(ptr)       \
   do {                            \
      if (ptr) {                   \

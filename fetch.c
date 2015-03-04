@@ -11,6 +11,7 @@
 #include <vdr/videodir.h>
 
 #include "common.h"
+#include "log.h"
 #include "fetch.h"
 
 // --- cElvisIndexGenerator --------------------------------------------
@@ -19,19 +20,19 @@ cElvisIndexGenerator::cElvisIndexGenerator(const char *recordingNameP)
 : cThread("cElvisIndexGenerator"),
   recordingNameM(recordingNameP)
 {
-  debug("cElvisIndexGenerator::cElvisIndexGenerator(): rec=%s", recordingNameP);
+  debug1("%s (%s)", __PRETTY_FUNCTION__, recordingNameP);
   Start();
 }
 
 cElvisIndexGenerator::~cElvisIndexGenerator()
 {
-  debug("cElvisIndexGenerator::~cElvisIndexGenerator()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Cancel(3);
 }
 
 void cElvisIndexGenerator::Action()
 {
-  debug("cElvisIndexGenerator::Action()");
+  debug1("%s Start", __PRETTY_FUNCTION__);
   bool IndexFileComplete = false;
   bool IndexFileWritten = false;
   bool Rewind = false;
@@ -121,7 +122,7 @@ void cElvisIndexGenerator::Action()
         }
   // Delete the index file if the recording has not been processed entirely:
   if (!IndexFileComplete || !IndexFileWritten) {
-     debug("cElvisIndexGenerator::Action(delindex)");
+     debug1("%s Delete index", __PRETTY_FUNCTION__);
      IndexFile.Delete();
      }
 }
@@ -143,7 +144,7 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
   sizeM(0),
   fetchedM(0)
 {
-  debug("cElvisFetchItem::cElvisFetchItem(): url=%s", *urlM);
+  debug1("%s (%s, %s, %s, %s, %u)", __PRETTY_FUNCTION__, urlP, nameP, descriptionP, startTimeP, lengthP);
 
   // create video file
   int year = 2010, mon = 1, day = 1, hour = 12, min = 0, sec = 0;
@@ -152,17 +153,17 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
   dirNameM = cString::sprintf("%s/Elvis/%s/%4d-%02d-%02d.%02d.%02d.99-0.rec", cVideoDirectory::Name(), ExchangeChars(name, true), year, mon, day, hour, min);
   free(name);
   if (DirectoryOk(*dirNameM, false)) {
-     error("cElvisFetchItem(): directory already exists: '%s'", *dirNameM);
+     error("%s (%s, %s, %s, %s, %u) Directory already exists dirname='%s'", __PRETTY_FUNCTION__, urlP, nameP, descriptionP, startTimeP, lengthP, *dirNameM);
      return;
      }
   if (!MakeDirs(*dirNameM, true)) {
-     error("cElvisFetchItem(): cannot create directory: '%s'", *dirNameM);
+     error("%s (%s, %s, %s, %s, %u) Cannot create dirname='%s'", __PRETTY_FUNCTION__, urlP, nameP, descriptionP, startTimeP, lengthP, *dirNameM);
      return;
      }
   fileNameM = new cFileName(*dirNameM, true);
   recordFileM = fileNameM->Open();
   if (!recordFileM) {
-     error("cElvisFetchItem(): cannot open file: '%s'", fileNameM->Name());
+     error("%s (%s, %s, %s, %s, %u) Cannot open file='%s'", __PRETTY_FUNCTION__, urlP, nameP, descriptionP, startTimeP, lengthP, fileNameM->Name());
      return;
      }
 
@@ -185,10 +186,11 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
   // setup curl interface
   handleM = curl_easy_init();
   if (handleM) {
-#ifdef DEBUG
      // verbose output
      curl_easy_setopt(handleM, CURLOPT_VERBOSE, 1L);
-#endif
+     curl_easy_setopt(handleM, CURLOPT_DEBUGFUNCTION, cElvisFetchItem::DebugCallback);
+     curl_easy_setopt(handleM, CURLOPT_DEBUGDATA, this);
+
      // set callbacks
      curl_easy_setopt(handleM, CURLOPT_WRITEFUNCTION, cElvisFetchItem::WriteCallback);
      curl_easy_setopt(handleM, CURLOPT_WRITEDATA, this);
@@ -219,7 +221,7 @@ cElvisFetchItem::cElvisFetchItem(const char *urlP, const char *nameP, const char
 
 cElvisFetchItem::~cElvisFetchItem()
 {
-  debug("cElvisFetchItem::~cElvisFetchItem()");
+  debug1("%s", __PRETTY_FUNCTION__);
   if (handleM) {
      // cleanup curl stuff
      curl_slist_free_all(headerListM);
@@ -229,6 +231,35 @@ cElvisFetchItem::~cElvisFetchItem()
      }
   DELETE_POINTER(fileNameM);
   DELETE_POINTER(indexGeneratorM);
+}
+
+int cElvisFetchItem::DebugCallback(CURL *handleP, curl_infotype typeP, char *dataP, size_t sizeP, void *userPtrP)
+{
+  cElvisFetchItem *obj = reinterpret_cast<cElvisFetchItem *>(userPtrP);
+
+  if (obj) {
+     switch (typeP) {
+       case CURLINFO_TEXT:
+            debug8("%s INFO %.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_IN:
+            debug8("%s HEAD <<< %.*s", __PRETTY_FUNCTION__,  (int)sizeP, dataP);
+            break;
+       case CURLINFO_HEADER_OUT:
+            debug8("%s HEAD >>>\n%.*s", __PRETTY_FUNCTION__, (int)sizeP, dataP);
+            break;
+       case CURLINFO_DATA_IN:
+            debug8("%s DATA <<< %zu", __PRETTY_FUNCTION__,  sizeP);
+            break;
+       case CURLINFO_DATA_OUT:
+            debug8("%s DATA >>> %zu", __PRETTY_FUNCTION__, sizeP);
+            break;
+       default:
+            break;
+       }
+     }
+
+  return 0;
 }
 
 size_t cElvisFetchItem::WriteCallback(void *ptrP, size_t sizeP, size_t nmembP, void *dataP)
@@ -258,7 +289,7 @@ size_t cElvisFetchItem::HeaderCallback(void *ptrP, size_t sizeP, size_t nmembP, 
 
 void cElvisFetchItem::WriteData(uchar *dataP, int lenP)
 {
-  //debug("cElvisFetchItem::WriteData(%d)", lenP);
+  debug16("%s (, %d)", __PRETTY_FUNCTION__, lenP);
 
   fetchedM += lenP;
   if (recordFileM && recordFileM->Write(dataP, lenP) < 0)
@@ -267,13 +298,13 @@ void cElvisFetchItem::WriteData(uchar *dataP, int lenP)
 
 void cElvisFetchItem::SetRange(unsigned long startP, unsigned long stopP, unsigned long sizeP)
 {
-  //debug("cElvisFetchItem::SetRange(): start=%ld stop=%ld filesize=%ld", startP, stopP, sizeP);
+  debug16("%s (%ld, %ld, %ld)", __PRETTY_FUNCTION__, startP, stopP, sizeP);
   sizeM = sizeP;
 }
 
 void cElvisFetchItem::GenerateIndex()
 {
-  debug("cElvisFetchItem::GenerateIndex()");
+  debug1("%s", __PRETTY_FUNCTION__);
 
   if (fileNameM)
      indexGeneratorM = new cElvisIndexGenerator(*dirNameM);
@@ -281,10 +312,10 @@ void cElvisFetchItem::GenerateIndex()
 
 void cElvisFetchItem::Remove()
 {
-  debug("cElvisFetchItem::Remove(%s)", fileNameM ? fileNameM->Name() : "");
+  debug1("%s recording='%s'", __PRETTY_FUNCTION__, fileNameM ? fileNameM->Name() : "");
 
   if (fileNameM) {
-     info("removing recording '%s'", fileNameM->Name());
+     info("%s Removing recording='%s'", __PRETTY_FUNCTION__, fileNameM->Name());
      cVideoDirectory::RemoveVideoFile(*dirNameM);
      }
 }
@@ -321,14 +352,14 @@ cElvisFetcher::cElvisFetcher()
   itemsM(),
   multiM(NULL)
 {
-  debug("cElvisFetcher::cElvisFetcher()");
+  debug1("%s", __PRETTY_FUNCTION__);
   multiM = curl_multi_init();
   Start();
 }
 
 cElvisFetcher::~cElvisFetcher()
 {
-  debug("cElvisFetcher::~cElvisFetcher()");
+  debug1("%s", __PRETTY_FUNCTION__);
   Cancel(3);
   Abort();
   if (multiM) {
@@ -340,7 +371,7 @@ cElvisFetcher::~cElvisFetcher()
 void cElvisFetcher::New(const char *urlP, const char *nameP, const char *descriptionP, const char *startTimeP, unsigned int lengthP)
 {
   LOCK_THREAD;
-  debug("cElvisFetcher::New(): url='%s'", urlP);
+  debug1("%s (%s, %s, %s, %s, %d)", __PRETTY_FUNCTION__, urlP, nameP, descriptionP, startTimeP, lengthP);
 
   bool found = false;
   for (int i = 0; i < itemsM.Size(); ++i) {
@@ -372,7 +403,7 @@ void cElvisFetcher::New(const char *urlP, const char *nameP, const char *descrip
 void cElvisFetcher::Remove(CURL *handleP, bool statusP)
 {
   LOCK_THREAD;
-  debug("cElvisFetcher::Remove(): status=%d", statusP);
+  debug1("%s (, %d)", __PRETTY_FUNCTION__, statusP);
 
   int i = 0;
   bool found = false;
@@ -386,7 +417,7 @@ void cElvisFetcher::Remove(CURL *handleP, bool statusP)
   if (found) {
      cElvisFetchItem *item = itemsM[i];
      if (item) {
-        debug("cElvisFetcher::Remove(%d): name='%s'", statusP, item->Name());
+        debug4("%s (, %d) name='%s'", __PRETTY_FUNCTION__, statusP, item->Name());
         // remove handle from multi set
         if (multiM && item->Handle())
            curl_multi_remove_handle(multiM, item->Handle());
@@ -404,14 +435,14 @@ bool cElvisFetcher::Cleanup()
 {
   LOCK_THREAD;
   bool found = false;
-  //debug("cElvisFetcher::Cleanup()");
+  debug16("%s", __PRETTY_FUNCTION__);
 
   for (int i = 0; i < itemsM.Size(); ++i) {
       cElvisFetchItem *item = itemsM[i];
       if (item->Handle() && item->Ready()) {
          found = true;
          itemsM.Remove(i);
-         debug("cElvisFetcher::Cleanup(): name='%s'", item->Name());
+         debug4("%s name='%s'", __PRETTY_FUNCTION__, item->Name());
          Skins.QueueMessage(mtInfo, *cString::sprintf(tr("Fetched: %s"), item->Name()));
          DELETE_POINTER(item);
          }
@@ -423,7 +454,7 @@ bool cElvisFetcher::Cleanup()
 void cElvisFetcher::Abort(int indexP)
 {
   LOCK_THREAD;
-  debug("cElvisFetcher::Abort()");
+  debug1("%s", __PRETTY_FUNCTION__);
 
   if (indexP < 0) {
      for (int i = 0; i < itemsM.Size(); ++i) {
@@ -456,7 +487,7 @@ cString cElvisFetcher::List(int prefixP)
 {
   LOCK_THREAD;
   cString list("");
-  debug("cElvisFetcher::List()");
+  debug1("%s (%d)", __PRETTY_FUNCTION__, prefixP);
 
   if (itemsM.Size() > 0) {
      for (int i = 0; i < itemsM.Size(); ++i) {
@@ -472,7 +503,7 @@ cString cElvisFetcher::List(int prefixP)
 cElvisFetchItem *cElvisFetcher::Get(int indexP)
 {
   LOCK_THREAD;
-  //debug("cElvisFetcher::Get(%d)", indexP);
+  debug16("%s (%d)", __PRETTY_FUNCTION__, indexP);
   if (indexP < itemsM.Size())
      return itemsM[indexP];
   return NULL;
@@ -480,7 +511,7 @@ cElvisFetchItem *cElvisFetcher::Get(int indexP)
 
 void cElvisFetcher::Action()
 {
-  debug("cElvisFetcher::Action(): start");
+  debug1("%s Start", __PRETTY_FUNCTION__);
   while (Running()) {
         CURLMcode err;
         int running_handles, maxfd;
@@ -498,14 +529,14 @@ void cElvisFetcher::Action()
            int msgcount;
            CURLMsg *msg = curl_multi_info_read(multiM, &msgcount);
            if (msg && (msg->msg == CURLMSG_DONE)) {
-              debug("cElvisFetcher::Action(done)");
+              debug1("%s Done", __PRETTY_FUNCTION__);
               Remove(msg->easy_handle, (msg->data.result == CURLE_OK));
               }
            }
 
         // cleanup ready made transfers
         if (Cleanup()) {
-           debug("cElvisFetcher::Action(touch)");
+           debug1("%s Touch", __PRETTY_FUNCTION__);
            Recordings.ChangeState();
            Recordings.TouchUpdate();
            }
