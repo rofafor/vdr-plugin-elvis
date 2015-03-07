@@ -2,14 +2,6 @@
 # Makefile for Elvis plugin
 #
 
-# Debugging on/off
-
-#ELVIS_DEBUG = 1
-
-# Strip debug symbols?  Set eg. to /bin/true if not
-
-STRIP = strip
-
 # The official name of this plugin.
 # This name will be used in the '-P...' option of VDR to load the plugin.
 # By default the main source file also carries this name.
@@ -35,6 +27,7 @@ TMPDIR ?= /tmp
 
 export CFLAGS   = $(call PKGCFG,cflags)
 export CXXFLAGS = $(call PKGCFG,cxxflags)
+STRIP           ?= /bin/true
 
 ### The version number of VDR's plugin API:
 
@@ -62,10 +55,6 @@ LIBS = -lm $(shell curl-config --libs) $(shell pkg-config --libs jansson)
 INCLUDES +=
 
 DEFINES += -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
-
-ifdef ELVIS_DEBUG
-DEFINES += -DDEBUG
-endif
 
 ifneq ($(strip $(GITTAG)),)
 DEFINES += -DGITVERSION='"-GIT-$(GITTAG)"'
@@ -127,9 +116,7 @@ install-i18n: $(I18Nmsgs)
 
 $(SOFILE): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared $(OBJS) $(LIBS) -o $@
-ifndef ELVIS_DEBUG
 	@$(STRIP) $@
-endif
 
 install-lib: $(SOFILE)
 	install -D $^ $(DESTDIR)$(LIBDIR)/$^.$(APIVERSION)
