@@ -15,21 +15,13 @@ const char *cElvisConfig::confBaseNameS = PLUGIN_NAME_I18N ".conf";
 
 cElvisConfig::cElvisConfig()
 : traceModeM(eTraceModeNormal),
-  __BeginData__(0),
-  HideMenu(0),
-  ReplaceSchedule(0),
-  ReplaceTimers(0),
-  ReplaceRecordings(0),
-  __EndData__(0)
+  hideMenuM(0),
+  replaceScheduleM(0),
+  replaceTimersM(0),
+  replaceRecordingsM(0)
 {
-  memset(Username, 0, sizeof(Username));
-  memset(Password, 0, sizeof(Password));
-}
-
-cElvisConfig& cElvisConfig::operator=(const cElvisConfig &objP)
-{
-  memcpy(&__BeginData__, &objP.__BeginData__, (char *)&objP.__EndData__ - (char *)&objP.__BeginData__);
-  return *this;
+  memset(usernameM, 0, sizeof(usernameM));
+  memset(passwordM, 0, sizeof(passwordM));
 }
 
 cSetupLine *cElvisConfig::Get(const char *nameP)
@@ -79,9 +71,9 @@ bool cElvisConfig::Load(const char *directoryP)
 
 bool cElvisConfig::Parse(const char *nameP, const char *valueP)
 {
-  if      (!strcasecmp(nameP, "Username")) Utf8Strn0Cpy(Username, valueP, sizeof(Username));
-  else if (!strcasecmp(nameP, "Password")) Utf8Strn0Cpy(Password, valueP, sizeof(Password));
-  else if (!strcasecmp(nameP, "HideMenu")) HideMenu = atoi(valueP);
+  if      (!strcasecmp(nameP, "Username")) Utf8Strn0Cpy(usernameM, valueP, sizeof(usernameM));
+  else if (!strcasecmp(nameP, "Password")) Utf8Strn0Cpy(passwordM, valueP, sizeof(passwordM));
+  else if (!strcasecmp(nameP, "HideMenu")) hideMenuM = atoi(valueP);
   else
      return false;
   return true;
@@ -89,9 +81,9 @@ bool cElvisConfig::Parse(const char *nameP, const char *valueP)
 
 bool cElvisConfig::Save()
 {
-  Store("HideMenu",  HideMenu);
-  Store("Username",  Username);
-  Store("Password",  Password);
+  Store("HideMenu",  hideMenuM);
+  Store("Username",  usernameM);
+  Store("Password",  passwordM);
 
   Sort();
 

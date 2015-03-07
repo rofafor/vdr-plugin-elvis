@@ -223,16 +223,16 @@ bool cElvisWidget::Perform(const char *urlP, const char *msgP)
 
 bool cElvisWidget::Login()
 {
-  if (isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) {
+  if (isempty(ElvisConfig.GetUsername()) || isempty(ElvisConfig.GetPassword())) {
      error("Invalid credentials");
      return false;
      }
 
   if (!IsLogged() && handleM) {
 #ifdef USE_COOKIE_JAR
-     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", baseUrlViihdeS, ElvisConfig.Username, ElvisConfig.Password);
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&savelogin=true&ajax=true", baseUrlViihdeS, ElvisConfig.GetUsername(), ElvisConfig.GetPassword());
 #else
-     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", baseUrlViihdeS, ElvisConfig.Username, ElvisConfig.Password);
+     cString url = cString::sprintf("%s/login.sl?username=%s&password=%s&ajax=true", baseUrlViihdeS, ElvisConfig.GetUsername(), ElvisConfig.GetPassword());
 #endif
 
      if (Perform(*url, "Login"))

@@ -14,7 +14,7 @@
 #include "fetch.h"
 #include "menu.h"
 #include "resume.h"
-#include "widget.h"
+#include "setup.h"
 #include "elvisservice.h"
 
 #if defined(APIVERSNUM) && APIVERSNUM < 20200
@@ -32,6 +32,7 @@ static const char MAINMENUENTRY[] = trNOOP("Elvis");
 class cPluginElvis : public cPlugin {
 private:
   // Add any member variables or functions you may need here.
+
 public:
   cPluginElvis();
   virtual ~cPluginElvis();
@@ -46,7 +47,7 @@ public:
   virtual void MainThreadHook();
   virtual cString Active();
   virtual time_t WakeupTime();
-  virtual const char *MainMenuEntry() { return ((ElvisConfig.HideMenu || isempty(ElvisConfig.Username) || isempty(ElvisConfig.Password)) ? NULL : tr(MAINMENUENTRY)); }
+  virtual const char *MainMenuEntry() { return ((ElvisConfig.GetHideMenu() || isempty(ElvisConfig.GetUsername()) || isempty(ElvisConfig.GetPassword())) ? NULL : tr(MAINMENUENTRY)); }
   virtual cOsdObject *MainMenuAction();
   virtual cMenuSetupPage *SetupMenu();
   virtual bool SetupParse(const char *nameP, const char *valueP);
@@ -54,20 +55,6 @@ public:
   virtual const char **SVDRPHelpPages();
   virtual cString SVDRPCommand(const char *commandP, const char *optionP, int &replyCodeP);
   };
-
-class cPluginElvisSetup : public cMenuSetupPage
-{
-private:
-  cElvisConfig dataM;
-  cVector<const char*> helpM;
-  void SetHelpKeys();
-  void Setup();
-protected:
-  virtual eOSState ProcessKey(eKeys keyP);
-  virtual void Store();
-public:
-  cPluginElvisSetup();
-};
 
 cPluginElvis::cPluginElvis()
 {
@@ -284,82 +271,6 @@ cString cPluginElvis::SVDRPCommand(const char *commandP, const char *optionP, in
      }
 
   return NULL;
-}
-
-cPluginElvisSetup::cPluginElvisSetup()
-: dataM(ElvisConfig)
-{
-  SetMenuCategory(mcSetupPlugins);
-  Setup();
-  SetHelpKeys();
-}
-
-void cPluginElvisSetup::SetHelpKeys()
-{
-  SetHelp(trVDR("Button$Reset"), NULL, NULL, NULL);
-}
-
-void cPluginElvisSetup::Setup()
-{
-  int current = Current();
-
-  Clear();
-  helpM.Clear();
-
-  Add(new cMenuEditBoolItem(tr("Hide main menu entry"), &dataM.HideMenu));
-  helpM.Append(tr("Define whether the main manu entry is hidden."));
-
-  Add(new cMenuEditStrItem(tr("Username"), dataM.Username, sizeof(dataM.Username)));
-  helpM.Append(tr("Define your Elisa Viihde username."));
-
-  Add(new cMenuEditHiddenStrItem(tr("Password"), dataM.Password, sizeof(dataM.Password)));
-  helpM.Append(tr("Define your Elisa Viihde password."));
-
-#if defined(MAINMENUHOOKSVERSNUM)
-  Add(new cMenuEditBoolItem(tr("Replace 'Schedule' in main menu"), &dataM.ReplaceSchedule));
-  helpM.Append(tr("Define whether this plugin replaces the original 'Schedule' entry in the main menu. MainMenuHook patch is required."));
-
-  Add(new cMenuEditBoolItem(tr("Replace 'Timers' in main menu"), &dataM.ReplaceTimers));
-  helpM.Append(tr("Define whether this plugin replaces the original 'Timers' entry in the main menu. MainMenuHook patch is required."));
-
-  Add(new cMenuEditBoolItem(tr("Replace 'Recordings' menu entry"), &dataM.ReplaceRecordings));
-  helpM.Append(tr("Define whether this plugin replaces the original 'Recordings' entry in the main menu. MainMenuHook patch is required."));
-#endif
-
-  SetCurrent(Get(current));
-  Display();
-}
-
-eOSState cPluginElvisSetup::ProcessKey(eKeys keyP)
-{
-  eOSState state = cMenuSetupPage::ProcessKey(keyP);
-
-  if (state == osUnknown) {
-     switch (keyP) {
-       case kRed:
-            Skins.Message(mtInfo, tr("Reseting..."));
-            cElvisResumeItems::GetInstance()->Reset();
-            cElvisWidget::GetInstance()->Invalidate();
-            Skins.Message(mtInfo, NULL);
-            state = osContinue;
-            break;
-       case kInfo:
-            if (Current() < helpM.Size())
-               return AddSubMenu(new cMenuText(cString::sprintf("%s - %s '%s'", tr("Help"), trVDR("Plugin"), PLUGIN_NAME_I18N), helpM[Current()]));
-            break;
-       default:
-            break;
-            }
-     }
-
-  return state;
-}
-
-void cPluginElvisSetup::Store()
-{
-  ElvisConfig = dataM;
-  ElvisConfig.Save();
-  cElvisWidget::GetInstance()->Invalidate();
 }
 
 VDRPLUGINCREATOR(cPluginElvis); // Don't touch this!

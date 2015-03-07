@@ -11,6 +11,8 @@
 #include <vdr/menuitems.h>
 #include <vdr/tools.h>
 
+#define CREDENTIALS_MAX 32
+
 #define DELETE_POINTER(ptr)       \
   do {                            \
      if (ptr) {                   \

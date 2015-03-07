@@ -10,17 +10,25 @@
 
 #include <vdr/config.h>
 
+#include "common.h"
+
 class cElvisConfig : public cConfig<cSetupLine> {
 private:
-  enum {
-    eMaxCredentials = 32
-  };
   unsigned int traceModeM;
+  int hideMenuM;
+  int replaceScheduleM;
+  int replaceTimersM;
+  int replaceRecordingsM;
+  char usernameM[CREDENTIALS_MAX];
+  char passwordM[CREDENTIALS_MAX];
+
   static const char *confBaseNameS;
+
   bool Parse(const char *nameP, const char *valueP);
   cSetupLine *Get(const char *nameP);
   void Store(const char *nameP, const char *valueP);
   void Store(const char *nameP, int valueP);
+
 public:
   enum eTraceMode {
     eTraceModeNormal  = 0x0000,
@@ -42,21 +50,25 @@ public:
     eTraceModeDebug16 = 0x8000,
     eTraceModeMask    = 0xFFFF
   };
-  int __BeginData__;
-  int HideMenu;
-  int ReplaceSchedule;
-  int ReplaceTimers;
-  int ReplaceRecordings;
-  char Username[eMaxCredentials];
-  char Password[eMaxCredentials];
-  int __EndData__;
   cElvisConfig();
-  cElvisConfig& operator= (const cElvisConfig &objP);
   bool Load(const char *directoryP);
   bool Save();
-  void SetTraceMode(unsigned int modeP) { traceModeM = (modeP & eTraceModeMask); }
   unsigned int GetTraceMode(void) const { return traceModeM; }
   bool IsTraceMode(eTraceMode modeP) const { return (traceModeM & modeP); }
+  int GetHideMenu(void) const { return hideMenuM; }
+  int GetReplaceSchedule(void) const { return replaceScheduleM; }
+  int GetReplaceTimers(void) const { return replaceTimersM; }
+  int GetReplaceRecordings(void) const { return replaceRecordingsM; }
+  const char *GetUsername(void) const { return usernameM; }
+  const char *GetPassword(void) const { return passwordM; }
+
+  void SetTraceMode(unsigned int modeP) { traceModeM = (modeP & eTraceModeMask); }
+  void SetHideMenu(int hideMenuP) { hideMenuM = hideMenuP; }
+  void SetReplaceSchedule(int replaceScheduleP) { replaceScheduleM = replaceScheduleP; }
+  void SetReplaceTimers(int replaceTimersP) { replaceTimersM = replaceTimersP; }
+  void SetReplaceRecordings(int replaceRecordingsP) { replaceRecordingsM = replaceRecordingsP; }
+  void SetUsername(const char *usernameP) { strn0cpy(usernameM, usernameP, sizeof(usernameM)); }
+  void SetPassword(const char *passwordP) { strn0cpy(passwordM, passwordP, sizeof(passwordM)); }
 };
 
 extern cElvisConfig ElvisConfig;

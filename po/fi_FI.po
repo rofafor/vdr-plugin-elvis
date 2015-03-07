@@ -25,48 +25,6 @@ msgstr "Elvis"
 msgid "Elvis is alive!"
 msgstr "Elvis elää!"
 
-msgid "Hide main menu entry"
-msgstr "Piilota valinta päävalikosta"
-
-msgid "Define whether the main manu entry is hidden."
-msgstr "Määrittele, näytetäänkö laajennoksen valinta päävalikossa."
-
-msgid "Username"
-msgstr "Käyttäjätunnus"
-
-msgid "Define your Elisa Viihde username."
-msgstr "Määrittele Elisa Viihde -käyttäjätunnuksesi."
-
-msgid "Password"
-msgstr "Salasana"
-
-msgid "Define your Elisa Viihde password."
-msgstr "Määrittele Elisa Viihde -salasanasi."
-
-msgid "Replace 'Schedule' in main menu"
-msgstr "Korvaa päävalikon 'Ohjelmisto'-valinta"
-
-msgid "Define whether this plugin replaces the original 'Schedule' entry in the main menu. MainMenuHook patch is required."
-msgstr "Määrittele, korvataanko alkuperäinen 'Ohjelmisto'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
-
-msgid "Replace 'Timers' in main menu"
-msgstr "Korvaa päävalikon 'Ajastimet'-valinta"
-
-msgid "Define whether this plugin replaces the original 'Timers' entry in the main menu. MainMenuHook patch is required."
-msgstr "Määrittele, korvataanko alkuperäinen 'Ajastimet'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
-
-msgid "Replace 'Recordings' menu entry"
-msgstr "Korvaa päävalikon 'Tallenteet'-valinta"
-
-msgid "Define whether this plugin replaces the original 'Recordings' entry in the main menu. MainMenuHook patch is required."
-msgstr "Määrittele, korvataanko alkuperäinen 'Tallennukset'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
-
-msgid "Reseting..."
-msgstr "Nollataan..."
-
-msgid "Help"
-msgstr "Opaste"
-
 #, c-format
 msgid "Fetching: %s"
 msgstr "Haetaan: %s"
@@ -206,3 +164,45 @@ msgstr "Keskeytetäänkö haku?"
 
 msgid "(default)"
 msgstr "(oletus)"
+
+msgid "Hide main menu entry"
+msgstr "Piilota valinta päävalikosta"
+
+msgid "Define whether the main manu entry is hidden."
+msgstr "Määrittele, näytetäänkö laajennoksen valinta päävalikossa."
+
+msgid "Username"
+msgstr "Käyttäjätunnus"
+
+msgid "Define your Elisa Viihde username."
+msgstr "Määrittele Elisa Viihde -käyttäjätunnuksesi."
+
+msgid "Password"
+msgstr "Salasana"
+
+msgid "Define your Elisa Viihde password."
+msgstr "Määrittele Elisa Viihde -salasanasi."
+
+msgid "Replace 'Schedule' in main menu"
+msgstr "Korvaa päävalikon 'Ohjelmisto'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Schedule' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Ohjelmisto'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
+
+msgid "Replace 'Timers' in main menu"
+msgstr "Korvaa päävalikon 'Ajastimet'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Timers' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Ajastimet'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
+
+msgid "Replace 'Recordings' menu entry"
+msgstr "Korvaa päävalikon 'Tallenteet'-valinta"
+
+msgid "Define whether this plugin replaces the original 'Recordings' entry in the main menu. MainMenuHook patch is required."
+msgstr "Määrittele, korvataanko alkuperäinen 'Tallennukset'-valinta päävalikossa tällä laajennoksella. Toiminto vaatii MainMenuHook-paikkauksen."
+
+msgid "Reseting..."
+msgstr "Nollataan..."
+
+msgid "Help"
+msgstr "Opaste"
