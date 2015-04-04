@@ -150,9 +150,8 @@ VDR Plugin 'elvis' Revision History
 
 - Updated for vdr-2.2.0.
 
-2015-XX-XX: Version 2.2.1
+2015-04-04: Version 2.2.1
 
 - Added a stale connection detection for the player.
-- Added a command-line switch for manually setting used
-  tracing mode.
-- Added a new TRAC command into the SVDRP interface.
+- Got rid of ELVIS_DEBUG.
+- Added support for tracing modes.
