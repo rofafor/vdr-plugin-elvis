@@ -180,7 +180,7 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
      return true;
      }
 #if defined(MAINMENUHOOKSVERSNUM)
-  else if (ElvisConfig.ReplaceSchedule && (strcmp(idP, "MainMenuHooksPatch-v1.0::osSchedule") == 0)) {
+  else if (ElvisConfig.GetReplaceSchedule() && (strcmp(idP, "MainMenuHooksPatch-v1.0::osSchedule") == 0)) {
      if (dataP) {
         cOsdMenu **menu = (cOsdMenu**)dataP;
         if (menu)
@@ -188,7 +188,7 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
         }
      return true;
      }
-  else if (ElvisConfig.ReplaceTimers && (strcmp(idP, "MainMenuHooksPatch-v1.0::osTimers") == 0)) {
+  else if (ElvisConfig.GetReplaceTimers() && (strcmp(idP, "MainMenuHooksPatch-v1.0::osTimers") == 0)) {
      if (dataP) {
         cOsdMenu **menu = (cOsdMenu**)dataP;
         if (menu)
@@ -196,7 +196,7 @@ bool cPluginElvis::Service(const char *idP, void *dataP)
         }
      return true;
      }
-  else if (ElvisConfig.ReplaceRecordings && (strcmp(idP, "MainMenuHooksPatch-v1.0::osRecordings") == 0)) {
+  else if (ElvisConfig.GetReplaceRecordings() && (strcmp(idP, "MainMenuHooksPatch-v1.0::osRecordings") == 0)) {
      if (dataP) {
         cOsdMenu **menu = (cOsdMenu**)dataP;
         if (menu)
