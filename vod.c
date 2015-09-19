@@ -91,24 +91,26 @@ cElvisVOD *cElvisVODCategory::GetVOD(int idP)
 void cElvisVODCategory::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  if (foregroundP) {
-     Clear();
-     ChangeState();
-     }
-  else {
-     for (cElvisVOD *i = cList<cElvisVOD>::First(); i; i = cList<cElvisVOD>::Next(i))
-         i->Tag(false);
-     }
-  Unlock();
+  {
+    LOCK_THREAD;
+    if (foregroundP) {
+       Clear();
+       ChangeState();
+       }
+    else {
+       for (cElvisVOD *i = cList<cElvisVOD>::First(); i; i = cList<cElvisVOD>::Next(i))
+           i->Tag(false);
+       }
+  }
   cElvisWidget::GetInstance()->GetVOD(*this, *categoryM);
-  Lock();
-  for (cElvisVOD *i = cList<cElvisVOD>::First(); i; i = cList<cElvisVOD>::Next(i)) {
-      if (!i->IsTagged())
-         Del(i);
-      }
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    for (cElvisVOD *i = cList<cElvisVOD>::First(); i; i = cList<cElvisVOD>::Next(i)) {
+        if (!i->IsTagged())
+           Del(i);
+        }
+    ChangeState();
+  }
 }
 
 bool cElvisVODCategory::Update(bool waitP)
@@ -266,14 +268,16 @@ cElvisVOD *cElvisVODSearch::GetVOD(int idP)
 void cElvisVODSearch::Refresh()
 {
   lastUpdateM = time(NULL);
-  Lock();
-  Clear();
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    Clear();
+    ChangeState();
+  }
   cElvisWidget::GetInstance()->SearchVOD(*this, *titleM, *descM, hdM);
-  Lock();
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    ChangeState();
+  }
 }
 
 void cElvisVODSearch::Search(const char *titleP, const char *descP, bool hdP)

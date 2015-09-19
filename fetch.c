@@ -537,8 +537,6 @@ void cElvisFetcher::Action()
         // cleanup ready made transfers
         if (Cleanup()) {
            debug1("%s Touch", __PRETTY_FUNCTION__);
-           Recordings.ChangeState();
-           Recordings.TouchUpdate();
            }
 
         timeout.tv_sec  = 0;

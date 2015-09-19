@@ -17,15 +17,15 @@
 #include "setup.h"
 #include "elvisservice.h"
 
-#if defined(APIVERSNUM) && APIVERSNUM < 20200
-#error "VDR-2.2.0 API version or greater is required!"
+#if defined(APIVERSNUM) && APIVERSNUM < 20301
+#error "VDR-2.3.1 API version or greater is required!"
 #endif
 
 #ifndef GITVERSION
 #define GITVERSION ""
 #endif
 
-       const char VERSION[]       = "2.2.1" GITVERSION;
+       const char VERSION[]       = "2.3.0" GITVERSION;
 static const char DESCRIPTION[]   = trNOOP("Elisa Viihde Widget");
 static const char MAINMENUENTRY[] = trNOOP("Elvis");
 

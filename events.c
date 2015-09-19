@@ -136,10 +136,11 @@ void cElvisChannels::AddEvent(const char *channelP, int idP, const char *nameP, 
 void cElvisChannels::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  Clear();
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    Clear();
+    ChangeState();
+  }
   cElvisWidget::GetInstance()->GetEPG(*this);
 }
 
@@ -172,15 +173,15 @@ void cElvisChannels::Action()
 
 bool cElvisChannels::AddTimer(tEventID eventIdP)
 {
-  cEvent *event = NULL;
-  cChannel *channel = NULL;
-  cSchedulesLock SchedulesLock(false, 100);
+  const cEvent *event = NULL;
+  const cChannel *channel = NULL;
   debug7("%s (%d)", __PRETTY_FUNCTION__, eventIdP);
-  const cSchedules *Schedules = cSchedules::Schedules(SchedulesLock);
+  LOCK_CHANNELS_READ;
+  LOCK_SCHEDULES_WRITE;
   for (const cSchedule *s = Schedules->First(); s; s = Schedules->Next(s)) {
-      for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
+      for (const cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
           if (e->EventID() == eventIdP) {
-             channel = Channels.GetByChannelID(e->ChannelID(), true);
+             channel = Channels->GetByChannelID(e->ChannelID(), true);
              event = e;
              info("%s (%d) Found event='%s' channel='%s'", __PRETTY_FUNCTION__, e->EventID(), e->Title(), channel->Name());
              break;
@@ -192,7 +193,7 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
   if (event && channel) {
      if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
         Update(true);
-     Lock();
+     LOCK_THREAD;
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {
             for (cElvisEvent *i = c->cList<cElvisEvent>::First(); i; i = c->cList<cElvisEvent>::Next(i)) {
@@ -204,7 +205,6 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
             break;
             }
          }
-     Unlock();
      }
 
   return false;
@@ -212,15 +212,15 @@ bool cElvisChannels::AddTimer(tEventID eventIdP)
 
 bool cElvisChannels::DelTimer(tEventID eventIdP)
 {
-  cEvent *event = NULL;
-  cChannel *channel = NULL;
-  cSchedulesLock SchedulesLock(false, 100);
+  const cEvent *event = NULL;
+  const cChannel *channel = NULL;
   debug7("%s (%d)", __PRETTY_FUNCTION__, eventIdP);
-  const cSchedules *Schedules = cSchedules::Schedules(SchedulesLock);
-  for (const cSchedule *s = Schedules->First(); s; s = Schedules->Next(s)) {
-      for (cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
+  LOCK_CHANNELS_READ;
+  LOCK_SCHEDULES_WRITE;
+  for (cSchedule *s = Schedules->First(); s; s = Schedules->Next(s)) {
+      for (const cEvent *e = s->Events()->First(); e; e = s->Events()->Next(e)) {
           if (e->EventID() == eventIdP) {
-             channel = Channels.GetByChannelID(e->ChannelID(), true);
+             channel = Channels->GetByChannelID(e->ChannelID(), true);
              event = e;
              info("%s (%d) Found event '%s' on '%s'", __PRETTY_FUNCTION__, e->EventID(), e->Title(), channel->Name());
              break;
@@ -232,7 +232,7 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
   if (event && channel) {
      if ((time(NULL) - lastUpdateM) >= eUpdateInterval)
         Update(true);
-     Lock();
+     LOCK_THREAD;
      for (cElvisChannel *c = First(); c; c = Next(c)) {
          if (!strcmp(c->Name(), channel->Name())) {
             for (cElvisEvent *i = c->cList<cElvisEvent>::First(); i; i = c->cList<cElvisEvent>::Next(i)) {
@@ -244,7 +244,6 @@ bool cElvisChannels::DelTimer(tEventID eventIdP)
             break;
             }
          }
-     Unlock();
      }
 
   return false;
@@ -305,24 +304,26 @@ cElvisEvent *cElvisTopEvents::GetEvent(int idP)
 void cElvisTopEvents::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  //if (foregroundP) {
-     Clear();
-     ChangeState();
-  //   }
-  //else {
-  //   for (cElvisEvent *i = First(); i; i = Next(i))
-  //       i->Tag(false);
-  //   }
-  Unlock();
+  {
+    LOCK_THREAD;
+    //if (foregroundP) {
+       Clear();
+       ChangeState();
+    //   }
+    //else {
+    //   for (cElvisEvent *i = First(); i; i = Next(i))
+    //       i->Tag(false);
+    //   }
+  }
   cElvisWidget::GetInstance()->GetTopEvents(*this);
-  //Lock();
-  //for (cElvisEvent *i = First(); i; i = Next(i)) {
-  //    if (!i->IsTagged())
-  //       Del(i);
-  //    }
-  //ChangeState();
-  //Unlock();
+  //{
+    //LOCK_THREAD;
+    //for (cElvisEvent *i = First(); i; i = Next(i)) {
+    //    if (!i->IsTagged())
+    //       Del(i);
+    //    }
+    //ChangeState();
+  //}
 }
 
 bool cElvisTopEvents::Update(bool waitP)

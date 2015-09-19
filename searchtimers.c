@@ -104,24 +104,26 @@ cElvisSearchTimer *cElvisSearchTimers::GetSearchTimer(int idP)
 void cElvisSearchTimers::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  if (foregroundP) {
-     Clear();
-     ChangeState();
-     }
-  else {
-     for (cElvisSearchTimer *i = First(); i; i = Next(i))
-         i->Tag(false);
-     }
-  Unlock();
+  {
+    LOCK_THREAD;
+    if (foregroundP) {
+       Clear();
+       ChangeState();
+       }
+    else {
+       for (cElvisSearchTimer *i = First(); i; i = Next(i))
+           i->Tag(false);
+       }
+  }
   cElvisWidget::GetInstance()->GetSearchTimers(*this);
-  Lock();
-  for (cElvisSearchTimer *i = First(); i; i = Next(i)) {
-      if (!i->IsTagged())
-         Del(i);
-      }
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    for (cElvisSearchTimer *i = First(); i; i = Next(i)) {
+        if (!i->IsTagged())
+           Del(i);
+        }
+    ChangeState();
+  }
 }
 
 bool cElvisSearchTimers::Update(bool waitP)

@@ -143,27 +143,29 @@ cElvisRecording *cElvisRecordingFolder::GetRecording(int idP)
 void cElvisRecordingFolder::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  if (foregroundP) {
-     Clear();
-     ChangeState();
-     }
-  else {
-     for (cElvisRecording *i = cList<cElvisRecording>::First(); i; i = cList<cElvisRecording>::Next(i))
-         i->Tag(false);
-     }
-  Unlock();
+  {
+    LOCK_THREAD;
+    if (foregroundP) {
+       Clear();
+       ChangeState();
+       }
+    else {
+       for (cElvisRecording *i = cList<cElvisRecording>::First(); i; i = cList<cElvisRecording>::Next(i))
+           i->Tag(false);
+       }
+  }
   cElvisWidget::GetInstance()->GetRecordings(*this, folderIdM);
-  Lock();
-  for (cElvisRecording *i = cList<cElvisRecording>::First(); i; i = cList<cElvisRecording>::Next(i)) {
-      if (!i->IsTagged()) {
-         if (i->IsFolder())
-            cElvisRecordings::GetInstance()->DeleteFolder(i->FolderId());
-         Del(i);
-         }
-      }
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    for (cElvisRecording *i = cList<cElvisRecording>::First(); i; i = cList<cElvisRecording>::Next(i)) {
+        if (!i->IsTagged()) {
+           if (i->IsFolder())
+              cElvisRecordings::GetInstance()->DeleteFolder(i->FolderId());
+           Del(i);
+           }
+        }
+    ChangeState();
+  }
 }
 
 bool cElvisRecordingFolder::Update(bool waitP)
@@ -331,27 +333,29 @@ bool cElvisRecordings::Update(bool waitP)
 void cElvisRecordings::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  if (foregroundP) {
-     Clear();
-     AddFolder(-1, tr("(default)"));
-     ChangeState();
-     }
-  else {
-     for (cElvisRecordingFolder *i = cList<cElvisRecordingFolder>::First(); i; i = cList<cElvisRecordingFolder>::Next(i))
-         i->Tag(false);
-     }
-  Unlock();
+  {
+    LOCK_THREAD;
+    if (foregroundP) {
+       Clear();
+       AddFolder(-1, tr("(default)"));
+       ChangeState();
+       }
+    else {
+       for (cElvisRecordingFolder *i = cList<cElvisRecordingFolder>::First(); i; i = cList<cElvisRecordingFolder>::Next(i))
+           i->Tag(false);
+       }
+  }
   cElvisWidget::GetInstance()->GetFolders(*this);
-  Lock();
-  for (cElvisRecordingFolder *i = cList<cElvisRecordingFolder>::First(); i; i = cList<cElvisRecordingFolder>::Next(i)) {
-      if (!i->IsTagged()) {
-         DeleteFolder(i->Id());
-         Del(i);
-         }
-      }
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    for (cElvisRecordingFolder *i = cList<cElvisRecordingFolder>::First(); i; i = cList<cElvisRecordingFolder>::Next(i)) {
+        if (!i->IsTagged()) {
+           DeleteFolder(i->Id());
+           Del(i);
+           }
+        }
+    ChangeState();
+  }
 }
 
 void cElvisRecordings::Action()

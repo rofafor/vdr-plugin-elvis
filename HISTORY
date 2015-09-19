@@ -155,3 +155,12 @@ VDR Plugin 'elvis' Revision History
 - Added a stale connection detection for the player.
 - Got rid of ELVIS_DEBUG.
 - Added support for tracing modes.
+
+
+===================================
+VDR Plugin 'elvis' Revision History
+===================================
+
+2015-XX-XX: Version 2.3.0
+
+- Updated for vdr-2.3.1.

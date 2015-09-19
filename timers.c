@@ -127,24 +127,26 @@ cElvisTimer *cElvisTimers::GetTimer(int idP)
 void cElvisTimers::Refresh(bool foregroundP)
 {
   lastUpdateM = time(NULL);
-  Lock();
-  if (foregroundP) {
-     Clear();
-     ChangeState();
-     }
-  else {
-     for (cElvisTimer *i = First(); i; i = Next(i))
-         i->Tag(false);
-     }
-  Unlock();
+  {
+    LOCK_THREAD;
+    if (foregroundP) {
+       Clear();
+       ChangeState();
+       }
+    else {
+       for (cElvisTimer *i = First(); i; i = Next(i))
+           i->Tag(false);
+       }
+  }
   cElvisWidget::GetInstance()->GetTimers(*this);
-  Lock();
-  for (cElvisTimer *i = First(); i; i = Next(i)) {
-      if (!i->IsTagged())
-         Del(i);
-      }
-  ChangeState();
-  Unlock();
+  {
+    LOCK_THREAD;
+    for (cElvisTimer *i = First(); i; i = Next(i)) {
+        if (!i->IsTagged())
+           Del(i);
+        }
+    ChangeState();
+  }
 }
 
 bool cElvisTimers::Update(bool waitP)
